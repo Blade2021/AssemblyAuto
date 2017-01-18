@@ -16,7 +16,7 @@ int x = 0;
 int a = 1;
 
 unsigned long previousTimer = 0;
-unsigned long y[] = {1000, 2000, 3000};
+unsigned int y[] = {1000, 2000, 3000};
 
 void setup() {
 //  pinMode(NextButton, INPUT);
