@@ -1,0 +1,40 @@
+int TestButton = 10;
+int x;
+class Debounce
+{
+  int currentTime;
+  int previousTime = 0;
+  int sysVar;
+  int waitVar;
+  int pinVar;
+  
+  public:
+  Debounce(int main, long wait, int pin)
+  {
+    waitVar = wait;
+    pinVar = digitalRead(pin);
+    sysVar = main;
+  }
+  void Update(){
+    unsigned long currentTime = millis();
+    if ((pinVar==HIGH) && (currentTime-previousTime >= waitVar)){
+      sysVar = HIGH;
+      previousTime=currentTime;
+    }
+    else {
+      sysVar = LOW;
+    }
+  }
+};
+Debounce B1(x, 200, 10);
+void setup() {
+  pinMode(TestButton, INPUT);
+  Serial.begin(9600);
+  Serial.println("Testing...");
+}
+void loop() {
+  B1.update();
+  if (x==HIGH){
+    serial.println("Test");
+  }
+}
