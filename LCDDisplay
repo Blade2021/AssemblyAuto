@@ -1,0 +1,227 @@
+#include <LiquidCrystal.h>
+#include <EEPROM.h>
+#include <keypad.h>
+/*
+void setup() {
+  // put your setup code here, to run once:
+  lcd.begin(2,10); // (cols,rows) of display
+}
+*/
+// LCD Variables
+int sysButton = 0;
+int sysNext = 0;
+int lcdSel = 1; //default selection is 1
+int selState = 0;
+
+//LCD Buttons
+int sysNextButton = 0;
+int sysUpButton = 0;
+int sysDownButton = 0;
+int sysUpLogic = 0;
+int sysDownLogic = 0;
+
+//PIN MODE
+pinMode(sysNextButton, INPUT);
+pinMode(sysPreviousButton, INPUT);
+pinMode(sysUpButton, INPUT);
+pinMode(sysDownButton, INPUT);
+pinMode(sysButton, INPUT);
+void setup(){
+  TimerINV1 = EEPROM.read(1);
+  TimerINV2 = EEPROM.read(2);
+  TimerINV3 = EEPROM.read(3);
+  TimerINV4 = EEPROM.read(4);
+  TimerINV5 = EEPROM.read(5);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  lcd.print("System Running");
+  //when timing change button pressed
+  sysCheck = digitalRead(sysButton);
+  if (sysCheck == HIGH){
+  lcd.print("Change Timing");
+  sysNext = digitalRead(sysNextButton);
+  if (sysNext == HIGH){
+    lcdSel++;
+    if (lcdSel > 5){
+      lcdSel = 1
+    }
+  }
+  
+  if (sysPrevious == HIGH){
+    lcdSel--;
+    if (lcdSel < 1){
+      lcdSel = 1
+    }
+  }
+  switch (lcdSel){
+    case 1:
+    lcd.setCursor(0,1);
+    lcd.print("Feed Wait");
+    if ((sysSelButton == HIGH) || (selState==1)){
+      selState = 1;
+      lcd.setCursor(0,0);
+      lcd.print("Change Feed Wait Time");
+      lcd.setCursor(0,1);
+      lcd.print(Timer1INV)
+      lcd.setCursor(0,1);
+      char key = keypad.getKey();
+      if (key){
+        if (keypos >= 5);
+          keypos = 1;
+        }
+      else {
+        keyinput[keypos] = key;
+        lcd.setCursor(0,keypos);
+        lcd.print(key);
+        keypos++;
+      }
+      sysDownLogic = digitalRead(sysDownButton);
+      if (sysDownLogic == HIGH){
+        Timer1INV - 1;
+        if (Timer1INV <= 0){
+          Timer1INV = 0;
+        }
+        lcd.print(Timer1INV);
+        lcd.setCursor(0,1);
+      }
+    if (sysSelButton == HIGH){
+      Timer1INV = Timer1INV / 10;
+      address = 1
+      EEPROM.update(address, Timer1INV);
+      address = address + 1;
+      if (address == EEPROM.length()){
+        address = 0;
+          }
+        return;
+        }
+      }
+    break;
+case 2:
+    lcd.setCursor(0,1);
+    lcd.print("Feed Open Time");
+    if (sysSelButton == HIGH){
+      lcd.setCursor(0,0);
+      lcd.print("Change Feed Open Time");
+      lcd.setCursor(0,1);
+      lcd.print(Timer1INV2)
+      lcd.setCursor(0,1);
+      sysUpLogic = digitalRead(sysUpButton);
+      if (sysUpLogic == HIGH){
+        Timer1INV2 + 1;
+        lcd.print(Timer1INV2);
+        lcd.setCursor(0,1);
+      }
+      sysDownLogic = digitalRead(sysDownButton);
+      if (sysDownLogic == HIGH){
+        Timer1INV2 - 1;
+        lcd.print(Timer1INV2);
+        lcd.setCursor(0,1);
+      }
+    if (sysSelButton == HIGH){
+      EEPROM.update(address, Timer1INV2);
+      addr = addr + 1;
+      if (addr == EEPROM.length()){
+        addr = 0;
+          }
+        return;
+        }
+      }
+    break;
+case 3:
+    lcd.setCursor(0,1);
+    lcd.print("Tooling Wait Time");
+    if (sysSelButton == HIGH){
+      lcd.setCursor(0,0);
+      lcd.print("Change Tooling Wait Time");
+      lcd.setCursor(0,1);
+      lcd.print(Timer2INV)
+      lcd.setCursor(0,1);
+      sysUpLogic = digitalRead(sysUpButton);
+      if (sysUpLogic == HIGH){
+        Timer2INV + 1;
+        lcd.print(Timer2INV);
+        lcd.setCursor(0,1);
+      }
+      sysDownLogic = digitalRead(sysDownButton);
+      if (sysDownLogic == HIGH){
+        Timer2INV - 1;
+        lcd.print(Timer2INV);
+        lcd.setCursor(0,1);
+      }
+    if (sysSelButton == HIGH){
+      EEPROM.update(address, Timer2INV);
+      addr = addr + 1;
+      if (addr == EEPROM.length()){
+        addr = 0;
+          }
+        return;
+        }
+    }
+    break;
+case 4:
+    lcd.setCursor(0,1);
+    lcd.print("Crimp Wait Time");
+    if (sysSelButton == HIGH){
+      lcd.setCursor(0,0);
+      lcd.print("Change Crimp Wait Time");
+      lcd.setCursor(0,1);
+      lcd.print(Timer4INV)
+      lcd.setCursor(0,1);
+      sysUpLogic = digitalRead(sysUpButton);
+      if (sysUpLogic == HIGH){
+        Timer4INV + 1;
+        lcd.print(Timer4INV);
+        lcd.setCursor(0,1);
+      }
+      sysDownLogic = digitalRead(sysDownButton);
+      if (sysDownLogic == HIGH){
+        Timer4INV - 1;
+        lcd.print(Timer4INV);
+        lcd.setCursor(0,1);
+      }
+    if (sysSelButton == HIGH){
+      EEPROM.update(address, Timer4INV);
+      addr = addr + 1;
+      if (addr == EEPROM.length()){
+        addr = 0;
+          }
+        return;
+        }
+      }
+    break;
+case 5:
+    lcd.setCursor(0,1);
+    lcd.print("Crimp Time");
+    if (sysSelButton == HIGH){
+      lcd.setCursor(0,0);
+      lcd.print("Change Crimp Time");
+      lcd.setCursor(0,1);
+      lcd.print(Timer5INV)
+      lcd.setCursor(0,1);
+      sysUpLogic = digitalRead(sysUpButton);
+      if (sysUpLogic == HIGH){
+        Timer5INV + 1;
+        lcd.print(Timer5INV);
+        lcd.setCursor(0,1);
+      }
+      sysDownLogic = digitalRead(sysDownButton);
+      if (sysDownLogic == HIGH){
+        Timer5INV - 1;
+        lcd.print(Timer5INV);
+        lcd.setCursor(0,1);
+      }
+    if (sysSelButton == HIGH){
+      EEPROM.update(address, Timer5INV);
+      addr = addr + 1;
+      if (addr == EEPROM.length()){
+        addr = 0;
+          }
+        return;
+        }
+      }
+    break;
+  }
+  }
+}
