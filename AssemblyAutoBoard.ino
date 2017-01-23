@@ -1,10 +1,18 @@
 #include <EEPROM.h>
+//#include <LiquidCrystal.h>
 
 //System Load
 const int ErrorLED = 12; //Error LED
 const int StopButton1 = 2;
 const int StopButton2 = 4;
 const int ResetButton = 3;
+
+//LEDs
+const int FeedLed= 43;
+const int PanelLed2 = 44;
+const int HookLed = 45;
+const int CrimpLed = 46;
+const int PanelLed5 = 47;
 
 //Load Sensors
 const int HookRailEmpty = 15;
@@ -39,7 +47,7 @@ int ResetCheck = 0;
 //Buttons
 const int UpButton = 6;
 const int DownButton = 7;
-const int ToggleButton = 40;
+const int SelButton = 40;
 const int NextButton = 8;
 int buttonWait = 300;
 unsigned long buttonPreviousTime = 0;
@@ -49,7 +57,7 @@ unsigned long buttonCurrentTime = 0;
 int BNextLogic = 0;
 int BUpLogic = 0;
 int BDownLogic = 0;
-int ToggleLogic = 0;
+int BSelLogic = 0;
 int x = 0;
 int a = 1;
 
@@ -163,15 +171,16 @@ void loop() {
       Error = 1;
       digitalWrite(ErrorLED, HIGH);
       return;
-      }
-      unsigned long currentTimer1 = millis();
-      if (currentTimer1 - previousTimer1 >= y[0]){
-        Serial.println("Feed Cycle [FEED OPEN]");
-        //previousTimer1 = currentTimer1;
-        digitalWrite(FeedTable, HIGH);
-        FeedNext = 1;
-        FeedLoop = 0;
-      }
+    }
+    unsigned long currentTimer1 = millis();
+    if (currentTimer1 - previousTimer1 >= y[0]){
+      Serial.println("Feed Cycle [FEED OPEN]");
+      previousTimer1 = currentTimer1;
+      digitalWrite(FeedTable, HIGH);
+      digitalWrite(FeedLed, HIGH);
+      FeedNext = 1;
+      FeedLoop = 0;
+    }
   }
   if (FeedNext == 1){
       unsigned long currentTimer1 = millis();
@@ -179,6 +188,7 @@ void loop() {
         Serial.println("Feed Cycle [FEED CLOSE]");
         previousTimer1 = currentTimer1;
         digitalWrite(FeedTable, LOW);
+        digitalWrite(FeedLed, LOW);
         FeedNext = 0;  //End the Feed until called again
       }
   }
@@ -204,23 +214,25 @@ void loop() {
   HookLoop = analogRead(HookCycleStart);
   if (HookLoop >= 10){
     Serial.println("Hook Cycle Activated");
+    digitalWrite(HookLed, HIGH);
     HookCheck = analogRead(HookRailEmpty);
     if (HookCheck <= 10){
       Serial.println("ERROR: Hook Check failed");
       Error = 1;
+      digitalWrite(HookLed, LOW);
       digitalWrite(ErrorLED, HIGH);
       return;
       }else{
-    //no timer
-    digitalWrite(HookStopper, HIGH);
-    HookNext = 1;
-    HookLoop = 0;
+      //no timer
+      digitalWrite(HookStopper, HIGH);
+      HookNext = 1;
+      HookLoop = 0;
     }
   }
   if (HookNext == 1){
     unsigned long currentTimer2 = millis();
     if (currentTimer2 - previousTimer2 >= y[3]){
-      //previousTimer2 - currentTimer2;
+      previousTimer2 - currentTimer2;
       Serial.println("Hook Cycle (Step 2)");
     digitalWrite(ToolHead, HIGH);
     HookNext = 2;
@@ -233,8 +245,11 @@ void loop() {
     if (HeadCheckDown < 400){
       return;
     }
-    //wait for head to register down position
-    digitalWrite(StripOff, HIGH);
+    else {
+      //wait for head to register down position
+      digitalWrite(StripOff, HIGH);
+      HookNext = 3;
+    }
   }
   if (HookNext == 3){
     Serial.println("Hook Cycle (Step 4)");
@@ -243,9 +258,11 @@ void loop() {
     if (StripoffCheck <= 10){
       return;
     }
-    //wait for strip off to register out position
-    digitalWrite(ToolHead, LOW);
-    HookNext = 4;
+    else{
+      //wait for strip off to register out position
+      digitalWrite(ToolHead, LOW);
+      HookNext = 4;
+    }
   }
   if (HookNext == 4){
     Serial.println("Hook Cycle (Step 5)");
@@ -254,14 +271,18 @@ void loop() {
     if (HeadUpCheck < 400){
       return;
     }
-    //wait for head to register up position
-    digitalWrite(StripOff, LOW);
-    digitalWrite(HookStopper, LOW);
-    HookNext = 0;
+    else {
+      //wait for head to register up position
+      digitalWrite(StripOff, LOW);
+      digitalWrite(HookStopper, LOW);
+      digitalWrite(HookLed, LOW);
+      HookNext = 0;
+    }
   }
   CrimpLoop = analogRead(CrimpCycleStart);
   if (CrimpLoop >= 10){
     Serial.println("Crimp Cycle Activated");
+    digitalWrite(CrimpLed, HIGH);
     digitalWrite(CrimpStopper, HIGH);
     unsigned long currentTimer4 = millis();
     if (currentTimer4 - previousTimer4 >= y[4]){
@@ -278,6 +299,7 @@ void loop() {
       previousTimer5 - currentTimer5;
       digitalWrite(Crimp, LOW);
       digitalWrite(CrimpStopper, LOW);
+      digitalWrite(CrimpLed, LOW);
       CrimpLoop = 0;
       CrimpNext = 0;
     }
@@ -299,7 +321,7 @@ void LCD() {
   BNextLogic = digitalRead(NextButton);
   if ((BNextLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
     x++;
-    if (x >= 7){
+    if (x >= 6){
       x = 0;
       Serial.print("Time VAR: ");
       Serial.print(x+1);
@@ -328,5 +350,14 @@ void LCD() {
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
+  }
+  BSelLogic = digitalRead(SelButton);
+  if ((BSelLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
+    int temp = 0;
+    temp = y[x]/100;
+    EEPROM.update(temp,x);
+    Serial.print(temp);
+    Serial.print(" wrote to EE ADDR ");
+    Serial.println(x);
   }
 }
