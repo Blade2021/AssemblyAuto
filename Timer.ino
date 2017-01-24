@@ -1,13 +1,16 @@
-const int NextButton = 10;
-//int SelButton = 32;
-const int UpButton = 6;
-const int DownButton = 7;
-const int ToggleButton = 40;
-const int LED1 = 11;
-const int LED2 = 12;
-const int LED3 = 9;
+const int NextButton = 30;
+const int SaveButton = 38;
+const int UpButton = 28;
+const int DownButton = 26;
+const int ToggleButton = 32;
+const int Led1 = 11;
+const int Led2 = 10;
+const int Led3 = 9;
+const int Led4 = 8;
+const int Led5 = 7;
+const int ErrorLed = 12;
 
-
+/*
 class TimeKeeper
 {
   unsigned long previousTime;
@@ -46,60 +49,65 @@ class TimeKeeper
     }
   }
 };
+*/
 int BNextLogic = 0;
-//int BSelLogic = 0;
 int BUpLogic = 0;
 int BDownLogic = 0;
 int ToggleLogic = 0;
+int SaveButtonTrigger = 0;
 int x = 0;
 int a = 1;
 
 unsigned long previousTimer = 0;  //Previous Time for MAIN TIMER
-unsigned int y[] = {1000, 2000, 3000};  // Time ARRAY for MAIN TIMER
+unsigned int y[] = {100, 100, 100, 100, 100};  // Time ARRAY for MAIN TIMER
 
 unsigned long buttonPreviousTime = 0;  //Previous Time for Button Timer
-int buttonWait = 300;  //Button wait Variable
-int buttonCurrentTime = 0;
+unsigned long previousTimer2 = 0;
+int buttonWait = 200;  //Button wait Variable
 
-TimeKeeper ins(1000, 2300, 1100);
 
 void setup() {
   pinMode(NextButton, INPUT);
-//  pinMode(SelButton, INPUT);
+  pinMode(SaveButton, INPUT);
   pinMode(UpButton, INPUT);
   pinMode(DownButton, INPUT);
   pinMode(ToggleLogic, INPUT);
-  pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
-  pinMode(LED3, OUTPUT);
+  pinMode(Led1, OUTPUT);
+  pinMode(Led2, OUTPUT);
+  pinMode(Led3, OUTPUT);
+  pinMode(Led4, OUTPUT);
+  pinMode(Led5, OUTPUT);
+  pinMode(ErrorLed, OUTPUT);
   Serial.begin(9600);
   Serial.println("Starting...");
+  attachInterrupt(digitalPinToInterrupt(38), savetrigger, CHANGE);
 }
 
 void loop() {
-  ins.Update();
-  buttonCurrentTime = millis();
+//  ins.Update();
+  unsigned long buttonCurrentTime = millis();
   BNextLogic = digitalRead(NextButton);
   if ((BNextLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
     buttonPreviousTime = buttonCurrentTime;
     x++;
-    if (x >= 3){
+    if (x >= 5){
       x = 0;
       Serial.print("Time VAR: ");
       Serial.print(x+1);
-      Serial.println(" selected");
+      Serial.print(" selected. | ");
+      Serial.println(y[x]);
     }
     else {
     Serial.print("Time VAR: ");
     Serial.print(x+1);
-    Serial.println(" selected");
+    Serial.print(" selected. | ");
+    Serial.println(y[x]);
     }
   }
-  int BUpLogic = 0;
   BUpLogic = digitalRead(UpButton);
   if ((BUpLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
+    y[x] = y[x]+100;
     buttonPreviousTime = buttonCurrentTime;
-    y[x] = y[x] + 100;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
@@ -107,16 +115,25 @@ void loop() {
   }
   BDownLogic = digitalRead(DownButton);
   if ((BDownLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
-    y[x] = y[x] - 100;
+    y[x] = y[x]-100;
     buttonPreviousTime = buttonCurrentTime;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
   }
+  SaveButtonTrigger = digitalRead(SaveButton);
+  if ((SaveButtonTrigger) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
+    buttonPreviousTime = buttonCurrentTime;
+    Serial.print("TimeVar ");
+    Serial.print(x+1);
+    Serial.println(" saved.");
+    savetrigger();
+  }
   else {
     ToggleLogic = digitalRead(ToggleButton);
-    if (ToggleLogic == HIGH){  
+    if (ToggleLogic == HIGH){
+      digitalWrite(ErrorLed, LOW);
       unsigned long Timer1 = millis();
       if (a == 1){
       if (Timer1 - previousTimer >= y[0]){
@@ -125,6 +142,11 @@ void loop() {
         Serial.print(y[0]);
         Serial.print("  |  Time: ");
         Serial.println(Timer1);
+        digitalWrite(Led1, HIGH);
+        digitalWrite(Led2, LOW);
+        digitalWrite(Led3, LOW);
+        digitalWrite(Led4, LOW);
+        digitalWrite(Led5, LOW);
         a = 2;
       }
       }
@@ -135,6 +157,11 @@ void loop() {
         Serial.print(y[1]);
         Serial.print("  |  Time: ");
         Serial.println(Timer1);
+        digitalWrite(Led2, HIGH);
+        digitalWrite(Led1, LOW);
+        digitalWrite(Led3, LOW);
+        digitalWrite(Led4, LOW);
+        digitalWrite(Led5, LOW);
         a = 3;
       }
       }
@@ -145,25 +172,97 @@ void loop() {
         Serial.print(y[2]);
         Serial.print("  |  Time: ");
         Serial.println(Timer1);
+        a = 4;
+        digitalWrite(Led3, HIGH);
+        digitalWrite(Led2, LOW);
+        digitalWrite(Led1, LOW);
+        digitalWrite(Led4, LOW);
+        digitalWrite(Led5, LOW);
+      }
+      }
+      if (a == 4){
+      if (Timer1 - previousTimer >= y[3]){
+        previousTimer = Timer1;
+        Serial.print("SEQ 4 | Running at: ");
+        Serial.print(y[3]);
+        Serial.print("  |  Time: ");
+        Serial.println(Timer1);
+        a = 5;
+        digitalWrite(Led4, HIGH);
+        digitalWrite(Led2, LOW);
+        digitalWrite(Led3, LOW);
+        digitalWrite(Led1, LOW);
+        digitalWrite(Led5, LOW);
+      }
+      }
+      if (a == 5){
+      if (Timer1 - previousTimer >= y[4]){
+        previousTimer = Timer1;
+        Serial.print("SEQ 5 | Running at: ");
+        Serial.print(y[4]);
+        Serial.print("  |  Time: ");
+        Serial.println(Timer1);
         a = 1;
+        digitalWrite(Led5, HIGH);
+        digitalWrite(Led2, LOW);
+        digitalWrite(Led3, LOW);
+        digitalWrite(Led4, LOW);
+        digitalWrite(Led1, LOW);
+        }
+        } 
       }
+      else {
+        digitalWrite(ErrorLed, HIGH);
+        switch (x){
+          case 0:
+            digitalWrite(Led1, HIGH);
+            digitalWrite(Led2, LOW);
+            digitalWrite(Led3, LOW);
+            digitalWrite(Led4, LOW);
+            digitalWrite(Led5, LOW);
+            break;
+          case 1:
+            digitalWrite(Led2, HIGH);
+            digitalWrite(Led1, LOW);
+            digitalWrite(Led3, LOW);
+            digitalWrite(Led4, LOW);
+            digitalWrite(Led5, LOW);
+            break;
+          case 2:
+            digitalWrite(Led3, HIGH);
+            digitalWrite(Led2, LOW);
+            digitalWrite(Led1, LOW);
+            digitalWrite(Led4, LOW);
+            digitalWrite(Led5, LOW);
+            break;
+          case 3:
+            digitalWrite(Led4, HIGH);
+            digitalWrite(Led2, LOW);
+            digitalWrite(Led3, LOW);
+            digitalWrite(Led1, LOW);
+            digitalWrite(Led5, LOW);
+            break;
+          case 4:
+            digitalWrite(Led5, HIGH);
+            digitalWrite(Led2, LOW);
+            digitalWrite(Led3, LOW);
+            digitalWrite(Led4, LOW);
+            digitalWrite(Led1, LOW);
+            break;
+        }
       }
-    }
-    if (x == 0){
-      digitalWrite(LED1, HIGH);
-      digitalWrite(LED2, LOW);
-      digitalWrite(LED3, LOW);
-    }
-    if (x == 1){
-      digitalWrite(LED2, HIGH);
-      digitalWrite(LED1, LOW);
-      digitalWrite(LED3, LOW);
-    }
-    if (x == 2){
-      digitalWrite(LED3, HIGH);
-      digitalWrite(LED2, LOW);
-      digitalWrite(LED1, LOW);
-    }
-    
-  }
+   }
 }
+void savetrigger(){
+int state = digitalRead(ErrorLed);
+    digitalWrite(ErrorLed, HIGH);
+    delay(200);
+    digitalWrite(ErrorLed, LOW);
+    delay(200);
+    digitalWrite(ErrorLed, HIGH);
+    delay(200);
+    digitalWrite(ErrorLed, LOW);
+    delay(200);
+    digitalWrite(ErrorLed, state);
+}
+
