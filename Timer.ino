@@ -2,6 +2,7 @@
 #include <Key.h>
 #include <Keypad.h>
 #include <LiquidCrystal.h>
+#include <EEPROM.h>
 
 
 const int NextButton = 26;
@@ -32,6 +33,7 @@ int x = 0;
 int a = 1;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
+int address = 0;
 
 
 
@@ -83,6 +85,13 @@ void setup() {
   lcd.print("Run Time: ");
   lcd.setCursor(2,1);
   lcd.print("Status: ");
+  for(int k = 0; k < 5; k++){
+    int ytemp = 0;
+    ytemp = EEPROM.read(k);
+    y[k] = ytemp * 10;
+    Serial.println(y[k]);
+    delay(100);
+  }
 }
 
 void loop() {
@@ -341,7 +350,22 @@ void changetime(int x){
     if(key=='*'){
       int tempa = atoi(arraya);
       Serial.println(tempa);
+      if (tempa > 2550){
+        tempa = 2550;
+        Serial.println("WARNING: MAX VALUE HIT");
+      }
       y[x]=tempa;
+      int ytemp = 0;
+      ytemp = y[x]/10;
+      address = x;
+      EEPROM.update(address, ytemp);
+      address = address + 1;
+      if (address == EEPROM.length()){
+        address = 0;
+      }
+      Serial.print(ytemp);
+      Serial.print(" was wrote to EEPROM address: ");
+      Serial.println(x);
       Serial.println("Ran array process function.");
       pos = 13;
       lcd.setCursor(pos,3);
