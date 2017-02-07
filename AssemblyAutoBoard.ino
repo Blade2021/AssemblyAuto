@@ -154,6 +154,14 @@ void setup(){
   //Assign Variables
   digitalWrite(MainAir, HIGH);
   digitalWrite(MotorRelay, HIGH);
+  Serial.println("********** System Variables ***********");
+  Serial.print("Button Wait Time: ");
+  Serial.println(buttonWait);
+  Serial.print("LCD Clear Time: ");
+  Serial.println(LCDClearTime);
+  Serial.print("LCD Default POS: ");
+  Serial.println(pos);
+  Serial.println("********** End of Setup ***********");
 }
 void loop() {
   unsigned long currentTime = millis();  //TIME
@@ -380,56 +388,35 @@ void loop() {
   }
   else {
         digitalWrite(ErrorLed, HIGH);
-        //char input;
         switch (x){
           case 0:
             setLED(FeedLed);
             lcd.setCursor(0,1);
             lcd.print("Feed Wait Time:     ");
-            lcd.setCursor(5,2);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,2);
             changetime(x);
             break;
           case 1:
             setLED(PanelLed2);
             lcd.setCursor(0,1);
             lcd.print("Feed Open Time      ");
-            lcd.setCursor(5,2);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,2);
             changetime(x);
             break;
           case 2:
             setLED(HookLed);
             lcd.setCursor(0,1);
             lcd.print("Hook Cycle Wait     ");
-            lcd.setCursor(5,2);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,2);
             changetime(x);
             break;
           case 3:
             setLED(CrimpLed);
             lcd.setCursor(0,1);
             lcd.print("Crimp Cycle Wait    ");
-            lcd.setCursor(5,2);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,2);
             changetime(x);
             break;
           case 4:
             setLED(PanelLed5);
             lcd.setCursor(0,1);
             lcd.print("Crimp Time          ");
-            lcd.setCursor(5,2);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,2);
             changetime(x);
             break;
         }
@@ -475,6 +462,10 @@ int state = digitalRead(ErrorLed);
     digitalWrite(ErrorLed, state);
 }
 void changetime(int x){
+  lcd.setCursor(5,2);
+  lcd.print(y[x]);
+  lcd.print("     ");
+  lcd.setCursor(pos,2);
   char key;
   key = keypad.getKey();
   if(key){
