@@ -135,7 +135,6 @@ void setup(){
   pinMode(StartFeedButton, INPUT);
   pinMode(ResetButton, INPUT);
   //OUTPUT
-  pinMode(ErrorLed, OUTPUT);
   pinMode(ToolHead, OUTPUT);
   pinMode(StripOff, OUTPUT);
   pinMode(HookStopper, OUTPUT);
@@ -145,7 +144,13 @@ void setup(){
   pinMode(MainAir, OUTPUT);
   pinMode(HookShaker, OUTPUT);
   pinMode(MotorRelay, OUTPUT);
-
+  //LED
+  pinMode(FeedLed, OUTPUT);
+  pinMode(PanelLed2, OUTPUT);
+  pinMode(HookLed, OUTPUT);
+  pinMode(CrimpLed, OUTPUT);
+  pinMode(PanelLed5, OUTPUT);
+  pinMode(ErrorLed, OUTPUT);
   //Assign Variables
   digitalWrite(MainAir, HIGH);
   digitalWrite(MotorRelay, HIGH);
