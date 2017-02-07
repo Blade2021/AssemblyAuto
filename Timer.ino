@@ -1,5 +1,5 @@
 
-#include <Key.h>
+//#include <Key.h>
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
@@ -33,7 +33,8 @@ int x = 0;
 int a = 1;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
-int address = 0;
+int SensorLogic = 0;
+int Active = 0;
 
 
 
@@ -44,6 +45,9 @@ unsigned long buttonPreviousTime = 0;  //Previous Time for Button Timer
 unsigned long previousTimer2 = 0;
 int buttonWait = 200;  //Button wait Variable
 int TestCheck = 0;
+unsigned long preLCDClear = 0;
+int LCDClearTime = 5000;
+
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -56,7 +60,7 @@ char keys[ROWS][COLS] = {
 byte rowPins[ROWS] = {53, 51, 49, 47}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {45, 43, 41, 39};
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
-int pos=13;
+int pos=14;
 boolean SenCheck = LOW;
 
 void setup() {
@@ -84,20 +88,34 @@ void setup() {
   lcd.setCursor(0,0);
   lcd.print("Run Time: ");
   lcd.setCursor(2,1);
-  lcd.print("Status: ");
+  lcd.print("*** BOOTING ***");
+  lcd.setCursor(0,2);
+  lcd.print("Time:");
   for(int k = 0; k < 5; k++){
     int ytemp = 0;
     ytemp = EEPROM.read(k);
     y[k] = ytemp * 10;
+    Serial.print("EEPROM[");
+    Serial.print(k);
+    Serial.print("]: ");
     Serial.println(y[k]);
     delay(100);
   }
+  Serial.println("********** System Variables ***********");
+  Serial.print("Button Wait Time: ");
+  Serial.println(buttonWait);
+  Serial.print("LCD Clear Time: ");
+  Serial.println(LCDClearTime);
+  Serial.print("LCD Default POS: ");
+  Serial.println(pos);
+  Serial.println();
 }
 
 void loop() {
-//  ins.Update();
-  lcd.setCursor(11,0);
+  lcdClear();
+  lcd.setCursor(10,0);
   lcd.print(millis() / 1000);
+  unsigned long Timer1 = millis();
   /*SenCheck = digitalRead(Sensor);
   if (SenCheck == HIGH){
     digitalWrite(Led3, HIGH);
@@ -105,10 +123,10 @@ void loop() {
   if (SenCheck == LOW){
     digitalWrite(Led3, LOW);
   }*/
-  unsigned long buttonCurrentTime = millis();
+  //unsigned long buttonCurrentTime = millis();
   BNextLogic = digitalRead(NextButton);
-  if ((BNextLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
-    buttonPreviousTime = buttonCurrentTime;
+  if ((BNextLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
+    buttonPreviousTime = Timer1;
     x++;
     if (x >= 5){
       x = 0;
@@ -125,46 +143,53 @@ void loop() {
     }
   }
   BUpLogic = digitalRead(UpButton);
-  if ((BUpLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
+  if ((BUpLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
     y[x] = y[x]+100;
-    buttonPreviousTime = buttonCurrentTime;
+    buttonPreviousTime = Timer1;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
+    lcd.setCursor(0,3);
+    lcd.print("Var[");
+    lcd.print(x);
+    lcd.print("] set to:");
+    lcd.print(y[x]);
   }
   BDownLogic = digitalRead(DownButton);
-  if ((BDownLogic == HIGH) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
+  if ((BDownLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
     y[x] = y[x]-100;
-    buttonPreviousTime = buttonCurrentTime;
+    buttonPreviousTime = Timer1;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
   }
   SaveButtonTrigger = digitalRead(SaveButton);
-  if ((SaveButtonTrigger) && (buttonCurrentTime - buttonPreviousTime >= buttonWait)){
-    buttonPreviousTime = buttonCurrentTime;
+  if ((SaveButtonTrigger) && (Timer1 - buttonPreviousTime >= buttonWait)){
+    buttonPreviousTime = Timer1;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.println(" saved.");
-    savetrigger();
+    savetrigger(x);
   }
   else {
-    ToggleLogic = digitalRead(Sensor);
-    if (ToggleLogic == HIGH){
+    SensorLogic = digitalRead(Sensor);
+    if (SensorLogic == HIGH){
+      Active=1;
+    }
+    if (SensorLogic == LOW){
+      Active=0;
+    }
+    if ((a>=1) && (Active==1)){
       digitalWrite(ErrorLed, LOW);
-      lcd.setCursor(10,1);
-      lcd.print("Active    ");
-      unsigned long Timer1 = millis();
-      if (a == 1){
-      if (Timer1 - previousTimer >= y[0]){
+      if ((a==1) && (Timer1 - previousTimer >= y[0])){
         previousTimer = Timer1;
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("Feed Table Opened   ");
-        lcd.setCursor(0,3);
+        lcd.setCursor(5,2);
         lcd.print(y[0]);
-        lcd.print("     ");
+        lcd.print("    ");
         Serial.print("SEQ 1 | Running at: ");
         Serial.print(y[0]);
         Serial.print("  |  Time: ");
@@ -177,15 +202,13 @@ void loop() {
         setLED(Led1);
         a = 2;
       }
-      }
-      if (a == 2){
-      if (Timer1 - previousTimer >= y[1]){
+      if ((a == 2) && (Timer1 - previousTimer >= y[1])){
         previousTimer = Timer1;
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("Feed Table Closed   ");
-        lcd.setCursor(0,3);
+        lcd.setCursor(5,2);
         lcd.print(y[1]);
-        lcd.print("     ");
+        lcd.print("    ");
         Serial.print("SEQ 2 | Running at: ");
         Serial.print(y[1]);
         Serial.print("  |  Time: ");
@@ -198,13 +221,11 @@ void loop() {
         setLED(Led2);
         a = 3;
       }
-      }
-      if (a == 3){
-      if (Timer1 - previousTimer >= y[2]){
+      if ((a == 3) && (Timer1 - previousTimer >= y[2])){
         previousTimer = Timer1;
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("Hook Head Wait      ");
-        lcd.setCursor(0,3);
+        lcd.setCursor(5,2);
         lcd.print(y[2]);
         lcd.print("     ");
         Serial.print("SEQ 3 | Running at: ");
@@ -219,13 +240,11 @@ void loop() {
         digitalWrite(Relay5, LOW);
         setLED(Led3);
       }
-      }
-      if (a == 4){
-      if (Timer1 - previousTimer >= y[3]){
+      if ((a == 4) && (Timer1 - previousTimer >= y[3])){
         previousTimer = Timer1;
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("Crimp Wait          ");
-        lcd.setCursor(0,3);
+        lcd.setCursor(5,2);
         lcd.print(y[3]);
         lcd.print("     ");
         Serial.print("SEQ 4 | Running at: ");
@@ -240,90 +259,81 @@ void loop() {
         digitalWrite(Relay5, LOW);
         setLED(Led4);
       }
-      }
-      if (a == 5){
-      if (Timer1 - previousTimer >= y[4]){
+      if ((a == 5) && (Timer1 - previousTimer >= y[4])){
         previousTimer = Timer1;
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("Crimp Time Activated");
-        lcd.setCursor(0,3);
+        lcd.setCursor(5,2);
         lcd.print(y[4]);
         lcd.print("     ");
         Serial.print("SEQ 5 | Running at: ");
         Serial.print(y[4]);
         Serial.print("  |  Time: ");
         Serial.println(Timer1);
-        a = 1;
         digitalWrite(Relay5, HIGH);
         digitalWrite(Relay2, LOW);
         digitalWrite(Relay3, LOW);
         digitalWrite(Relay4, LOW);
         digitalWrite(Relay1, LOW);
         setLED(Led5);
+        a=1;
         }
-        } 
-      }
+    }
       else {
-        lcd.setCursor(10,1);
-        lcd.print("Inactive  ");
         digitalWrite(ErrorLed, HIGH);
-        char input;
+        //char input;
         switch (x){
           case 0:
             setLED(Led1);
-            lcd.setCursor(0,2);
+            lcd.setCursor(0,1);
             lcd.print("Feed Wait Time:     ");
-            lcd.setCursor(0,3);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,3);
             changetime(x);
             break;
           case 1:
             setLED(Led2);
-            lcd.setCursor(0,2);
+            lcd.setCursor(0,1);
             lcd.print("Feed Open Time      ");
-            lcd.setCursor(0,3);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,3);
             changetime(x);
             break;
           case 2:
             setLED(Led3);
-            lcd.setCursor(0,2);
+            lcd.setCursor(0,1);
             lcd.print("Hook Cycle Wait     ");
-            lcd.setCursor(0,3);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,3);
             changetime(x);
             break;
           case 3:
             setLED(Led4);
-            lcd.setCursor(0,2);
+            lcd.setCursor(0,1);
             lcd.print("Crimp Cycle Wait    ");
-            lcd.setCursor(0,3);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,3);
             changetime(x);
             break;
           case 4:
             setLED(Led5);
-            lcd.setCursor(0,2);
+            lcd.setCursor(0,1);
             lcd.print("Crimp Time          ");
-            lcd.setCursor(0,3);
-            lcd.print(y[x]);
-            lcd.print("     ");
-            lcd.setCursor(pos,3);
             changetime(x);
             break;
-        }
-      }
-   }
-}
-void savetrigger(){
+        } //End of Switch
+      } // End of Else (containing switch)
+   } // End of MAIN else statement
+} // End of LOOP Void
+void savetrigger(int x){
+  int address = 0;
+  address = x;
+  int ytemp = 0;
+  ytemp = y[x]/10;
+  /*EEPROM.update(address,ytemp);
+  address = address + 1;
+  if (address == EEPROM.length()){
+    address = 0;
+  }*/
+  ytemp=x+1;
+  lcd.setCursor(0,3);
+  lcd.print("EE.Update VAR[");
+  lcd.print(ytemp);
+  lcd.print("]    ");
+  unsigned long currentTime = millis();
+  preLCDClear = currentTime;
 int state = digitalRead(ErrorLed);
     digitalWrite(ErrorLed, HIGH);
     delay(200);
@@ -336,16 +346,20 @@ int state = digitalRead(ErrorLed);
     digitalWrite(ErrorLed, state);
 }
 void changetime(int x){
+  lcd.setCursor(5,2);
+  lcd.print(y[x]);
+  lcd.print("     ");
+  lcd.setCursor(pos,2);
   char key;
   key = keypad.getKey();
   if(key){
     lcd.print(key);
     pos++;
-    lcd.setCursor(pos,3);
+    lcd.setCursor(pos,2);
     arraya[j++] = key;
     arraya[j];
     if (pos > 20){
-      pos = 13;
+      pos = 14;
     }
     if(key=='*'){
       int tempa = atoi(arraya);
@@ -353,33 +367,46 @@ void changetime(int x){
       if (tempa > 2550){
         tempa = 2550;
         Serial.println("WARNING: MAX VALUE HIT");
+        lcd.setCursor(0,3);
+        lcd.print("ERROR: MAX VALUE HIT");
+        unsigned long currentTime = millis();
+        preLCDClear = currentTime;
       }
       y[x]=tempa;
       int ytemp = 0;
+      int address = 0;
       ytemp = y[x]/10;
       address = x;
-      EEPROM.update(address, ytemp);
+      /*EEPROM.update(address, ytemp);
       address = address + 1;
       if (address == EEPROM.length()){
         address = 0;
-      }
+      }*/
       Serial.print(ytemp);
       Serial.print(" was wrote to EEPROM address: ");
       Serial.println(x);
       Serial.println("Ran array process function.");
-      pos = 13;
-      lcd.setCursor(pos,3);
+      pos = 14;
+      lcd.setCursor(pos,2);
       lcd.print("       ");
       j = 0;
       return;
     }
     if(key=='#'){
-      pos = 13;
-      lcd.setCursor(pos,3);
+      pos = 14;
+      lcd.setCursor(pos,2);
       lcd.print("       ");
       j = 0;
       return;
     }
+  } //End of If(Key)
+} //End of ChangeTime Void
+void lcdClear(){
+  unsigned long currentTime = millis();
+  if(currentTime - preLCDClear >= LCDClearTime)
+  {
+    lcd.setCursor(0,3);
+    lcd.print("                    ");
   }
 }
 void setLED(byte LEDnumber)
