@@ -174,11 +174,12 @@ void loop() {
     savetrigger(x);
   }
   else {
+    ToggleLogic = digitalRead(ToggleButton);
     SensorLogic = digitalRead(Sensor);
-    if (SensorLogic == HIGH){
+    if ((SensorLogic == HIGH) && (ToggleLogic == HIGH)){
       Active=1;
     }
-    if (SensorLogic == LOW){
+    if ((SensorLogic == LOW) || (ToggleLogic == LOW)){
       Active=0;
     }
     if ((a>=1) && (Active==1)){
@@ -281,6 +282,11 @@ void loop() {
     }
       else {
         digitalWrite(ErrorLed, HIGH);
+        digitalWrite(Relay1, LOW);
+        digitalWrite(Relay2, LOW);
+        digitalWrite(Relay3, LOW);
+        digitalWrite(Relay4, LOW);
+        digitalWrite(Relay5, LOW);
         //char input;
         switch (x){
           case 0:
@@ -322,11 +328,12 @@ void savetrigger(int x){
   address = x;
   int ytemp = 0;
   ytemp = y[x]/10;
-  /*EEPROM.update(address,ytemp);
+  /*     ************ UN COMMENT BEFORE FINAL RELEASE ****************** */
+  EEPROM.update(address,ytemp);
   address = address + 1;
   if (address == EEPROM.length()){
     address = 0;
-  }*/
+  }
   ytemp=x+1;
   lcd.setCursor(0,3);
   lcd.print("EE.Update VAR[");
