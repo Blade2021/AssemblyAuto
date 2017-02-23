@@ -24,8 +24,8 @@ const int Relay4 = 18;
 const int Relay5 = 19;
 
 int rswitch = 0;
-int SOverride = 0;
-char StateArray[] = {0, 0, 0, 0, 0};
+int SOverride = 1;
+char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 
 int BNextLogic = 0;
 int BUpLogic = 0;
@@ -40,6 +40,8 @@ char arraya [] = {0, 1, 2, 3, 0};
 int SensorLogic = 0;
 int Bcheck = 0;
 int Active = 0;
+
+int passcode = 7777;
 
 String SerialArray = "";
 int SerialCount = 0;
@@ -138,15 +140,21 @@ void loop() {
     SerialArray = Serial.readString();
     Serial.println(SerialArray);
   }
-  if (SOverride == 0){
-    for (int indx = 0; indx < 6; indx++){
+  if (SOverride == 0 || SOverride == 1){
+    if (SOverride == 0){
+    for (int indx = 0; indx < 7; indx++){
       StateArray[indx] = 0;
+      Serial.print("INDEX: ");
+      Serial.print(indx);
+      Serial.println(" reset.");
+    }
+    SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
     if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
       buttonPreviousTime = currentTime;
       x++;
-      if (x >= 6){
+      if (x >= 5){
         x = 0;
         Serial.print("Time VAR: ");
         Serial.print(x+1);
@@ -162,19 +170,12 @@ void loop() {
   }
   BUpLogic = digitalRead(UpButton);
   if ((BUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
-    if (x == 5){
-      SOverride = 1;
-      lcd.setCursor(8,1);
-      lcd.print("ON     ");
-    }
-    else{
     y[x] = y[x]+100;
     buttonPreviousTime = currentTime;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
-    }
   }
   BDownLogic = digitalRead(DownButton);
   if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
@@ -311,6 +312,11 @@ void loop() {
         digitalWrite(Relay3, LOW);
         digitalWrite(Relay4, LOW);
         digitalWrite(Relay5, LOW);
+        if (y[5] == passcode){
+              Serial.println("***** Override ACTIVATED *****");
+              y[5]=0;
+              SOverride = 2;
+        }
         switch (x){
           case 0:
             setLEDS(Led1);
@@ -342,23 +348,17 @@ void loop() {
             lcd.print("Crimp Time          ");
             changetime(x);
             break;
-          case 5:
-            digitalWrite(Led1,HIGH);
-            digitalWrite(Led2,HIGH);
-            digitalWrite(Led3,HIGH);
-            digitalWrite(Led4,HIGH);
-            digitalWrite(Led5,HIGH);
-            lcd.setCursor(0,1);
-            lcd.print("Override: ");
-            lcd.print("OFF");
-            lcd.print("     ");
-            break;
         } //END OF MAIN SWITCH
       } // End of Else (containing switch)
   } // End of MAIN while statement
-  if (SOverride == 1){
-    lcd.setCursor(10,1);
-    lcd.print("ON     ");
+  if (SOverride == 2){
+    digitalWrite(Led1,HIGH);
+    digitalWrite(Led2,HIGH);
+    digitalWrite(Led3,HIGH);
+    digitalWrite(Led4,HIGH);
+    digitalWrite(Led5,HIGH);
+    lcd.setCursor(0,1);
+    lcd.print("OVERRIDE: ON        ");
     BNextLogic = digitalRead(NextButton);
     if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
       buttonPreviousTime = currentTime;
@@ -370,7 +370,7 @@ void loop() {
     SaveButtonTrigger = digitalRead(SaveButton);
     if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
       buttonPreviousTime = currentTime;
-      Override_Trigger(rswitch);
+      Override_Trigger(rswitch+1);
     }
     BDownLogic = digitalRead(DownButton);
     if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
@@ -381,6 +381,18 @@ void loop() {
       x=0;
     }
     else {
+    char key;
+    key = keypad.getKey();
+    if(key){
+      Serial.println(key);
+      char bxyz[] = {0};
+      bxyz[j++] = key;
+      bxyz[j];
+      int tempb = atoi(bxyz);
+      Serial.println(tempb);
+      Override_Trigger(tempb);
+      j = 0;
+    }
       switch(rswitch){
         case 0:
         lcd.setCursor(0,2);
@@ -441,19 +453,18 @@ void Override_Trigger(int RTrigger){
   int tempstate = LOW;
   String lcdstate = "OFF";
   unsigned long currentTime = millis();
-  if (StateArray[rswitch] == 1){
+  if (StateArray[RTrigger] == 1){
     tempstate = LOW;
     lcdstate = "OFF";
-    StateArray[rswitch] = 0;
+    StateArray[RTrigger] = 0;
   }
   else
   {
-    //digitalWrite(RTrigger, HIGH);
-    StateArray[rswitch] = 1;
+    StateArray[RTrigger] = 1;
     lcdstate = "ON";
     tempstate = HIGH;
   }
-  if (rswitch == 0){
+  if (RTrigger == 1){
     digitalWrite(Relay1, tempstate);
     lcd.setCursor(0,3);
     lcd.print("Relay 1 SET TO: ");
@@ -461,7 +472,7 @@ void Override_Trigger(int RTrigger){
     lcd.print(" ");
     preLCDClear = currentTime;
   }
-  if (rswitch == 1){
+  if (RTrigger == 2){
     digitalWrite(Relay2, tempstate);
     lcd.setCursor(0,3);
     lcd.print("Relay 2 SET TO: ");
@@ -469,7 +480,7 @@ void Override_Trigger(int RTrigger){
     lcd.print(" ");
     preLCDClear = currentTime;
   }
-  if (rswitch == 2){
+  if (RTrigger == 3){
     digitalWrite(Relay3, tempstate);
     lcd.setCursor(0,3);
     lcd.print("Relay 3 SET TO: ");
@@ -477,7 +488,7 @@ void Override_Trigger(int RTrigger){
     lcd.print(" ");
     preLCDClear = currentTime;
   }
-  if (rswitch == 3){
+  if (RTrigger == 4){
     digitalWrite(Relay4, tempstate);
     lcd.setCursor(0,3);
     lcd.print("Relay 4 SET TO: ");
@@ -485,7 +496,7 @@ void Override_Trigger(int RTrigger){
     lcd.print(" ");
     preLCDClear = currentTime;
   }
-  if (rswitch == 4){
+  if (RTrigger == 5){
     digitalWrite(Relay5, tempstate);
     lcd.setCursor(0,3);
     lcd.print("Relay 5 SET TO: ");
@@ -493,7 +504,14 @@ void Override_Trigger(int RTrigger){
     lcd.print(" ");
     preLCDClear = currentTime;
   }
-  if (rswitch == 5){
+  else{
+  }
+}
+void OverrideTrigger(){
+  char key;
+  key = keypad.getKey();
+  if(key){
+    rswitch = key;
   }
 }
 void changetime(int x){
@@ -515,6 +533,14 @@ void changetime(int x){
     if(key=='*'){
       int tempa = atoi(arraya);
       Serial.println(tempa);
+      if (tempa == passcode){
+        y[5]= passcode;
+        pos = 15;
+        lcd.setCursor(pos,2);
+        lcd.print("       ");
+        j = 0;
+        return;
+      }
       if (tempa > 2550){
         tempa = 2550;
         Serial.println("WARNING: MAX VALUE HIT");
