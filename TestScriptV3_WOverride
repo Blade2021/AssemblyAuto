@@ -121,6 +121,8 @@ void setup() {
   Serial.println(LCDClearTime);
   Serial.print("LCD Default POS: ");
   Serial.println(pos);
+  Serial.print("OVERRIDE PASSCODE: ");
+  Serial.println(passcode);
   Serial.println();
 }
 
