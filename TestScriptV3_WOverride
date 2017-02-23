@@ -25,8 +25,8 @@ const int Relay3 = 17;
 const int Relay4 = 18;
 const int Relay5 = 19;
 
-int state = HIGH;
-boolean SOverride = 0;
+int rswitch = 0;
+int SOverride = 0;
 char StateArray [] = {0, 0, 0, 0, 0};
 
 int BNextLogic = 0;
@@ -55,7 +55,7 @@ unsigned long buttonPreviousTime = 0;  //Previous Time for Button Timer
 int buttonWait = 200;  //Button wait Variable
 int TestCheck = 0;
 unsigned long preLCDClear = 0;
-int LCDClearTime = 5000;
+int LCDClearTime = 3000;
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const byte ROWS = 4;
@@ -126,14 +126,11 @@ void loop() {
   lcdClear();
   lcd.setCursor(10,0);
   lcd.print(millis() / 1000);
-  unsigned long Timer1 = millis();
+  unsigned long currentTime = millis();
+  if (SOverride == 0){
   BNextLogic = digitalRead(NextButton);
-  BUpLogic = digitalRead(UpButton);
-  BDownLogic = digitalRead(DownButton);
-  SaveButtonTrigger = digitalRead(SaveButton);
-  while(SOverride == 0){
-  if ((BNextLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-    buttonPreviousTime = Timer1;
+  if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+    buttonPreviousTime = currentTime;
     x++;
     if (x >= 6){
       x = 0;
@@ -149,34 +146,34 @@ void loop() {
     Serial.println(y[x]);
     }
   }
-  if ((BUpLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
+  BUpLogic = digitalRead(UpButton);
+  if ((BUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
     if (x == 5){
       SOverride = 1;
+      lcd.setCursor(8,1);
+      lcd.print("ON     ");
     }
     else{
     y[x] = y[x]+100;
-    buttonPreviousTime = Timer1;
+    buttonPreviousTime = currentTime;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
-    lcd.setCursor(0,3);
-    lcd.print("Var[");
-    lcd.print(x);
-    lcd.print("] set to:");
-    lcd.print(y[x]);
     }
   }
-  if ((BDownLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
+  BDownLogic = digitalRead(DownButton);
+  if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
     y[x] = y[x]-100;
-    buttonPreviousTime = Timer1;
+    buttonPreviousTime = currentTime;
     Serial.print("TimeVar ");
     Serial.print(x+1);
     Serial.print(" is now: ");
     Serial.println(y[x]);
   }
-  if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-    buttonPreviousTime = Timer1;
+  SaveButtonTrigger = digitalRead(SaveButton);
+  if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+    buttonPreviousTime = currentTime;
     if (SOverride == 0){
       Serial.print("TimeVar ");
       Serial.print(x+1);
@@ -184,21 +181,23 @@ void loop() {
       savetrigger(x);
     }
   }
-    ToggleLogic = digitalRead(ToggleButton);
-    SensorLogic = digitalRead(Sensor);
-    if ((SensorLogic == LOW) && (ToggleLogic == HIGH)){
-      Active=1;
-    }
-    if ((SensorLogic == HIGH) || (ToggleLogic == LOW)){
+  lcd.setCursor(0,2);
+  lcd.print("Time:");
+  ToggleLogic = digitalRead(ToggleButton);
+  SensorLogic = digitalRead(Sensor);
+  if ((SensorLogic == LOW) && (ToggleLogic == HIGH)){
+    Active=1;
+  }
+  if ((SensorLogic == HIGH) || (ToggleLogic == LOW)){
       Active=0;
+  }
+  if ((a>=1) && (Active==1)){
+    digitalWrite(ErrorLed, LOW);
+    if (a==1){
+      setLED(Led1);
     }
-    if ((a>=1) && (Active==1)){
-      digitalWrite(ErrorLed, LOW);
-      if (a==1){
-        setLED(Led1);
-      }
-      if ((a==1) && (Timer1 - previousTimer >= y[0])){
-        previousTimer = Timer1;
+      if ((a==1) && (currentTime - previousTimer >= y[0])){
+        previousTimer = currentTime;
         lcd.setCursor(0,1);
         lcd.print("Feed Table Opened   ");
         lcd.setCursor(5,2);
@@ -207,7 +206,7 @@ void loop() {
         Serial.print("SEQ 1 | Running at: ");
         Serial.print(y[0]);
         Serial.print("  |  Time: ");
-        Serial.println(Timer1);
+        Serial.println(currentTime);
         digitalWrite(Relay1, HIGH);
         digitalWrite(Relay2, LOW);
         a = 2;
@@ -215,8 +214,8 @@ void loop() {
       if (a==2){
         setLED(Led2);
       }
-      if ((a == 2) && (Timer1 - previousTimer >= y[1])){
-        previousTimer = Timer1;
+      if ((a == 2) && (currentTime - previousTimer >= y[1])){
+        previousTimer = currentTime;
         lcd.setCursor(0,1);
         lcd.print("Feed Table Closed   ");
         lcd.setCursor(5,2);
@@ -225,7 +224,7 @@ void loop() {
         Serial.print("SEQ 2 | Running at: ");
         Serial.print(y[1]);
         Serial.print("  |  Time: ");
-        Serial.println(Timer1);
+        Serial.println(currentTime);
         digitalWrite(Relay2, HIGH);
         digitalWrite(Relay1, LOW);
         a = 1;
@@ -233,8 +232,8 @@ void loop() {
       if (b==1){
         setLED(Led3);
       }
-      if ((b == 1) && (Timer1 - previousTimer2 >= y[2])){
-        previousTimer2 = Timer1;
+      if ((b == 1) && (currentTime - previousTimer2 >= y[2])){
+        previousTimer2 = currentTime;
         lcd.setCursor(0,1);
         lcd.print("Hook Head Wait      ");
         lcd.setCursor(5,2);
@@ -243,7 +242,7 @@ void loop() {
         Serial.print("SEQ 3 | Running at: ");
         Serial.print(y[2]);
         Serial.print("  |  Time: ");
-        Serial.println(Timer1);
+        Serial.println(currentTime);
         digitalWrite(Relay3, HIGH);
         digitalWrite(Relay4, LOW);
         digitalWrite(Relay5, LOW);
@@ -252,8 +251,8 @@ void loop() {
       if (b==2){
         setLED(Led4);
       }
-      if ((b == 2) && (Timer1 - previousTimer2 >= y[3])){
-        previousTimer2 = Timer1;
+      if ((b == 2) && (currentTime - previousTimer2 >= y[3])){
+        previousTimer2 = currentTime;
         lcd.setCursor(0,1);
         lcd.print("Crimp Wait          ");
         lcd.setCursor(5,2);
@@ -262,7 +261,7 @@ void loop() {
         Serial.print("SEQ 4 | Running at: ");
         Serial.print(y[3]);
         Serial.print("  |  Time: ");
-        Serial.println(Timer1);
+        Serial.println(currentTime);
         digitalWrite(Relay4, HIGH);
         digitalWrite(Relay3, LOW);
         digitalWrite(Relay5, LOW);
@@ -271,10 +270,10 @@ void loop() {
       if (b==3){
         setLED(Led5);
       }
-      if ((b == 3) && (Timer1 - previousTimer2 >= y[4])){
+      if ((b == 3) && (currentTime - previousTimer2 >= y[4])){
         Bcheck = digitalRead(SensorB);
         if (Bcheck == LOW){
-        previousTimer2 = Timer1;
+        previousTimer2 = currentTime;
         lcd.setCursor(0,1);
         lcd.print("Crimp Time Activated");
         lcd.setCursor(5,2);
@@ -283,7 +282,7 @@ void loop() {
         Serial.print("SEQ 5 | Running at: ");
         Serial.print(y[4]);
         Serial.print("  |  Time: ");
-        Serial.println(Timer1);
+        Serial.println(currentTime);
         digitalWrite(Relay5, HIGH);
         digitalWrite(Relay3, LOW);
         digitalWrite(Relay4, LOW);
@@ -337,48 +336,62 @@ void loop() {
             digitalWrite(Led5,HIGH);
             lcd.setCursor(0,1);
             lcd.print("Override: ");
-            lcd.print(SOverride);
+            lcd.print("OFF");
             lcd.print("     ");
-            sysovertrigger();
             break;
         } //END OF MAIN SWITCH
       } // End of Else (containing switch)
   } // End of MAIN while statement
-  while (SOverride = 1){
-    switch(x){
-      case 0:
-        setLEDS(Led1);
-        if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-          Override_Trigger(Relay1);
-        }
-      break;
-      case 1:
-        setLEDS(Led2);
-        if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-          Override_Trigger(Relay2);
-        }
-      break;
-      case 2:
-        setLEDS(Led3);
-        if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-          Override_Trigger(Relay3);
-        }
-      break;
-      case 3:
-        setLEDS(Led4);
-        if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-          Override_Trigger(Relay4);
-        }
-      break;
-      case 4:
-        setLEDS(Led5);
-        if ((SaveButtonTrigger == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-          Override_Trigger(Relay5);
-        }
-      break;
-      case 5:
-      break;
-    }// END OF OVERRIDE SWITCH
+  if (SOverride == 1){
+    lcd.setCursor(10,1);
+    lcd.print("ON     ");
+    BNextLogic = digitalRead(NextButton);
+    if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+      buttonPreviousTime = currentTime;
+      rswitch++;
+      if (rswitch >= 5){
+        rswitch = 0;
+      }
+    }
+    SaveButtonTrigger = digitalRead(SaveButton);
+    if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+      buttonPreviousTime = currentTime;
+      Override_Trigger(rswitch);
+    }
+    BDownLogic = digitalRead(DownButton);
+    if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+      buttonPreviousTime = currentTime;
+      lcd.setCursor(8,1);
+      lcd.print("OFF     ");
+      SOverride = 0;
+      x=0;
+    }
+    else {
+      switch(rswitch){
+        case 0:
+        lcd.setCursor(0,2);
+        lcd.print("SYSTEM: Relay 1    ");
+        break;
+        case 1:
+        lcd.setCursor(0,2);
+        lcd.print("SYSTEM: Relay 2    ");
+        break;
+        case 2:
+        lcd.setCursor(0,2);
+        lcd.print("SYSTEM: Relay 3    ");
+        break;
+        case 3:
+        lcd.setCursor(0,2);
+        lcd.print("SYSTEM: Relay 4    ");
+        break;
+        case 4:
+        lcd.setCursor(0,2);
+        lcd.print("SYSTEM: Relay 5    ");
+        break;
+        case 5:
+        break;
+      }
+    }
   }
 } // End of LOOP Void
 void savetrigger(int x){
@@ -410,35 +423,69 @@ int state = digitalRead(ErrorLed);
     delay(200);
     digitalWrite(ErrorLed, state);
 }
-
-void sysovertrigger(){
-  unsigned long Timer1 = millis();
-  if ((BUpLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-    SOverride = 1;
-    lcd.setCursor(8,1);
-    lcd.print("True    ");
-  }
-  if ((BDownLogic == HIGH) && (Timer1 - buttonPreviousTime >= buttonWait)){
-    SOverride = 0;
-    lcd.setCursor(8,1);
-    lcd.print("False    ");
-  }
-}
 void Override_Trigger(int RTrigger){
-  if (StateArray[x] == 1){
-    digitalWrite(RTrigger, LOW);
-    StateArray[x] = 0;
+  int tempstate = LOW;
+  String lcdstate = "OFF";
+  unsigned long currentTime = millis();
+  if (StateArray[rswitch] == 1){
+    tempstate = LOW;
+    lcdstate = "OFF";
+    StateArray[rswitch] = 0;
   }
   else
   {
-    digitalWrite(RTrigger, HIGH);
-    StateArray[x] = 1;
+    //digitalWrite(RTrigger, HIGH);
+    StateArray[rswitch] = 1;
+    lcdstate = "ON";
+    tempstate = HIGH;
+  }
+  if (rswitch == 0){
+    digitalWrite(Relay1, tempstate);
+    lcd.setCursor(0,3);
+    lcd.print("Relay 1 SET TO: ");
+    lcd.print(lcdstate);
+    lcd.print(" ");
+    preLCDClear = currentTime;
+  }
+  if (rswitch == 1){
+    digitalWrite(Relay2, tempstate);
+    lcd.setCursor(0,3);
+    lcd.print("Relay 2 SET TO: ");
+    lcd.print(lcdstate);
+    lcd.print(" ");
+    preLCDClear = currentTime;
+  }
+  if (rswitch == 2){
+    digitalWrite(Relay3, tempstate);
+    lcd.setCursor(0,3);
+    lcd.print("Relay 3 SET TO: ");
+    lcd.print(lcdstate);
+    lcd.print(" ");
+    preLCDClear = currentTime;
+  }
+  if (rswitch == 3){
+    digitalWrite(Relay4, tempstate);
+    lcd.setCursor(0,3);
+    lcd.print("Relay 4 SET TO: ");
+    lcd.print(lcdstate);
+    lcd.print(" ");
+    preLCDClear = currentTime;
+  }
+  if (rswitch == 4){
+    digitalWrite(Relay5, tempstate);
+    lcd.setCursor(0,3);
+    lcd.print("Relay 5 SET TO: ");
+    lcd.print(lcdstate);
+    lcd.print(" ");
+    preLCDClear = currentTime;
+  }
+  if (rswitch == 5){
   }
 }
 void changetime(int x){
   lcd.setCursor(5,2);
   lcd.print(y[x]);
-  lcd.print("     ");
+  lcd.print("      ");
   lcd.setCursor(pos,2);
   char key;
   key = keypad.getKey();
@@ -495,6 +542,7 @@ void lcdClear(){
   unsigned long currentTime = millis();
   if(currentTime - preLCDClear >= LCDClearTime)
   {
+    preLCDClear = currentTime;
     lcd.setCursor(0,3);
     lcd.print("                    ");
   }
