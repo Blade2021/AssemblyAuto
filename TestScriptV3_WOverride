@@ -42,8 +42,6 @@ int Bcheck = 0;
 int Active = 0;
 
 int passcode = 7777;
-
-String SerialArray = "";
 int SerialCount = 0;
 
 
@@ -56,7 +54,6 @@ unsigned int y[] = {600, 600, 600, 600, 600, 300};  // Time ARRAY for MAIN TIMER
 unsigned long buttonPreviousTime = 0;  //Previous Time for Button Timer
 
 int buttonWait = 200;  //Button wait Variable
-int TestCheck = 0;
 unsigned long preLCDClear = 0;
 int LCDClearTime = 3000;
 
@@ -121,7 +118,7 @@ void setup() {
   Serial.println(LCDClearTime);
   Serial.print("LCD Default POS: ");
   Serial.println(pos);
-  Serial.print("OVERRIDE PASSCODE: ");
+  Serial.print("Override Passcode: ");
   Serial.println(passcode);
   Serial.println();
 }
@@ -138,15 +135,11 @@ void loop() {
     LCDClearTime = currentTime;
   }
   SerialCount = 0;
-  if (Serial.available() > 0){
-    SerialArray = Serial.readString();
-    Serial.println(SerialArray);
-  }
   if (SOverride == 0 || SOverride == 1){
     if (SOverride == 0){
     for (int indx = 0; indx < 7; indx++){
       StateArray[indx] = 0;
-      Serial.print("INDEX: ");
+      Serial.print("Relay status INDEX: ");
       Serial.print(indx);
       Serial.println(" reset.");
     }
@@ -377,8 +370,10 @@ void loop() {
     BDownLogic = digitalRead(DownButton);
     if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
       buttonPreviousTime = currentTime;
-      lcd.setCursor(8,1);
-      lcd.print("OFF     ");
+      lcd.setCursor(0,3);
+      lcd.print("Override Deactivated");
+      Serial.println("SYSTEM OVERRIDE | Deactivated ");
+      preLCDClear = currentTime;
       SOverride = 0;
       x=0;
     }
@@ -386,12 +381,10 @@ void loop() {
     char key;
     key = keypad.getKey();
     if(key){
-      Serial.println(key);
       char bxyz[] = {0};
       bxyz[j++] = key;
       bxyz[j];
       int tempb = atoi(bxyz);
-      Serial.println(tempb);
       Override_Trigger(tempb);
       j = 0;
     }
@@ -472,6 +465,8 @@ void Override_Trigger(int RTrigger){
     lcd.print("Relay 1 SET TO: ");
     lcd.print(lcdstate);
     lcd.print(" ");
+    Serial.print("SYSTEM OVERRIDE | Relay 1 | ");
+    Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
   if (RTrigger == 2){
@@ -480,6 +475,8 @@ void Override_Trigger(int RTrigger){
     lcd.print("Relay 2 SET TO: ");
     lcd.print(lcdstate);
     lcd.print(" ");
+    Serial.print("SYSTEM OVERRIDE | Relay 2 | ");
+    Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
   if (RTrigger == 3){
@@ -488,6 +485,8 @@ void Override_Trigger(int RTrigger){
     lcd.print("Relay 3 SET TO: ");
     lcd.print(lcdstate);
     lcd.print(" ");
+    Serial.print("SYSTEM OVERRIDE | Relay 3 | ");
+    Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
   if (RTrigger == 4){
@@ -496,6 +495,8 @@ void Override_Trigger(int RTrigger){
     lcd.print("Relay 4 SET TO: ");
     lcd.print(lcdstate);
     lcd.print(" ");
+    Serial.print("SYSTEM OVERRIDE | Relay 4 | ");
+    Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
   if (RTrigger == 5){
@@ -504,16 +505,11 @@ void Override_Trigger(int RTrigger){
     lcd.print("Relay 5 SET TO: ");
     lcd.print(lcdstate);
     lcd.print(" ");
+    Serial.print("SYSTEM OVERRIDE | Relay 5 | ");
+    Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
   else{
-  }
-}
-void OverrideTrigger(){
-  char key;
-  key = keypad.getKey();
-  if(key){
-    rswitch = key;
   }
 }
 void changetime(int x){
@@ -534,6 +530,7 @@ void changetime(int x){
     }
     if(key=='*'){
       int tempa = atoi(arraya);
+      Serial.print("SYSTEM | Keypad Input: ");
       Serial.println(tempa);
       if (tempa == passcode){
         y[5]= passcode;
@@ -561,10 +558,10 @@ void changetime(int x){
       if (address == EEPROM.length()){
         address = 0;
       }*/
+      Serial.print("EEPROM | ");
       Serial.print(ytemp);
       Serial.print(" was wrote to EEPROM address: ");
       Serial.println(x);
-      Serial.println("Ran array process function.");
       pos = 15;
       lcd.setCursor(pos,2);
       lcd.print("       ");
@@ -614,12 +611,4 @@ void setLED(byte LEDnumber)
 
     digitalWrite(LEDnumber, HIGH);
   }
-}
-void setLEDB(byte LEDBnumber)
-{
-  digitalWrite(Led3, LOW);
-  digitalWrite(Led4, LOW);
-  digitalWrite(Led5, LOW);
-
-  digitalWrite(LEDBnumber, HIGH);
 }
