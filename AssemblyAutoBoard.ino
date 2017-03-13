@@ -121,9 +121,16 @@ void setup() {
   lcd.setCursor(0,2);
   lcd.print("Time:");
   for(int k = 0; k < 5; k++){
+    int f = 0;
+    f = k*2;
     int ytemp = 0;
-    ytemp = EEPROM.read(k);
-    y[k] = ytemp * 10;
+    int gtemp = 0;
+    ytemp = EEPROM.read(f);
+    ytemp = ytemp * 10;
+    f++;
+    gtemp = EEPROM.read(f);
+    gtemp = gtemp * 10;
+    y[k] = gtemp + ytemp;
     Serial.print("EEPROM[");
     Serial.print(k);
     Serial.print("]: ");
@@ -275,6 +282,7 @@ void loop() {
     if ((RailCheck == LOW) && (currentTime - previousTimer2 >= y[5])){
       digitalWrite(HookShaker, LOW);
       previousTimer2 = currentTime;
+      Serial.println("Rail Check Finsihed");
       RailCheckNext = 0;
     }
   }
@@ -505,14 +513,35 @@ if (Active == 0){
 } // End of LOOP Void
 void savetrigger(int x){
   int address = 0;
-  address = x;
+  address = x*2;
   int ytemp = 0;
   ytemp = y[x]/10;
-  /*     ************ UN COMMENT BEFORE FINAL RELEASE ****************** */
-  EEPROM.update(address,ytemp);
-  address = address + 1;
-  if (address == EEPROM.length()){
-    address = 0;
+  if (ytemp > 255){
+    int htemp = 0;
+    htemp = ytemp - 255;
+    ytemp = 255;
+    EEPROM.update(address, ytemp);
+    address = address + 1;
+    if (address == EEPROM.length()){
+      address = 0;
+    }
+    EEPROM.update(address, htemp);
+    address = address + 1;
+    if (address == EEPROM.length()){
+      address = 0;
+    }
+  }
+  if (ytemp < 255){
+    EEPROM.update(address, ytemp);
+    address = address + 1;
+    if (address == EEPROM.length()){
+      address = 0;
+    }
+    EEPROM.update(address, 0);
+    address = address + 1;
+    if (address == EEPROM.length()){
+      address = 0;
+    }
   }
   ytemp=x+1;
   lcd.setCursor(0,3);
@@ -658,28 +687,55 @@ void changetime(int x){
         j = 0;
         return;
       }
-      if (tempa > 2550){
-        tempa = 2550;
+      if (tempa > 5100){
+        tempa = 5100;
         Serial.println("WARNING: MAX VALUE HIT");
         lcd.setCursor(0,3);
         lcd.print("ERROR: MAX VALUE HIT");
         unsigned long currentTime = millis();
         preLCDClear = currentTime;
       }
-      y[x]=tempa;
-      int ytemp = 0;
-      int address = 0;
-      ytemp = y[x]/10;
-      address = x;
-      EEPROM.update(address, ytemp);
-      address = address + 1;
-      if (address == EEPROM.length()){
-        address = 0;
+      if (tempa > 2550){
+        y[x]=tempa;
+        int ytemp = 0;
+        int address = 0;
+        ytemp = y[x]/10;
+        address = x*2;
+        ytemp = ytemp - 255;
+        EEPROM.update(address, 255);
+        address = address + 1;
+        if (address == EEPROM.length()){
+          address = 0;
+        }
+        EEPROM.update(address, ytemp);
+        if (address == EEPROM.length()){
+          address = 0;
+        }
+        Serial.print("EEPROM | ");
+        Serial.print(ytemp+255);
+        Serial.print(" was wrote to EEPROM address: ");
+        Serial.println(x);
       }
-      Serial.print("EEPROM | ");
-      Serial.print(ytemp);
-      Serial.print(" was wrote to EEPROM address: ");
-      Serial.println(x);
+      if (tempa < 2550){
+        y[x]=tempa;
+        int ytemp = 0;
+        int address = 0;
+        ytemp = y[x]/10;
+        address = x*2;
+        EEPROM.update(address, ytemp);
+        address = address + 1;
+        if (address == EEPROM.length()){
+          address = 0;
+        }
+        EEPROM.update(address, 0);
+        if (address == EEPROM.length()){
+          address = 0;
+        }
+        Serial.print("EEPROM | ");
+        Serial.print(ytemp);
+        Serial.print(" was wrote to EEPROM address: ");
+        Serial.println(x);
+      }
       pos = 15;
       lcd.setCursor(pos,2);
       lcd.print("      ");
