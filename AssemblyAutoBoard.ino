@@ -93,6 +93,13 @@ int ManualFeed = 0;
 int SecStart = 0;
 
 void setup() {
+  //LEDs
+  pinMode(PanelLed1, OUTPUT);
+  pinMode(PanelLed2, OUTPUT);
+  pinMode(PanelLed3, OUTPUT);
+  pinMode(PanelLed4, OUTPUT);
+  pinMode(PanelLed5, OUTPUT);
+  pinMode(ErrorLed, OUTPUT);
   //Buttons
   pinMode(StartFeedButton, INPUT);
   pinMode(NextButton, INPUT);
@@ -100,6 +107,15 @@ void setup() {
   pinMode(UpButton, INPUT);
   pinMode(DownButton, INPUT);
   pinMode(ToggleButton, INPUT);
+  //Solenoids
+  pinMode(ToolHead, OUTPUT);
+  pinMode(HookStopper, OUTPUT);
+  pinMode(CrimpStopper, OUTPUT);
+  pinMode(Crimp, OUTPUT);
+  pinMode(FeedTable, OUTPUT);
+  pinMode(MainAir, OUTPUT);
+  pinMode(HookShaker, OUTPUT);
+  pinMode(StripOff, OUTPUT);
     //Photo
   pinMode(HookCycleStart, INPUT_PULLUP);
   pinMode(HangerRackFull, INPUT_PULLUP);
@@ -120,7 +136,7 @@ void setup() {
   lcd.print("*** BOOTING ***");
   lcd.setCursor(0,2);
   lcd.print("Time:");
-  for(int k = 0; k < 5; k++){
+  for(int k = 0; k < 6; k++){
     int f = 0;
     f = k*2;
     int ytemp = 0;
@@ -167,6 +183,8 @@ void loop() {
     digitalWrite(PanelLed3, LOW);
     digitalWrite(PanelLed4, LOW);
     digitalWrite(PanelLed5, LOW);
+    lcd.setCursor(0,2);
+    lcd.print("Time:               ");
     SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -218,8 +236,14 @@ void loop() {
   //lcd.setCursor(0,2);
   //lcd.print("Time:");
   ToggleLogic = digitalRead(ToggleButton);
-  if (ToggleLogic == HIGH){
+  if ((ToggleLogic == HIGH) && (Active == 0)){
     Active = 1;
+    digitalWrite(PanelLed1, LOW);
+    digitalWrite(PanelLed2, LOW);
+    digitalWrite(PanelLed3, LOW);
+    digitalWrite(PanelLed4, LOW);
+    digitalWrite(PanelLed5, LOW);
+    digitalWrite(ErrorLed, LOW);
   }
   if (ToggleLogic == LOW){
     Active = 0;
@@ -228,8 +252,7 @@ void loop() {
   if (Active==1){
   digitalWrite(MainAir, HIGH);
   lcd.setCursor(0,1);
-  lcd.print("System: ACTIVE");
-  digitalWrite(ErrorLed, LOW);
+  lcd.print("System: ACTIVE      ");
   ManualFeed = digitalRead(StartFeedButton);
   FeedLoop = digitalRead(HookCycleStart);
   if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
@@ -279,6 +302,17 @@ void loop() {
     RailCheckNext = 1;
   }
   if (RailCheckNext == 1){
+    RailCheck = digitalRead(HookRailFull);
+    if (RailCheck == LOW){
+      previousTimer2 = currentTime;
+      RailCheckNext = 2;
+    }
+  }
+  if (RailCheckNext == 2){
+    RailCheck = digitalRead(HookRailFull);
+    if (RailCheck == HIGH){
+      RailCheckNext = 1;
+    }  
     if ((RailCheck == LOW) && (currentTime - previousTimer2 >= y[5])){
       digitalWrite(HookShaker, LOW);
       previousTimer2 = currentTime;
@@ -510,7 +544,7 @@ if (Active == 0){
       }
     }
   }
-} // End of LOOP Void
+} // *****************************  End of LOOP Void ************************
 void savetrigger(int x){
   int address = 0;
   address = x*2;
@@ -560,7 +594,7 @@ int state = digitalRead(ErrorLed);
     digitalWrite(ErrorLed, LOW);
     delay(200);
     digitalWrite(ErrorLed, state);
-}
+} //************************* VOID END ******************************
 void Override_Trigger(int RTrigger){
   int tempstate = LOW;
   String lcdstate = "OFF";
@@ -660,6 +694,7 @@ void Override_Trigger(int RTrigger){
   }
 }
 void changetime(int x){
+  unsigned long currentTime = millis();
   lcd.setCursor(5,2);
   lcd.print(y[x]);
   lcd.print("      ");
@@ -692,7 +727,6 @@ void changetime(int x){
         Serial.println("WARNING: MAX VALUE HIT");
         lcd.setCursor(0,3);
         lcd.print("ERROR: MAX VALUE HIT");
-        unsigned long currentTime = millis();
         preLCDClear = currentTime;
       }
       if (tempa > 2550){
