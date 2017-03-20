@@ -1,3 +1,10 @@
+/*  VERSION 1.2.4
+ *  COMPILED SUCCESSFULLY ON 03.20.17
+ *  CHANGE LOG:
+ *  - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
+ *  EEPROM Memory: 1 - 10
+ *  Override Passcode: 7777
+ */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
@@ -151,7 +158,7 @@ void setup() {
     Serial.print(k);
     Serial.print("]: ");
     Serial.println(y[k]);
-    delay(100);
+    delay(10);
   }
   Serial.println("********** System Variables ***********");
   Serial.print("Button Wait Time: ");
@@ -253,6 +260,7 @@ void loop() {
   digitalWrite(MainAir, HIGH);
   lcd.setCursor(0,1);
   lcd.print("System: ACTIVE      ");
+  
   ManualFeed = digitalRead(StartFeedButton);
   FeedLoop = digitalRead(HookCycleStart);
   if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
@@ -315,6 +323,7 @@ void loop() {
     }  
     if ((RailCheck == LOW) && (currentTime - previousTimer2 >= y[5])){
       digitalWrite(HookShaker, LOW);
+      digitalWrite(PanelLed5, LOW);
       previousTimer2 = currentTime;
       Serial.println("Rail Check Finsihed");
       RailCheckNext = 0;
@@ -410,59 +419,9 @@ void loop() {
   // END OF HOOK CYCLE
 }//END OF ACTIVE
 if (Active == 0){
-        digitalWrite(ErrorLed, HIGH);
-        digitalWrite(FeedTable, LOW);
-        digitalWrite(ToolHead, LOW);
-        digitalWrite(HookStopper, LOW);
-        digitalWrite(CrimpStopper, LOW);
-        digitalWrite(Crimp, LOW);
-        digitalWrite(MainAir, LOW);
-        digitalWrite(HookShaker, LOW);
-        if (y[5] == passcode){
-              Serial.println("***** Override ACTIVATED *****");
-              y[5]=0;
-              SOverride = 2;
-        }
-        switch (x){
-          case 0:
-            setLEDS(PanelLed1);
-            lcd.setCursor(0,1);
-            lcd.print("Feed Wait Time:     ");
-            changetime(x);
-            break;
-          case 1:
-            setLEDS(PanelLed2);
-            lcd.setCursor(0,1);
-            lcd.print("Feed Open Time      ");
-            changetime(x);
-            break;
-          case 2:
-            setLEDS(PanelLed3);
-            lcd.setCursor(0,1);
-            lcd.print("Hook Cycle Wait     ");
-            changetime(x);
-            break;
-          case 3:
-            setLEDS(PanelLed4);
-            lcd.setCursor(0,1);
-            lcd.print("Crimp Cycle Wait    ");
-            changetime(x);
-            break;
-          case 4:
-            setLEDS(PanelLed5);
-            lcd.setCursor(0,1);
-            lcd.print("Crimp Time          ");
-            changetime(x);
-            break;
-          case 5:
-            setLEDS(PanelLed1);
-            lcd.setCursor(0,1);
-            lcd.print("Vibrator Time     ");
-            changetime(x);
-            break;
-        } //END OF MAIN SWITCH
-      } // End of Active 0 (containing switch)
-  } // End of Override Statement
+  inactive(x);    
+  } // End of Active 0 (containing switch)
+} // End of Override Statement
   if (SOverride == 2){
     digitalWrite(PanelLed1,HIGH);
     digitalWrite(PanelLed2,HIGH);
@@ -545,21 +504,74 @@ if (Active == 0){
     }
   }
 } // *****************************  End of LOOP Void ************************
+void inactive(int x){
+  digitalWrite(ErrorLed, HIGH);
+  digitalWrite(FeedTable, LOW);
+  digitalWrite(ToolHead, LOW);
+  digitalWrite(HookStopper, LOW);
+  digitalWrite(CrimpStopper, LOW);
+  digitalWrite(Crimp, LOW);
+  digitalWrite(MainAir, LOW);
+  digitalWrite(HookShaker, LOW);
+  if (y[5] == passcode){
+    Serial.println("***** Override ACTIVATED *****");
+    y[5]=0;
+    SOverride = 2;
+    return;
+    }
+  switch (x){
+    case 0:
+      setLEDS(PanelLed1);
+      lcd.setCursor(0,1);
+      lcd.print("Feed Wait Time:     ");
+      changetime(x);
+      break;
+    case 1:
+      setLEDS(PanelLed2);
+      lcd.setCursor(0,1);
+      lcd.print("Feed Open Time      ");
+      changetime(x);
+      break;
+    case 2:
+      setLEDS(PanelLed3);
+      lcd.setCursor(0,1);
+      lcd.print("Hook Cycle Wait     ");
+      changetime(x);
+      break;
+    case 3:
+      setLEDS(PanelLed4);
+      lcd.setCursor(0,1);
+      lcd.print("Crimp Cycle Wait    ");
+      changetime(x);
+      break;
+    case 4:
+      setLEDS(PanelLed5);
+      lcd.setCursor(0,1);
+      lcd.print("Crimp Time          ");
+      changetime(x);
+      break;
+    case 5:
+      setLEDS(PanelLed1);
+      lcd.setCursor(0,1);
+      lcd.print("Vibrator Time     ");
+      changetime(x);
+      break;
+    } //END OF MAIN SWITCH
+} // End of void
+
 void savetrigger(int x){
   int address = 0;
   address = x*2;
   int ytemp = 0;
   ytemp = y[x]/10;
   if (ytemp > 255){
-    int htemp = 0;
-    htemp = ytemp - 255;
-    ytemp = 255;
+    ytemp =  ytemp - 255;
     EEPROM.update(address, ytemp);
     address = address + 1;
     if (address == EEPROM.length()){
       address = 0;
     }
-    EEPROM.update(address, htemp);
+    EEPROM.update(address, 255);
     address = address + 1;
     if (address == EEPROM.length()){
       address = 0;
