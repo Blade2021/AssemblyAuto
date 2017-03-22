@@ -1,5 +1,5 @@
-/*  VERSION 1.2.4
- *  COMPILED SUCCESSFULLY ON 03.20.17
+/*  VERSION 1.2.5
+ *  COMPILED SUCCESSFULLY ON 03.22.17
  *  CHANGE LOG:
  *  - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
  *  EEPROM Memory: 1 - 10
@@ -45,7 +45,7 @@ const int HookShaker = 15;
 int BSelLogic = 0;
 int x = 0;
 int seq = 1;
-int LCDClearTime = 5000;
+int LCDClearTime = 8000;
 int pos=15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
@@ -84,7 +84,7 @@ int HookLoop = 0;
 int HookCheck = 0;
 int CrimpLoop = 0;
 int CrimpNext = 0;
-int RailCheck = 0;
+int RailCheck = LOW;
 int RailCheckNext = 0;
 int rswitch = 0;
 int SOverride = 1;
@@ -240,8 +240,6 @@ void loop() {
       savetrigger(x);
     }
   }
-  //lcd.setCursor(0,2);
-  //lcd.print("Time:");
   ToggleLogic = digitalRead(ToggleButton);
   if ((ToggleLogic == HIGH) && (Active == 0)){
     Active = 1;
@@ -260,29 +258,34 @@ void loop() {
   digitalWrite(MainAir, HIGH);
   lcd.setCursor(0,1);
   lcd.print("System: ACTIVE      ");
-  
   ManualFeed = digitalRead(StartFeedButton);
   FeedLoop = digitalRead(HookCycleStart);
-  if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
+  
+  if (((FeedLoop == LOW) && (Error == 0)) || (ManualFeed == HIGH) || (SecStart == 1)){
+  //if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
     if (FeedNext == 0){
-    // FEED ACTIVATED
-    Serial.println("Feed Cycle Activated");
-    FeedCheck = digitalRead(HangerRackFull);
-    if (FeedCheck == LOW){
-      Error = 0;
+      // FEED ACTIVATED
+      Serial.println("Feed Cycle Activated");
+      FeedCheck = digitalRead(HangerRackFull);
+      if ((FeedCheck == LOW) && (SecStart != 1)){
+        Error = 0;
+        digitalWrite(ErrorLed, LOW);
+      }
+      if ((FeedCheck == HIGH) && (SecStart != 1)){
+        Serial.println("ERROR: Hanger Rack NOT full.");
+        lcd.setCursor(0,3);
+        lcd.print("ERROR: Hanger Rack");
+        Error = 1;
+        SecStart = 1;
+        return;
+      }
+      else {
+        SecStart = 0;
+        digitalWrite(PanelLed1, HIGH);
+        FeedNext = 1;
+        previousTimer1 = currentTime;
+      }
     }
-    if (FeedCheck == HIGH){
-      Serial.println("ERROR: Hanger Rack NOT full.");
-      lcd.setCursor(0,3);
-      lcd.print("ERROR: Hanger Rack");
-      Error = 1;
-      return;
-    }
-  SecStart = 0;
-  digitalWrite(PanelLed1, HIGH);
-  FeedNext = 1;
-  previousTimer1 = currentTime;
-  }
   }
   // FEED OPEN
   if ((FeedNext == 1) && (currentTime - previousTimer1 >= y[0])){
@@ -342,10 +345,11 @@ void loop() {
   if ((CrimpNext == 1) && (currentTime - previousTimer4 >= y[3])){
     previousTimer4 = currentTime;
     digitalWrite(Crimp, HIGH);
+    Serial.println("Crimp Cycle | Crimp");
     CrimpNext = 2;
   }
   if ((CrimpNext == 2) && (currentTime - previousTimer4 >= y[4])){
-    Serial.println("Crimp Cycle | Step 2");
+    Serial.println("Crimp Cycle | Reset");
     previousTimer4 = currentTime;
     digitalWrite(Crimp, LOW);
     digitalWrite(CrimpStopper, LOW);
@@ -358,23 +362,27 @@ void loop() {
     Serial.println("Hook Cycle Activated");
     digitalWrite(PanelLed2, HIGH);
     boolean HookCheck;
-    /*HookCheck = digitalRead(HookRailEmpty);
+    HookCheck = digitalRead(HookRailEmpty);
     if (HookCheck == HIGH){
       Serial.println("ERROR: Hook Check failed");
+      lcd.setCursor(0,3);
+      lcd.print("ERROR: Hook Check   ");
+      preLCDClear = currentTime;
       Error = 1;
       digitalWrite(PanelLed2, LOW);
+      FeedLoop = 0;
+      FeedNext = 0;
       digitalWrite(ErrorLed, HIGH);
-      return;
     }
-    else {*/
+    if (HookCheck == LOW){
       previousTimer3 = currentTime;
       digitalWrite(HookStopper, HIGH);
       HookNext = 1;
-   // }
+    }
   }
   if ((HookNext == 1) && (currentTime - previousTimer3 >= y[2])){
     previousTimer3 = currentTime;
-    Serial.println("Hook Cycle | Step 2");
+    Serial.println("Hook Cycle | Tool/Head OUT");
     digitalWrite(ToolHead, HIGH);
     HookNext = 2;
   }
@@ -382,21 +390,19 @@ void loop() {
     int HeadCheckDown;
     HeadCheckDown = digitalRead(HeadDown);
     if (HeadCheckDown == HIGH){
-      return;
     }
-    else{
+    if (HeadCheckDown == LOW){
       digitalWrite(StripOff, HIGH);
       HookNext = 3;
-      Serial.println("Hook Cycle | Step 3");
+      Serial.println("Hook Cycle | Strip Off OUT");
     }
   }
   if (HookNext == 3){
     int StripoffCheck;
     StripoffCheck = digitalRead(StripOffOut);
     if (StripoffCheck == HIGH){
-      return;
     }
-    else{
+    if (StripoffCheck == LOW){
       digitalWrite(ToolHead, LOW);
       digitalWrite(PanelLed3, HIGH);
       digitalWrite(PanelLed2, LOW);
@@ -407,9 +413,9 @@ void loop() {
     int HeadUpCheck;
     HeadUpCheck = digitalRead(HeadUp);
     if (HeadUpCheck == HIGH){
-      return;
     }
-    else{
+    if (HeadUpCheck == LOW){
+      Serial.println("Hook Cycle | Reset");
       digitalWrite(StripOff, LOW);
       digitalWrite(HookStopper, LOW);
       digitalWrite(PanelLed3, LOW);
