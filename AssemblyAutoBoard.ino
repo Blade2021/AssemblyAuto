@@ -1,4 +1,4 @@
-/*  VERSION 1.2.5
+/*  VERSION 1.2.6
     COMPILED SUCCESSFULLY ON 03.22.17
     CHANGE LOG:
     - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
@@ -45,12 +45,12 @@ const int HookShaker = 15;
 int BSelLogic = 0;
 int x = 0;
 int seq = 1;
-int LCDClearTime = 8000;
+int LCDClearTime = 7000;
 int pos = 15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
 //Time Controls
-unsigned long buttonWait = 200;
+unsigned long buttonWait = 300;
 unsigned long preLCDClear = 0;
 unsigned long buttonPreviousTime = 0;
 unsigned long previousTimer1 = 0;
@@ -138,13 +138,12 @@ void setup() {
   // END OF PINMODE
   Serial.begin(9600);
   Serial.println("Starting...");
+  Serial.println("Program Version 1.2.6");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
-  lcd.setCursor(0, 2);
-  lcd.print("Time:");
   for (int k = 0; k < 6; k++) {
     int f = 0;
     f = k * 2;
@@ -193,8 +192,6 @@ void loop() {
       digitalWrite(PanelLed3, LOW);
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
-      //lcd.setCursor(0,2);
-      //lcd.print("Time:               ");
       SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -259,12 +256,10 @@ void loop() {
     }
     if (Active == 1) {
       digitalWrite(MainAir, HIGH);
-      lcd.setCursor(0, 1);
-      lcd.print("System: ACTIVE      ");
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(HookCycleStart);
-
-      if (((FeedLoop == LOW) && (Error == 0)) || (ManualFeed == HIGH) || (SecStart == 1)) {
+      FeedCheck = digitalRead(HangerRackFull);
+      if (((FeedLoop == LOW) && (Error == 0)) || (ManualFeed == HIGH) || ((SecStart == 1) && (FeedCheck == LOW))) {
         //if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
         if (FeedNext == 0) {
           // FEED ACTIVATED
@@ -275,19 +270,24 @@ void loop() {
             digitalWrite(ErrorLed, LOW);
           }
           if (LogicCount == 0) {
-            unsigned long precountTime = currentTime;
+            precountTime = currentTime;
           }
           if ((FeedCheck == HIGH) && (SecStart != 1)) {
             Serial.println("ERROR: Hanger Rack NOT full.");
             lcd.setCursor(0, 3);
             lcd.print("ERROR: Hanger Rack");
+            preLCDClear = currentTime;
             Error = 1;
             SecStart = 1;
-            return;
           }
           else {
             LogicCount++;
             SecStart = 0;
+            Error = 0;
+            lcd.setCursor(0, 1);
+            lcd.print("SYSTEM:             ");
+            lcd.setCursor(8,1);
+            lcd.print(LogicCount);
             digitalWrite(PanelLed1, HIGH);
             FeedNext = 1;
             previousTimer1 = currentTime;
@@ -373,7 +373,7 @@ void loop() {
         if (HookCheck == HIGH) {
           Serial.println("ERROR: Hook Check failed");
           lcd.setCursor(0, 3);
-          lcd.print("ERROR: Hook Check   ");
+          lcd.print("ERROR: Hook Check");
           preLCDClear = currentTime;
           Error = 1;
           digitalWrite(PanelLed2, LOW);
@@ -421,7 +421,7 @@ void loop() {
         }
       }// END OF HOOK CYCLE
       if (LogicCount >= 100) {
-        TimeKeeper(currentTime);
+        TimeKeeper();
       }
     }//END OF ACTIVE
     if (Active == 0) {
@@ -860,14 +860,14 @@ void setLED(byte LEDnumber)
 }
 
 
-void TimeKeeper(unsigned long currentTime) {
-  unsigned long tempvarj = 0;
-  tempvarj = ((currentTime - precountTime) / 1000);
+void TimeKeeper() {
+  unsigned long currentTime = millis();
+  unsigned long tempvarj = ((currentTime - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
   Serial.println(tempvarj);
   lcd.setCursor(0, 2);
-  lcd.print("CTN Run Time:       ");
-  lcd.setCursor(14, 2);
+  lcd.print("CTN Time:           ");
+  lcd.setCursor(15, 2);
   lcd.print(tempvarj);
   LogicCount = 0;
 }
