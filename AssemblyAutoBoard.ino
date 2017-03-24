@@ -1,7 +1,13 @@
 /*  VERSION 1.2.6
     COMPILED SUCCESSFULLY ON 03.22.17
     CHANGE LOG:
+    1.2.4
+    - Changelog Added
+    1.2.5
     - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
+    1.2.6
+    - Added LogicCount to LCD
+    - Updated TimeKeeper function to give accurate results.
     EEPROM Memory: 1 - 10
     Override Passcode: 7777
 */
