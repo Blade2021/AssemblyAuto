@@ -717,8 +717,6 @@ void Override_Trigger(int RTrigger) {
     Serial.println(lcdstate);
     preLCDClear = currentTime;
   }
-  else {
-  }
 }
 
 
