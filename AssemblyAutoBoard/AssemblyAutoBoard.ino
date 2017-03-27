@@ -185,6 +185,8 @@ void loop() {
       digitalWrite(PanelLed3, LOW);
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
+      lcd.setCursor(0,2);
+      lcd.print("                  ")
       SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -724,7 +726,7 @@ void changetime(int x) {
   unsigned long currentTime = millis();
   lcd.setCursor(5, 2);
   lcd.print(y[x]);
-  lcd.print("      ");
+  lcd.print("       ");
   lcd.setCursor(pos, 2);
   char key;
   key = keypad.getKey();
