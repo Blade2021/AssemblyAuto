@@ -87,7 +87,7 @@ char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 int Error = 0;
 //LOGIC CONTROLS
-long LogicCount = 0;
+int LogicCount = 0;
 int BNextLogic = 0;
 int BUpLogic = 0;
 int BDownLogic = 0;
@@ -501,11 +501,10 @@ void loop() {
           break;
         case 8:
           break;
-      }
-    }
-  }
-}
-// *****************************  End of LOOP Void ************************
+      } // End of Rswitch
+    } // End of Else Statment
+  } // End of SOverride2
+} // *****************************  End of LOOP Void ************************
 
 
 void inactive(int x) {
