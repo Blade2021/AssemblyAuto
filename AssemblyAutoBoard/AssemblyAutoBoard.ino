@@ -267,7 +267,7 @@ void loop() {
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(HookCycleStart);
       FeedCheck = digitalRead(HangerRackFull);
-      if (((FeedLoop == LOW) && (Error == 0)) || (ManualFeed == HIGH) || ((SecStart == 1) && (FeedCheck == LOW))) {
+      if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
         //if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
         if (FeedNext == 0) {
           // FEED ACTIVATED
@@ -383,7 +383,7 @@ void loop() {
           lcd.setCursor(0, 3);
           lcd.print("ERROR: Hook Check");
           preLCDClear = currentTime;
-          Error = 1;
+          //Error = 1;
           digitalWrite(PanelLed2, LOW);
           FeedLoop = 0;
           FeedNext = 0;
@@ -590,11 +590,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0003]");
     }
     EEPROM.update(address, 255);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0004]");
     }
   }
   if (ytemp < 255) {
@@ -602,11 +604,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0005]");
     }
     EEPROM.update(address, 0);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0006]");
     }
   }
   ytemp = x + 1;
@@ -777,12 +781,14 @@ void changetime(int x) {
         address = address + 1;
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0001]");
         }
         EEPROM.update(address, ytemp);
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0002]");
         }
-        Serial.print("EEPROM | ");
+        Serial.print("SYSTEM | EEPROM | ");
         Serial.print(ytemp + 255);
         Serial.print(" was wrote to EEPROM address: ");
         Serial.println(x);
