@@ -532,9 +532,9 @@ void inactive(int x) {
   digitalWrite(Crimp, LOW);
   digitalWrite(MainAir, LOW);
   digitalWrite(HookShaker, LOW);
-  if (y[5] == passcode) {
+  if (y[6] == passcode) {
     Serial.println("***** Override ACTIVATED *****");
-    y[5] = 0;
+    y[6] = 0;
     SOverride = 2;
     return;
   }
@@ -576,7 +576,7 @@ void inactive(int x) {
       changetime(x);
       break;
   } //END OF MAIN SWITCH
-} // End of void
+} // End of Inactive void
 
 
 void savetrigger(int x) {
@@ -760,7 +760,7 @@ void changetime(int x) {
       Serial.print("SYSTEM | Keypad Input: ");
       Serial.println(tempa);
       if (tempa == passcode) {
-        y[5] = passcode;
+        y[6] = passcode;
         pos = 15;
         lcd.setCursor(pos, 2);
         lcd.print("       ");
