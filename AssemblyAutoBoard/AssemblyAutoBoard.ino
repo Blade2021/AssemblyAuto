@@ -580,12 +580,16 @@ void inactive(int x) {
 
 
 void savetrigger(int x) {
-  int address = 0;
-  address = x * 2;
-  int ytemp = 0;
-  ytemp = y[x] / 10;
+  if (y[x] >= 5101){
+    y[x] = 5100;
+    lcd.setCursor(0,3);
+    lcd.print("Max Value hit!");
+    Serial.println("SYSTEM: Max value hit when trying to save.");
+  }
+  int address = x * 2;
+  int ytemp = ytemp = y[x] / 10;
   if (ytemp > 255) {
-    ytemp =  ytemp - 255;
+    ytemp = ytemp - 255;
     EEPROM.update(address, ytemp);
     address = address + 1;
     if (address == EEPROM.length()) {
