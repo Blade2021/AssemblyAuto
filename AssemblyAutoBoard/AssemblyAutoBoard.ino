@@ -14,7 +14,7 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
-//added test line
+
 //Panel Buttons
 const int StartFeedButton = 6;
 const int NextButton = 42;
@@ -142,6 +142,7 @@ void setup() {
   pinMode(HeadDown, INPUT_PULLUP);
   pinMode(StripOffOut, INPUT_PULLUP);
   // END OF PINMODE
+  
   Serial.begin(9600);
   Serial.println("Starting...");
   Serial.println("Program Version 1.2.6");
@@ -150,6 +151,8 @@ void setup() {
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
+  
+  //Load EEPROM Memory
   for (int k = 0; k < 6; k++) {
     int f = 0;
     f = k * 2;
@@ -178,7 +181,6 @@ void setup() {
   Serial.println(passcode);
   Serial.println();
 }
-
 
 void loop() {
   unsigned long currentTime = millis();
@@ -867,8 +869,7 @@ void setLED(byte LEDnumber)
 
 
 void TimeKeeper() {
-  unsigned long currentTime = millis();
-  unsigned long tempvarj = ((currentTime - precountTime) / 1000);
+  unsigned long tempvarj = ((millis() - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
   Serial.println(tempvarj);
   lcd.setCursor(0, 2);
