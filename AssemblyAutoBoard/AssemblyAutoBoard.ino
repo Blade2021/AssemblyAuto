@@ -1,15 +1,5 @@
-/*  VERSION 1.2.6
+/*  VERSION 1.2.7
     COMPILED SUCCESSFULLY ON 03.22.17
-    CHANGE LOG:
-    1.2.4
-    - Changelog Added
-    1.2.5
-    - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
-    1.2.6
-    - Added LogicCount to LCD
-    - Updated TimeKeeper function to give accurate results.
-    EEPROM Memory: 1 - 10
-    Override Passcode: 7777
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
@@ -48,15 +38,13 @@ const int FeedTable = 7;
 const int MainAir = 14;
 const int HookShaker = 15;
 //LCD Variables
-int BSelLogic = 0;
 int x = 0;
-int seq = 1;
-int LCDClearTime = 7000;
+const int LCDClearTime = 7000;
 int pos = 15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
 //Time Controls
-unsigned long buttonWait = 300;
+const int buttonWait = 300;
 unsigned long preLCDClear = 0;
 unsigned long buttonPreviousTime = 0;
 unsigned long previousTimer1 = 0;
@@ -99,7 +87,7 @@ char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 int Error = 0;
 //LOGIC CONTROLS
-unsigned long LogicCount = 0;
+long LogicCount = 0;
 int BNextLogic = 0;
 int BUpLogic = 0;
 int BDownLogic = 0;
@@ -145,7 +133,7 @@ void setup() {
   
   Serial.begin(9600);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.6");
+  Serial.println("Program Version 1.2.7");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -154,14 +142,11 @@ void setup() {
   
   //Load EEPROM Memory
   for (int k = 0; k < 6; k++) {
-    int f = 0;
-    f = k * 2;
-    int ytemp = 0;
-    int gtemp = 0;
-    ytemp = EEPROM.read(f);
+    int f = k * 2;
+    int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
     f++;
-    gtemp = EEPROM.read(f);
+    int gtemp = gtemp = EEPROM.read(f);
     gtemp = gtemp * 10;
     y[k] = gtemp + ytemp;
     Serial.print("EEPROM[");
