@@ -1,15 +1,5 @@
-/*  VERSION 1.2.6
+/*  VERSION 1.2.7
     COMPILED SUCCESSFULLY ON 03.22.17
-    CHANGE LOG:
-    1.2.4
-    - Changelog Added
-    1.2.5
-    - Added DigitalWrite(PanelLed5, LOW) to vibrator cycle.
-    1.2.6
-    - Added LogicCount to LCD
-    - Updated TimeKeeper function to give accurate results.
-    EEPROM Memory: 1 - 10
-    Override Passcode: 7777
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
@@ -48,15 +38,13 @@ const int FeedTable = 7;
 const int MainAir = 14;
 const int HookShaker = 15;
 //LCD Variables
-int BSelLogic = 0;
 int x = 0;
-int seq = 1;
-int LCDClearTime = 7000;
+const int LCDClearTime = 7000;
 int pos = 15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
 //Time Controls
-unsigned long buttonWait = 300;
+const int buttonWait = 300;
 unsigned long preLCDClear = 0;
 unsigned long buttonPreviousTime = 0;
 unsigned long previousTimer1 = 0;
@@ -99,7 +87,7 @@ char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 int Error = 0;
 //LOGIC CONTROLS
-unsigned long LogicCount = 0;
+long LogicCount = 0;
 int BNextLogic = 0;
 int BUpLogic = 0;
 int BDownLogic = 0;
@@ -142,23 +130,23 @@ void setup() {
   pinMode(HeadDown, INPUT_PULLUP);
   pinMode(StripOffOut, INPUT_PULLUP);
   // END OF PINMODE
+  
   Serial.begin(9600);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.6");
+  Serial.println("Program Version 1.2.7");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
+  
+  //Load EEPROM Memory
   for (int k = 0; k < 6; k++) {
-    int f = 0;
-    f = k * 2;
-    int ytemp = 0;
-    int gtemp = 0;
-    ytemp = EEPROM.read(f);
+    int f = k * 2;
+    int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
     f++;
-    gtemp = EEPROM.read(f);
+    int gtemp = gtemp = EEPROM.read(f);
     gtemp = gtemp * 10;
     y[k] = gtemp + ytemp;
     Serial.print("EEPROM[");
@@ -178,7 +166,6 @@ void setup() {
   Serial.println(passcode);
   Serial.println();
 }
-
 
 void loop() {
   unsigned long currentTime = millis();
@@ -265,7 +252,7 @@ void loop() {
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(HookCycleStart);
       FeedCheck = digitalRead(HangerRackFull);
-      if (((FeedLoop == LOW) && (Error == 0)) || (ManualFeed == HIGH) || ((SecStart == 1) && (FeedCheck == LOW))) {
+      if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
         //if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
         if (FeedNext == 0) {
           // FEED ACTIVATED
@@ -381,7 +368,7 @@ void loop() {
           lcd.setCursor(0, 3);
           lcd.print("ERROR: Hook Check");
           preLCDClear = currentTime;
-          Error = 1;
+          //Error = 1;
           digitalWrite(PanelLed2, LOW);
           FeedLoop = 0;
           FeedNext = 0;
@@ -530,9 +517,9 @@ void inactive(int x) {
   digitalWrite(Crimp, LOW);
   digitalWrite(MainAir, LOW);
   digitalWrite(HookShaker, LOW);
-  if (y[5] == passcode) {
+  if (y[6] == passcode) {
     Serial.println("***** Override ACTIVATED *****");
-    y[5] = 0;
+    y[6] = 0;
     SOverride = 2;
     return;
   }
@@ -574,25 +561,31 @@ void inactive(int x) {
       changetime(x);
       break;
   } //END OF MAIN SWITCH
-} // End of void
+} // End of Inactive void
 
 
 void savetrigger(int x) {
-  int address = 0;
-  address = x * 2;
-  int ytemp = 0;
-  ytemp = y[x] / 10;
+  if (y[x] >= 5101){
+    y[x] = 5100;
+    lcd.setCursor(0,3);
+    lcd.print("Max Value hit!");
+    Serial.println("SYSTEM: Max value hit when trying to save.");
+  }
+  int address = x * 2;
+  int ytemp = ytemp = y[x] / 10;
   if (ytemp > 255) {
-    ytemp =  ytemp - 255;
+    ytemp = ytemp - 255;
     EEPROM.update(address, ytemp);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0003]");
     }
     EEPROM.update(address, 255);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0004]");
     }
   }
   if (ytemp < 255) {
@@ -600,11 +593,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0005]");
     }
     EEPROM.update(address, 0);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
+      Serial.println("*** SYSTEM ERROR [EE0006]");
     }
   }
   ytemp = x + 1;
@@ -750,7 +745,7 @@ void changetime(int x) {
       Serial.print("SYSTEM | Keypad Input: ");
       Serial.println(tempa);
       if (tempa == passcode) {
-        y[5] = passcode;
+        y[6] = passcode;
         pos = 15;
         lcd.setCursor(pos, 2);
         lcd.print("       ");
@@ -775,12 +770,14 @@ void changetime(int x) {
         address = address + 1;
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0001]");
         }
         EEPROM.update(address, ytemp);
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0002]");
         }
-        Serial.print("EEPROM | ");
+        Serial.print("SYSTEM | EEPROM | ");
         Serial.print(ytemp + 255);
         Serial.print(" was wrote to EEPROM address: ");
         Serial.println(x);
@@ -867,8 +864,7 @@ void setLED(byte LEDnumber)
 
 
 void TimeKeeper() {
-  unsigned long currentTime = millis();
-  unsigned long tempvarj = ((currentTime - precountTime) / 1000);
+  unsigned long tempvarj = ((millis() - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
   Serial.println(tempvarj);
   lcd.setCursor(0, 2);
