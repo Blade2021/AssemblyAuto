@@ -81,8 +81,8 @@ int CrimpLoop = 0;
 int CrimpNext = 0;
 int RailCheck = LOW;
 int RailCheckNext = 0;
-int rswitch = 0;
-int SOverride = 1;
+byte rswitch = 0;
+byte SOverride = 1;
 char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 int Error = 0;
@@ -186,7 +186,7 @@ void loop() {
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
       lcd.setCursor(0,2);
-      lcd.print("                  ")
+      lcd.print("                  ");
       SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -840,26 +840,6 @@ void setLEDS(byte LEDSnumber)
   digitalWrite(LEDSnumber, HIGH);
 }
 
-
-void setLED(byte LEDnumber)
-{
-  if (LEDnumber == PanelLed4 || LEDnumber == PanelLed5) {
-    digitalWrite(PanelLed4, LOW);
-    digitalWrite(PanelLed5, LOW);
-
-    digitalWrite(LEDnumber, HIGH);
-  }
-  if (LEDnumber == PanelLed1) {
-    digitalWrite(PanelLed1, LOW);
-
-    digitalWrite(LEDnumber, HIGH);
-  }
-  if (LEDnumber == PanelLed3 || LEDnumber == PanelLed2) {
-    digitalWrite(PanelLed3, LOW);
-    digitalWrite(PanelLed2, LOW);
-    digitalWrite(LEDnumber, HIGH);
-  }
-}
 
 
 void TimeKeeper() {
