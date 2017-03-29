@@ -59,6 +59,18 @@ void setup() {
      .setFont(createFont("arial",20))
      .setAutoClear(true)
      ;
+  cp5.addTextfield("Timer4")
+     .setPosition(20,270)
+     .setSize(200,40)
+     .setFont(createFont("arial",20))
+     .setAutoClear(true)
+     ;
+  cp5.addTextfield("Timer5")
+     .setPosition(20,330)
+     .setSize(200,40)
+     .setFont(createFont("arial",20))
+     .setAutoClear(true)
+     ;
   cp5.addBang("clear")
      .setPosition(240,90)
      .setSize(80,40)
@@ -66,7 +78,7 @@ void setup() {
      ;    
   
   cp5.addBang("Logout")
-     .setPosition(550,40)
+     .setPosition(720,40)
      .setSize(60,20)
      .hide()
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
@@ -139,10 +151,12 @@ void setup() {
   cp5.getController("Timer1").moveTo("default");
   cp5.getController("Timer2").moveTo("default");
   cp5.getController("Timer3").moveTo("default");
+  cp5.getController("Timer4").moveTo("default");
+  cp5.getController("Timer5").moveTo("default");
   cp5.getController("mouse").moveTo("extra");
-  cp5.getController("Passcode").moveTo("extra");
+  cp5.getController("Passcode").moveTo("global");
   cp5.getController("clear").moveTo("default");
-  cp5.getController("Logout").moveTo("extra");
+  cp5.getController("Logout").moveTo("global");
   cp5.getController("Relay1").moveTo("extra");
   cp5.getController("Relay2").moveTo("extra");
   cp5.getController("Relay3").moveTo("extra");
@@ -164,7 +178,7 @@ void draw() {
   if (active == true){
   //text(cp5.get(Textfield.class,"mouse").getText(),360,count);
   //count = count + 10;
-  text("Welcome Back", 550,20); 
+  text("Welcome Back", 660,20); 
   if (count > 400) {
     count = 0;
   }
@@ -182,10 +196,13 @@ public void mouse(String theValue) {
   int mod = Integer.valueOf(theValue);
   cage = mod;
 }
+public void welcome() {
+ text("Welcome Back", 550,20);
+}
 
 public void Passcode(String theValue) {
  int pass = Integer.valueOf(theValue);
- if (pass == 7777){
+ if (pass == 0000){
    active=true;
    int i = 1;
    String r = "Relay";
