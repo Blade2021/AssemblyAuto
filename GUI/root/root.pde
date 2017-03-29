@@ -9,11 +9,28 @@ boolean active = false;
 float count = 20;
 
 void setup() {
-  size(700,400);
+  size(800,450);
   PFont font = createFont("arial",20);
   
   cp5 = new ControlP5(this);
   
+  cp5.addTab("extra")
+    .setLabel("extra")
+    .setColorBackground(color(0, 160, 100))
+    .setColorLabel(color(255))
+    .setColorActive(color(255,128,0))
+    ;
+    
+  cp5.getTab("default")
+    .setId(1)
+    .activateEvent(true)
+    .setLabel("Home")
+    ;
+  cp5.getTab("extra")
+    .activateEvent(true)
+    .setId(2)
+    ;
+    
   cp5.addTextfield("Passcode")
      .setPosition(20,30)
      .setSize(200,40)
@@ -22,7 +39,7 @@ void setup() {
      .setColor(color(255,0,0))
      ;
                  
-  cp5.addTextfield("Timer 1")
+  cp5.addTextfield("Timer1")
      .setPosition(20,90)
      .setSize(200,40)
      .setFont(createFont("arial",20))
@@ -36,7 +53,7 @@ void setup() {
      .setAutoClear(true)
      ;
      
-  cp5.addTextfield("Timer 3")
+  cp5.addTextfield("Timer3")
      .setPosition(20,210)
      .setSize(200,40)
      .setFont(createFont("arial",20))
@@ -48,11 +65,93 @@ void setup() {
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;    
   
+  cp5.addBang("Logout")
+     .setPosition(550,40)
+     .setSize(60,20)
+     .hide()
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;  
+     
   cp5.addTextfield("mouse")
      .setPosition(20,350)
      .setAutoClear(false)  //sets auto clear to erase on enter
+     .setCaptionLabel("Modifier")
      ;
      
+  cp5.addBang("Relay1")
+     .setPosition(240,10)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 1")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+  cp5.addBang("Relay2")
+     .setPosition(240,60)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 2")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+     
+  cp5.addBang("Relay3")
+     .setPosition(240,110)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 3")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+     
+  cp5.addBang("Relay4")
+     .setPosition(240,160)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 4")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+   cp5.addBang("Relay5")
+     .setPosition(240,210)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 5")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+   cp5.addBang("Relay6")
+     .setPosition(240,260)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 6")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+   cp5.addBang("Relay7")
+     .setPosition(240,310)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 7")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+    cp5.addBang("Relay8")
+     .setPosition(240,360)
+     .setSize(80,40)
+     .hide()
+     .setCaptionLabel("Relay 8")
+     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+  cp5.getController("Timer1").moveTo("default");
+  cp5.getController("Timer2").moveTo("default");
+  cp5.getController("Timer3").moveTo("default");
+  cp5.getController("mouse").moveTo("extra");
+  cp5.getController("Passcode").moveTo("extra");
+  cp5.getController("clear").moveTo("default");
+  cp5.getController("Logout").moveTo("extra");
+  cp5.getController("Relay1").moveTo("extra");
+  cp5.getController("Relay2").moveTo("extra");
+  cp5.getController("Relay3").moveTo("extra");
+  cp5.getController("Relay4").moveTo("extra");
+  cp5.getController("Relay5").moveTo("extra");
+  cp5.getController("Relay6").moveTo("extra");
+  cp5.getController("Relay7").moveTo("extra");
+  cp5.getController("Relay8").moveTo("extra");
+  
   textFont(font);
 }
 
@@ -63,8 +162,9 @@ void draw() {
   // Displays text to the right
   text(textValue, 360,180);
   if (active == true){
-  text(cp5.get(Textfield.class,"mouse").getText(),360,count);
-  count = count + 10;
+  //text(cp5.get(Textfield.class,"mouse").getText(),360,count);
+  //count = count + 10;
+  text("Welcome Back", 550,20); 
   if (count > 400) {
     count = 0;
   }
@@ -87,10 +187,38 @@ public void Passcode(String theValue) {
  int pass = Integer.valueOf(theValue);
  if (pass == 7777){
    active=true;
+   int i = 1;
+   String r = "Relay";
+   while (i < 9){
+    r = "Relay"+i;
+    cp5.get(controlP5.Controller.class,r).show(); 
+    i++;
+   }
+   cp5.get(controlP5.Controller.class,"Logout").show();
  }
  else{
    active=false;
+   cp5.get(controlP5.Controller.class,"Logout").hide();
+   int i = 1;
+   String r = "Relay";
+   while (i < 9){
+    r = "Relay"+i;
+    cp5.get(controlP5.Controller.class,r).hide(); 
+    i++;
+   }
  }
+}
+
+public void Logout(){
+ active=false;
+ cp5.get(controlP5.Controller.class,"Logout").hide();
+   int i = 1;
+   String r = "Relay";
+   while (i < 9){
+    r = "Relay"+i;
+    cp5.get(controlP5.Controller.class,r).hide(); 
+    i++;
+   }
 }
 
 void controlEvent(ControlEvent test) {
@@ -118,6 +246,11 @@ void controlEvent(ControlEvent test) {
   }
 }
 
+void keyPressed(){
+ if(keyCode==TAB){
+   cp5.getTab("extra").bringToFront();
+ }
+}
 
 public void input(String theText) {
   // automatically receives results from controller input
