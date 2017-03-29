@@ -81,8 +81,8 @@ int CrimpLoop = 0;
 int CrimpNext = 0;
 int RailCheck = LOW;
 int RailCheckNext = 0;
-int rswitch = 0;
-int SOverride = 1;
+byte rswitch = 0;
+byte SOverride = 1;
 char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 int Error = 0;
@@ -165,6 +165,8 @@ void setup() {
   Serial.print("Override Passcode: ");
   Serial.println(passcode);
   Serial.println();
+  lcd.setCursor(0,1);
+  lcd.print("                    ");
 }
 
 void loop() {
@@ -180,13 +182,13 @@ void loop() {
         Serial.print(indx);
         Serial.println(" reset.");
       }
+      lcd.setCursor(0,1);
+      lcd.print("                    ");
       digitalWrite(PanelLed1, LOW);
       digitalWrite(PanelLed2, LOW);
       digitalWrite(PanelLed3, LOW);
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
-      lcd.setCursor(0,2);
-      lcd.print("                  ")
       SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -259,14 +261,12 @@ void loop() {
         if (FeedNext == 0) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
-          FeedCheck = digitalRead(HangerRackFull);
-          if ((FeedCheck == LOW) && (SecStart != 1)) {
-            Error = 0;
-            digitalWrite(ErrorLed, LOW);
-          }
+          lcd.setCursor(0,2);
+          lcd.print("Feed Reset:");
           if (LogicCount == 0) {
             precountTime = currentTime;
           }
+          FeedCheck = digitalRead(HangerRackFull);
           if ((FeedCheck == HIGH) && (SecStart != 1)) {
             Serial.println("ERROR: Hanger Rack NOT full.");
             lcd.setCursor(0, 3);
@@ -274,16 +274,22 @@ void loop() {
             preLCDClear = currentTime;
             Error = 1;
             SecStart = 1;
+            lcd.setCursor(11,2);
+            lcd.print("ON ");
           }
           else {
             LogicCount++;
             SecStart = 0;
+            lcd.setCursor(11,2);
+            lcd.print("OFF");
             Error = 0;
             lcd.setCursor(0, 1);
-            lcd.print("SYSTEM:             ");
-            lcd.setCursor(8,1);
+            lcd.print("SC: ");
+            lcd.setCursor(4,1);
             lcd.print(LogicCount);
+            lcd.print("  ");
             digitalWrite(PanelLed1, HIGH);
+            digitalWrite(ErrorLed, LOW);
             FeedNext = 1;
             previousTimer1 = currentTime;
           }
@@ -510,6 +516,7 @@ void loop() {
 
 
 void inactive(int x) {
+  SOverride = 1;
   digitalWrite(ErrorLed, HIGH);
   digitalWrite(FeedTable, LOW);
   digitalWrite(ToolHead, LOW);
@@ -816,8 +823,9 @@ void changetime(int x) {
     }
   } //End of If(Key)
 }
-
 //End of ChangeTime Void
+
+
 void lcdClear() {
   unsigned long currentTime = millis();
   if (currentTime - preLCDClear >= LCDClearTime)
@@ -841,34 +849,13 @@ void setLEDS(byte LEDSnumber)
 }
 
 
-void setLED(byte LEDnumber)
-{
-  if (LEDnumber == PanelLed4 || LEDnumber == PanelLed5) {
-    digitalWrite(PanelLed4, LOW);
-    digitalWrite(PanelLed5, LOW);
-
-    digitalWrite(LEDnumber, HIGH);
-  }
-  if (LEDnumber == PanelLed1) {
-    digitalWrite(PanelLed1, LOW);
-
-    digitalWrite(LEDnumber, HIGH);
-  }
-  if (LEDnumber == PanelLed3 || LEDnumber == PanelLed2) {
-    digitalWrite(PanelLed3, LOW);
-    digitalWrite(PanelLed2, LOW);
-    digitalWrite(LEDnumber, HIGH);
-  }
-}
-
-
 void TimeKeeper() {
   unsigned long tempvarj = ((millis() - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
   Serial.println(tempvarj);
-  lcd.setCursor(0, 2);
-  lcd.print("CTN Time:           ");
-  lcd.setCursor(15, 2);
+  lcd.setCursor(11,1);
+  lcd.print("CTN:");
+  lcd.setCursor(15, 1);
   lcd.print(tempvarj);
   LogicCount = 0;
 }
