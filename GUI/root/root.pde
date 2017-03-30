@@ -6,6 +6,7 @@ ControlP5 cp5;
 String textValue = "";
 int cage = 1;
 boolean active = false;
+String acclvl = "0";
 float count = 20;
 
 void setup() {
@@ -15,7 +16,7 @@ void setup() {
   cp5 = new ControlP5(this);
   
   cp5.addTab("extra")
-    .setLabel("extra")
+    .setLabel("System Override")
     .setColorBackground(color(0, 160, 100))
     .setColorLabel(color(255))
     .setColorActive(color(255,128,0))
@@ -32,6 +33,7 @@ void setup() {
     ;
     
   cp5.addTextfield("Passcode")
+      .setLabel("Access Code")
      .setPosition(20,30)
      .setSize(200,40)
      .setFont(font)
@@ -85,19 +87,19 @@ void setup() {
      ;  
      
   cp5.addTextfield("mouse")
-     .setPosition(20,350)
+     .setPosition(20,410)
      .setAutoClear(false)  //sets auto clear to erase on enter
      .setCaptionLabel("Modifier")
      ;
      
-  cp5.addBang("Relay1")
+  cp5.addToggle("Relay1")
      .setPosition(240,10)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 1")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-  cp5.addBang("Relay2")
+  cp5.addToggle("Relay2")
      .setPosition(240,60)
      .setSize(80,40)
      .hide()
@@ -105,7 +107,7 @@ void setup() {
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
      
-  cp5.addBang("Relay3")
+  cp5.addToggle("Relay3")
      .setPosition(240,110)
      .setSize(80,40)
      .hide()
@@ -113,35 +115,35 @@ void setup() {
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
      
-  cp5.addBang("Relay4")
+  cp5.addToggle("Relay4")
      .setPosition(240,160)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 4")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-   cp5.addBang("Relay5")
+   cp5.addToggle("Relay5")
      .setPosition(240,210)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 5")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-   cp5.addBang("Relay6")
+   cp5.addToggle("Relay6")
      .setPosition(240,260)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 6")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-   cp5.addBang("Relay7")
+   cp5.addToggle("Relay7")
      .setPosition(240,310)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 7")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-    cp5.addBang("Relay8")
+    cp5.addToggle("Relay8")
      .setPosition(240,360)
      .setSize(80,40)
      .hide()
@@ -153,7 +155,7 @@ void setup() {
   cp5.getController("Timer3").moveTo("default");
   cp5.getController("Timer4").moveTo("default");
   cp5.getController("Timer5").moveTo("default");
-  cp5.getController("mouse").moveTo("extra");
+  cp5.getController("mouse").moveTo("default");
   cp5.getController("Passcode").moveTo("global");
   cp5.getController("clear").moveTo("default");
   cp5.getController("Logout").moveTo("global");
@@ -178,7 +180,7 @@ void draw() {
   if (active == true){
   //text(cp5.get(Textfield.class,"mouse").getText(),360,count);
   //count = count + 10;
-  text("Welcome Back", 660,20); 
+  text("Access Level: "+acclvl, 600,20); 
   if (count > 400) {
     count = 0;
   }
@@ -187,7 +189,7 @@ void draw() {
 }
 
 public void clear() {
-  cp5.get(Textfield.class,"Timer 1").clear();
+  cp5.get(Textfield.class,"Timer1").clear();
   count = (count+10);
   //Clear button
 }
@@ -211,7 +213,22 @@ public void Passcode(String theValue) {
     cp5.get(controlP5.Controller.class,r).show(); 
     i++;
    }
+   acclvl = "1";
    cp5.get(controlP5.Controller.class,"Logout").show();
+   cp5.get(controlP5.Controller.class,"Passcode").hide();
+ }
+ if (pass == 7777) {
+   active=true;
+   int i = 1;
+   String r = "Relay";
+   while (i < 9){
+    r = "Relay"+i;
+    cp5.get(controlP5.Controller.class,r).show(); 
+    i++;
+   }
+   acclvl = "ADMIN";
+   cp5.get(controlP5.Controller.class,"Logout").show();
+   cp5.get(controlP5.Controller.class,"Passcode").hide();
  }
  else{
    active=false;
@@ -220,15 +237,17 @@ public void Passcode(String theValue) {
    String r = "Relay";
    while (i < 9){
     r = "Relay"+i;
-    cp5.get(controlP5.Controller.class,r).hide(); 
+    cp5.get(controlP5.Controller.class,r).hide();
     i++;
    }
+   acclvl = "0";
  }
 }
 
 public void Logout(){
  active=false;
  cp5.get(controlP5.Controller.class,"Logout").hide();
+ cp5.get(controlP5.Controller.class,"Passcode").show();
    int i = 1;
    String r = "Relay";
    while (i < 9){
