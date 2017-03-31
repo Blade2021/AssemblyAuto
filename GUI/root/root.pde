@@ -4,10 +4,14 @@ import controlP5.*;
 ControlP5 cp5;
 
 String textValue = "";
+Textlabel consoletext;
+String temp = "";
 int cage = 1;
 boolean active = false;
 String acclvl = "0";
 float count = 20;
+
+Textarea systemTextArea;
 
 void setup() {
   size(800,450);
@@ -45,7 +49,7 @@ void setup() {
      .setPosition(20,90)
      .setSize(200,40)
      .setFont(createFont("arial",20))
-     .setAutoClear(false)
+     .setAutoClear(true)
      ;
      
   cp5.addTextfield("Timer2")
@@ -74,13 +78,21 @@ void setup() {
      .setAutoClear(true)
      ;
   cp5.addBang("clear")
-     .setPosition(240,90)
-     .setSize(80,40)
+     .setPosition(325,30)
+     .setSize(60,20)
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;    
-  
+  systemTextArea = cp5.addTextarea("txt")
+    .setPosition(400,30)
+    .setSize(370,380)
+    .setFont(createFont("arial",12))
+    .setLineHeight(14)
+    .setColor(color(128))
+    .setColorBackground(color(255,100))
+    .setColorForeground(color(255,100));
+    ;
   cp5.addBang("Logout")
-     .setPosition(720,40)
+     .setPosition(720,25)
      .setSize(60,20)
      .hide()
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
@@ -91,16 +103,21 @@ void setup() {
      .setAutoClear(false)  //sets auto clear to erase on enter
      .setCaptionLabel("Modifier")
      ;
-     
+  consoletext = cp5.addTextlabel("ctext")
+    .setText("Console")
+    .setPosition(380,5)
+    .setColorValue(255)
+    .setFont(createFont("Georgia",20));
+    
   cp5.addToggle("Relay1")
-     .setPosition(240,10)
+     .setPosition(20,40)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 1")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
   cp5.addToggle("Relay2")
-     .setPosition(240,60)
+     .setPosition(20,90)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 2")
@@ -108,43 +125,43 @@ void setup() {
      ;
      
   cp5.addToggle("Relay3")
-     .setPosition(240,110)
+     .setPosition(20,140)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 3")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
-     
+    
   cp5.addToggle("Relay4")
-     .setPosition(240,160)
+     .setPosition(20,190)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 4")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
    cp5.addToggle("Relay5")
-     .setPosition(240,210)
+     .setPosition(20,240)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 5")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
    cp5.addToggle("Relay6")
-     .setPosition(240,260)
+     .setPosition(20,290)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 6")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
    cp5.addToggle("Relay7")
-     .setPosition(240,310)
+     .setPosition(20,340)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 7")
      .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
      ;
     cp5.addToggle("Relay8")
-     .setPosition(240,360)
+     .setPosition(20,390)
      .setSize(80,40)
      .hide()
      .setCaptionLabel("Relay 8")
@@ -167,7 +184,7 @@ void setup() {
   cp5.getController("Relay6").moveTo("extra");
   cp5.getController("Relay7").moveTo("extra");
   cp5.getController("Relay8").moveTo("extra");
-  
+  cp5.getController("ctext").moveTo("default");
   textFont(font);
 }
 
@@ -181,25 +198,19 @@ void draw() {
   //text(cp5.get(Textfield.class,"mouse").getText(),360,count);
   //count = count + 10;
   text("Access Level: "+acclvl, 600,20); 
-  if (count > 400) {
-    count = 0;
-  }
-  delay(100);
   }
 }
 
 public void clear() {
-  cp5.get(Textfield.class,"Timer1").clear();
-  count = (count+10);
-  //Clear button
+  systemTextArea.setText("");
 }
 
 public void mouse(String theValue) {
   int mod = Integer.valueOf(theValue);
   cage = mod;
 }
-public void welcome() {
- text("Welcome Back", 550,20);
+public void console() {
+ text("Console: ", 400,20);
 }
 
 public void Passcode(String theValue) {
@@ -217,7 +228,7 @@ public void Passcode(String theValue) {
    cp5.get(controlP5.Controller.class,"Logout").show();
    cp5.get(controlP5.Controller.class,"Passcode").hide();
  }
- if (pass == 7777) {
+ else if (pass == 7777) {
    active=true;
    int i = 1;
    String r = "Relay";
@@ -230,18 +241,15 @@ public void Passcode(String theValue) {
    cp5.get(controlP5.Controller.class,"Logout").show();
    cp5.get(controlP5.Controller.class,"Passcode").hide();
  }
- else{
-   active=false;
-   cp5.get(controlP5.Controller.class,"Logout").hide();
-   int i = 1;
-   String r = "Relay";
-   while (i < 9){
-    r = "Relay"+i;
-    cp5.get(controlP5.Controller.class,r).hide();
-    i++;
-   }
-   acclvl = "0";
+ else {
+   temp = systemTextArea.getText();
+   systemTextArea.setText(""+temp+"\n"+"ERROR: Wrong access code entered.");
+   return;
  }
+ temp = systemTextArea.getText();
+ systemTextArea.setText(""+temp+"\n"+"Access Level "
+ +acclvl
+ +" has logged in");
 }
 
 public void Logout(){
@@ -255,6 +263,8 @@ public void Logout(){
     cp5.get(controlP5.Controller.class,r).hide(); 
     i++;
    }
+ temp = systemTextArea.getText();
+ systemTextArea.setText(""+temp+"\n"+"Logged Out");
 }
 
 void controlEvent(ControlEvent test) {
@@ -279,6 +289,15 @@ void controlEvent(ControlEvent test) {
     +" ACTIVE: "
     +active
     );
+    String pen = test.getName();
+    if (pen != "Passcode") {
+    temp = systemTextArea.getText();
+    systemTextArea.setText(""
+    +temp
+    +"\n"
+    +test.getName()+" : "
+    +rat);
+    }
   }
 }
 
