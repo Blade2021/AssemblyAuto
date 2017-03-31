@@ -1,7 +1,10 @@
 import processing.serial.*;
 import controlP5.*;
+import cc.arduino.*;
 
 ControlP5 cp5;
+
+//Arduino arduino;
 
 String textValue = "";
 Textlabel consoletext;
@@ -10,6 +13,7 @@ int cage = 1;
 boolean active = false;
 String acclvl = "0";
 float count = 20;
+int x = 1;
 
 Textarea systemTextArea;
 
@@ -18,6 +22,8 @@ void setup() {
   PFont font = createFont("arial",20);
   //test
   cp5 = new ControlP5(this);
+  
+  //arduino = new Arduino(this, Arduino.list()[0], 57600);
   
   cp5.addTab("extra")
     .setLabel("System Override")
@@ -209,11 +215,8 @@ public void mouse(String theValue) {
   int mod = Integer.valueOf(theValue);
   cage = mod;
 }
-public void console() {
- text("Console: ", 400,20);
-}
 
-public void Passcode(String theValue) {
+public void Passcode(String theValue) {    
  int pass = Integer.valueOf(theValue);
  if (pass == 0000){
    active=true;
@@ -268,6 +271,8 @@ public void Logout(){
 }
 
 void controlEvent(ControlEvent test) {
+  x = test.getId();
+  println(x);
   if(test.isAssignableFrom(Textfield.class)) {
     println("controlEvent: accessing a string from controller '"
             +test.getName()+"': "
@@ -300,10 +305,16 @@ void controlEvent(ControlEvent test) {
     }
   }
 }
-
 void keyPressed(){
  if(keyCode==TAB){
-   cp5.getTab("extra").bringToFront();
+   if ((x==-1) || (x==1)){
+     cp5.getTab("extra").bringToFront();
+     x = 2;
+   }
+   else {
+     cp5.getTab("default").bringToFront();
+     x = 1;
+   }
  }
 }
 
