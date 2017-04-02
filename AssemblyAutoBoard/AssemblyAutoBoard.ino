@@ -586,13 +586,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0003]");
+      Serial.println("*** SYSTEM ERROR [EE0005]");
     }
     EEPROM.update(address, 255);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0004]");
+      Serial.println("*** SYSTEM ERROR [EE0006]");
     }
   }
   if (ytemp < 255) {
@@ -600,13 +600,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0005]");
+      Serial.println("*** SYSTEM ERROR [EE0007]");
     }
     EEPROM.update(address, 0);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0006]");
+      Serial.println("*** SYSTEM ERROR [EE0008]");
     }
   }
   ytemp = x + 1;
@@ -797,10 +797,12 @@ void changetime(int x) {
         address = address + 1;
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0003]");
         }
         EEPROM.update(address, 0);
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0004]");
         }
         Serial.print("EEPROM | ");
         Serial.print(ytemp);
