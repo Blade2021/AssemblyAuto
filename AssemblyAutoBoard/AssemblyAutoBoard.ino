@@ -38,7 +38,7 @@ const byte FeedTable = 7;
 const byte MainAir = 14;
 const byte HookShaker = 15;
 //LCD Variables
-int syspostion = 0;
+int sysPosition = 0;
 const int LCDClearTime = 7000;
 byte pos = 15;
 int j = 0;
@@ -52,7 +52,7 @@ unsigned long previousTimer2 = 0;
 unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
-unsigned long y[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
+unsigned long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 //Keypad
@@ -83,7 +83,7 @@ byte RailCheck = LOW;
 byte RailCheckNext = 0;
 byte rswitch = 0;
 byte SOverride = 1;
-char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
+char StateArray[8] = {0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 byte Error = 0;
 //LOGIC CONTROLS
@@ -141,21 +141,21 @@ void setup() {
   lcd.print("*** BOOTING ***");
   
   //Load EEPROM Memory
-  for (int k = 0; k < 6; k++) {
+  for (byte k = 0; k < 6; k++) {
     byte f = k * 2;
-    byte ytemp = EEPROM.read(f);
+    int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
     f++;
-    byte gtemp = EEPROM.read(f);
+    int gtemp = EEPROM.read(f);
     gtemp = gtemp * 10;
-    y[k] = gtemp + ytemp;
+    sysArray[k] = gtemp + ytemp;
     Serial.print("EEPROM[");
     Serial.print(k);
     Serial.print("]: ");
-    Serial.println(y[k]);
+    Serial.println(sysArray[k]);
     delay(10);
   }
-  Serial.println(F("********** System Variables ***********"));
+  Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
   Serial.print("LCD Clear Time: ");
@@ -182,6 +182,7 @@ void loop() {
         Serial.print(indx);
         Serial.println(" reset.");
       }
+      StateArray[7] = '\0';
       lcd.setCursor(0,1);
       lcd.print("                    ");
       digitalWrite(PanelLed1, LOW);
@@ -195,47 +196,47 @@ void loop() {
     BNextLogic = digitalRead(NextButton);
     if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
-      syspostion++;
-      if (syspostion >= 6) {
-        syspostion = 0;
+      sysPosition++;
+      if (sysPosition >= 6) {
+        sysPosition = 0;
         Serial.print("Time VAR: ");
-        Serial.print(syspostion + 1);
+        Serial.print(sysPosition + 1);
         Serial.print(" selected. | ");
-        Serial.println(y[syspostion]);
+        Serial.println(sysArray[sysPosition]);
       }
       else {
         Serial.print("Time VAR: ");
-        Serial.print(syspostion + 1);
+        Serial.print(sysPosition + 1);
         Serial.print(" selected. | ");
-        Serial.println(y[syspostion]);
+        Serial.println(sysArray[sysPosition]);
       }
     }
     BUpLogic = digitalRead(UpButton);
     if ((BUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
-      y[syspostion] = y[syspostion] + 100;
+      sysArray[sysPosition] = sysArray[sysPosition] + 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
-      Serial.print(syspostion + 1);
+      Serial.print(sysPosition + 1);
       Serial.print(" is now: ");
-      Serial.println(y[syspostion]);
+      Serial.println(sysArray[sysPosition]);
     }
     BDownLogic = digitalRead(DownButton);
     if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
-      y[syspostion] = y[syspostion] - 100;
+      sysArray[sysPosition] = sysArray[sysPosition] - 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
-      Serial.print(syspostion + 1);
+      Serial.print(sysPosition + 1);
       Serial.print(" is now: ");
-      Serial.println(y[syspostion]);
+      Serial.println(sysArray[sysPosition]);
     }
     SaveButtonTrigger = digitalRead(SaveButton);
     if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (SOverride == 0 || SOverride == 1) {
         Serial.print("TimeVar ");
-        Serial.print(syspostion + 1);
+        Serial.print(sysPosition + 1);
         Serial.println(" saved.");
-        savetrigger(syspostion);
+        savetrigger(sysPosition);
       }
     }
     ToggleLogic = digitalRead(ToggleButton);
@@ -296,14 +297,14 @@ void loop() {
         }
       }
       // FEED OPEN
-      if ((FeedNext == 1) && (currentTime - previousTimer1 >= y[0])) {
+      if ((FeedNext == 1) && (currentTime - previousTimer1 >= sysArray[0])) {
         previousTimer1 = currentTime;
         digitalWrite(FeedTable, HIGH);
         Serial.println("Feed Cycle | FEED OPEN");
         FeedNext = 2;
       }
       //FEED CLOSE
-      if ((FeedNext == 2) && (currentTime - previousTimer1 >= y[1])) {
+      if ((FeedNext == 2) && (currentTime - previousTimer1 >= sysArray[1])) {
         Serial.println("Feed Cycle | FEED CLOSE");
         previousTimer1 = currentTime;
         digitalWrite(FeedTable, LOW);
@@ -332,7 +333,7 @@ void loop() {
         if (RailCheck == HIGH) {
           RailCheckNext = 1;
         }
-        if ((RailCheck == LOW) && (currentTime - previousTimer2 >= y[5])) {
+        if ((RailCheck == LOW) && (currentTime - previousTimer2 >= sysArray[5])) {
           digitalWrite(HookShaker, LOW);
           digitalWrite(PanelLed5, LOW);
           previousTimer2 = currentTime;
@@ -350,13 +351,13 @@ void loop() {
         previousTimer4 = currentTime;
         CrimpNext = 1;
       }
-      if ((CrimpNext == 1) && (currentTime - previousTimer4 >= y[3])) {
+      if ((CrimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3])) {
         previousTimer4 = currentTime;
         digitalWrite(Crimp, HIGH);
         Serial.println("Crimp Cycle | Crimp");
         CrimpNext = 2;
       }
-      if ((CrimpNext == 2) && (currentTime - previousTimer4 >= y[4])) {
+      if ((CrimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4])) {
         Serial.println("Crimp Cycle | Reset");
         previousTimer4 = currentTime;
         digitalWrite(Crimp, LOW);
@@ -388,7 +389,7 @@ void loop() {
           HookNext = 1;
         }
       }
-      if ((HookNext == 1) && (currentTime - previousTimer3 >= y[2])) {
+      if ((HookNext == 1) && (currentTime - previousTimer3 >= sysArray[2])) {
         previousTimer3 = currentTime;
         Serial.println("Hook Cycle | Tool/Head OUT");
         digitalWrite(ToolHead, HIGH);
@@ -428,7 +429,7 @@ void loop() {
     if (Active == 0) {
       lcd.setCursor(0, 2);
       lcd.print("Time:");
-      inactive(syspostion);
+      inactive(sysPosition);
     } // End of Active 0 (containing switch)
   } // End of Override Statement
   if (SOverride == 2) {
@@ -460,7 +461,7 @@ void loop() {
       Serial.println("SYSTEM OVERRIDE | Deactivated ");
       preLCDClear = currentTime;
       SOverride = 0;
-      syspostion = 0;
+      sysPosition = 0;
     }
     else {
       char key;
@@ -514,7 +515,7 @@ void loop() {
 } // *****************************  End of LOOP Void ************************
 
 
-void inactive(int syspostion) {
+void inactive(int sysPosition) {
   SOverride = 0;
   digitalWrite(ErrorLed, HIGH);
   digitalWrite(FeedTable, LOW);
@@ -524,62 +525,62 @@ void inactive(int syspostion) {
   digitalWrite(Crimp, LOW);
   digitalWrite(MainAir, LOW);
   digitalWrite(HookShaker, LOW);
-  if (y[6] == passcode) {
+  if (sysArray[6] == passcode) {
     Serial.println("***** Override ACTIVATED *****");
-    y[6] = 0;
+    sysArray[6] = 0;
     SOverride = 2;
     return;
   }
-  switch (syspostion) {
+  switch (sysPosition) {
     case 0:
       setLEDS(PanelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Feed Wait Time:     ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
     case 1:
       setLEDS(PanelLed2);
       lcd.setCursor(0, 1);
       lcd.print("Feed Open Time      ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
     case 2:
       setLEDS(PanelLed3);
       lcd.setCursor(0, 1);
       lcd.print("Hook Cycle Wait     ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
     case 3:
       setLEDS(PanelLed4);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Cycle Wait    ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
     case 4:
       setLEDS(PanelLed5);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Time          ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
     case 5:
       setLEDS(PanelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Vibrator Time     ");
-      changetime(syspostion);
+      changetime(sysPosition);
       break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
 
 
-void savetrigger(int syspostion) {
-  if (y[syspostion] >= 5101){
-    y[syspostion] = 5100;
+void savetrigger(int sysPosition) {
+  if (sysArray[sysPosition] >= 5101){
+    sysArray[sysPosition] = 5100;
     lcd.setCursor(0,3);
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  int address = syspostion * 2;
-  int ytemp = ytemp = y[syspostion] / 10;
+  int address = sysPosition * 2;
+  int ytemp = ytemp = sysArray[sysPosition] / 10;
   if (ytemp > 255) {
     ytemp = ytemp - 255;
     EEPROM.update(address, ytemp);
@@ -609,7 +610,7 @@ void savetrigger(int syspostion) {
       Serial.println("*** SYSTEM ERROR [EE0008]");
     }
   }
-  ytemp = syspostion + 1;
+  ytemp = sysPosition + 1;
   lcd.setCursor(0, 3);
   lcd.print("EE.Update VAR[");
   lcd.print(ytemp);
@@ -728,10 +729,10 @@ void Override_Trigger(int RTrigger) {
 }
 
 
-void changetime(int syspostion) {
+void changetime(int sysPosition) {
   unsigned long currentTime = millis();
   lcd.setCursor(5, 2);
-  lcd.print(y[syspostion]);
+  lcd.print(sysArray[sysPosition]);
   lcd.print("       ");
   lcd.setCursor(pos, 2);
   char key;
@@ -750,7 +751,7 @@ void changetime(int syspostion) {
       Serial.print("SYSTEM | Keypad Input: ");
       Serial.println(tempa);
       if (tempa == passcode) {
-        y[6] = passcode;
+        sysArray[6] = passcode;
         pos = 15;
         lcd.setCursor(pos, 2);
         lcd.print("       ");
@@ -765,11 +766,11 @@ void changetime(int syspostion) {
         preLCDClear = currentTime;
       }
       if (tempa > 2550) {
-        y[syspostion] = tempa;
+        sysArray[sysPosition] = tempa;
         int ytemp = 0;
         int address = 0;
-        ytemp = y[syspostion] / 10;
-        address = syspostion * 2;
+        ytemp = sysArray[sysPosition] / 10;
+        address = sysPosition * 2;
         ytemp = ytemp - 255;
         EEPROM.update(address, 255);
         address = address + 1;
@@ -785,14 +786,14 @@ void changetime(int syspostion) {
         Serial.print("SYSTEM | EEPROM | ");
         Serial.print(ytemp + 255);
         Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(syspostion);
+        Serial.println(sysPosition);
       }
       if (tempa < 2550) {
-        y[syspostion] = tempa;
+        sysArray[sysPosition] = tempa;
         int ytemp = 0;
         int address = 0;
-        ytemp = y[syspostion] / 10;
-        address = syspostion * 2;
+        ytemp = sysArray[sysPosition] / 10;
+        address = sysPosition * 2;
         EEPROM.update(address, ytemp);
         address = address + 1;
         if (address == EEPROM.length()) {
@@ -807,7 +808,7 @@ void changetime(int syspostion) {
         Serial.print("EEPROM | ");
         Serial.print(ytemp);
         Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(syspostion);
+        Serial.println(sysPosition);
       }
       pos = 15;
       lcd.setCursor(pos, 2);
