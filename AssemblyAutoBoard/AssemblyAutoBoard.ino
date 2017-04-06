@@ -170,12 +170,12 @@ void setup() {
 }
 
 void loop() {
-  unsigned long currentTime = millis();
-  lcdClear();
+  unsigned long currentTime = millis(); //MAIN Timer
+  lcdClear(); //Call LCD Clear function to clear 4th line of LCD
   lcd.setCursor(10, 0);
   lcd.print(millis() / 1000);
   if (SOverride == 0 || SOverride == 1) {
-    if (SOverride == 0) {
+    if (SOverride == 0 && Active != 0) {
       for (int indx = 0; indx < 7; indx++) {
         StateArray[indx] = 0;
         Serial.print("Relay status INDEX: ");
@@ -189,6 +189,7 @@ void loop() {
       digitalWrite(PanelLed3, LOW);
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
+      LogicCount = 0; //Reset the count after leaving SOverride or inactive mode
       SOverride = 1;
     }
     BNextLogic = digitalRead(NextButton);
@@ -257,7 +258,6 @@ void loop() {
       FeedLoop = digitalRead(HookCycleStart);
       FeedCheck = digitalRead(HangerRackFull);
       if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
-        //if ((FeedLoop == LOW) && (Error == 0) || (ManualFeed == HIGH)){
         if (FeedNext == 0) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
@@ -447,7 +447,6 @@ void loop() {
         rswitch = 0;
       }
     }
-    int SaveButtonTrigger = 0;
     SaveButtonTrigger = digitalRead(SaveButton);
     if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
@@ -516,7 +515,7 @@ void loop() {
 
 
 void inactive(int x) {
-  SOverride = 1;
+  SOverride = 0;
   digitalWrite(ErrorLed, HIGH);
   digitalWrite(FeedTable, LOW);
   digitalWrite(ToolHead, LOW);
@@ -587,13 +586,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0003]");
+      Serial.println("*** SYSTEM ERROR [EE0005]");
     }
     EEPROM.update(address, 255);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0004]");
+      Serial.println("*** SYSTEM ERROR [EE0006]");
     }
   }
   if (ytemp < 255) {
@@ -601,13 +600,13 @@ void savetrigger(int x) {
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0005]");
+      Serial.println("*** SYSTEM ERROR [EE0007]");
     }
     EEPROM.update(address, 0);
     address = address + 1;
     if (address == EEPROM.length()) {
       address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0006]");
+      Serial.println("*** SYSTEM ERROR [EE0008]");
     }
   }
   ytemp = x + 1;
@@ -798,10 +797,12 @@ void changetime(int x) {
         address = address + 1;
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0003]");
         }
         EEPROM.update(address, 0);
         if (address == EEPROM.length()) {
           address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0004]");
         }
         Serial.print("EEPROM | ");
         Serial.print(ytemp);
