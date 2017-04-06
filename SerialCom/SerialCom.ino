@@ -2,6 +2,7 @@
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
 char pear[] = {0};
+long reciever = 0;
 int x;
 boolean newData = false;
 String apple = "";
@@ -56,22 +57,25 @@ void recvWithEndMarker() {
 void showNewData() {
     if (newData == true) {
         Serial.println(receivedChars);
-        x = atoi(receivedChars);
+        reciever = atoi(receivedChars);
         newData = false;
         if (apple.length() >= 5){
-          checkApple();
+          if (apple.substring(0,6) == "EEPROM") {
+            eepromApple();
+          }
+          if (apple.substring(0,3) == "pin") {
+            pinApple();
+          }
         }
         apple = "";
     }
 }
 
-void checkApple() {
+void eepromApple() {
   int tree = 0;
   char grape[numChars] = {0};
   int u = 0;
-  if (apple.substring(0,6) == "EEPROM") {
-    Serial.print("Apple before trim: ");
-    Serial.println(apple);
+    Serial.println("Processing EEPROM Update....");
     for (int y = 7; y <= apple.length(); y++){
       if(receivedChars[y] != '.'){
         int z = y - 7;
@@ -91,8 +95,9 @@ void checkApple() {
       delay(10);
     }
     x = atoi(pear);
-    Serial.print("X = ");
-    Serial.println(x);
+    if (x >= 256){
+      x = 1;
+    }
     u++;
     for(u; u <= apple.length(); u++) {
       grape[tree] = receivedChars[u];
@@ -100,9 +105,49 @@ void checkApple() {
     }
     int value = atoi(grape);
     value = atoi(grape);
-    Serial.print("Final Value = ");
-    Serial.println(value);
-  }
+    if (value >= 256){
+      value = 255;
+    }
+    Serial.print("EEPROM.update(");
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.print(value);
+    Serial.println(")");
+}
+
+void pinApple() {
+  boolean value = LOW;
+  char grape[numChars] = {0};
+  int u = 0;
+    Serial.println("Processing EEPROM Update....");
+    for (int y = 4; y <= apple.length(); y++){
+      if(receivedChars[y] != '.'){
+        int z = y - 4;
+        pear[z] = receivedChars[y];
+      }
+      else{
+        int z = y - 7;
+        pear[z] = '\0';
+        u = y;
+        break;
+      }
+      delay(10);
+    }
+    x = atoi(pear);
+    if (x >= 64){
+      x = 64;
+    }
+    u++;
+    if (receivedChars[u] == 1){
+      value = HIGH;
+    } else {
+      value = LOW;
+    }
+    Serial.print("digitalWrite(");
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.print(value);
+    Serial.println(")");
 }
 
 
