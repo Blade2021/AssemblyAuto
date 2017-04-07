@@ -1,4 +1,3 @@
-
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
 char pear[] = {0};
@@ -10,24 +9,13 @@ String apple = "";
 void setup() {
     Serial.begin(9600);
     Serial.println("<Arduino is ready>");
+    pinMode(13, OUTPUT);
+    pinMode(10, OUTPUT);
 }
 
 void loop() {
     recvWithEndMarker();
     showNewData();
-    /*
-    switch(x){
-    case 1:
-      Serial.println("Test success 1");
-      x = 0;
-      break;
-    case 2:
-      Serial.println("Test success 2");
-      x = 0;
-      break;
-    default:
-      break;
-    }*/
 }
 
 void recvWithEndMarker() {
@@ -94,9 +82,10 @@ void eepromApple() {
       }
       delay(10);
     }
-    x = atoi(pear);
-    if (x >= 256){
-      x = 1;
+    reciever = atoi(pear);
+    
+    if (reciever >= 256){
+      reciever = 1;
     }
     u++;
     for(u; u <= apple.length(); u++) {
@@ -104,12 +93,11 @@ void eepromApple() {
       tree++;
     }
     int value = atoi(grape);
-    value = atoi(grape);
     if (value >= 256){
       value = 255;
     }
     Serial.print("EEPROM.update(");
-    Serial.print(x);
+    Serial.print(reciever);
     Serial.print(", ");
     Serial.print(value);
     Serial.println(")");
@@ -117,37 +105,39 @@ void eepromApple() {
 
 void pinApple() {
   boolean value = LOW;
-  char grape[numChars] = {0};
   int u = 0;
-    Serial.println("Processing EEPROM Update....");
+    Serial.println("Processing PIN Update....");
     for (int y = 4; y <= apple.length(); y++){
       if(receivedChars[y] != '.'){
         int z = y - 4;
         pear[z] = receivedChars[y];
+        delay(1);
       }
       else{
-        int z = y - 7;
+        int z = y - 4;
         pear[z] = '\0';
+        delay(10);
         u = y;
         break;
       }
       delay(10);
     }
-    x = atoi(pear);
-    if (x >= 64){
-      x = 64;
+    reciever = atoi(pear);
+    if (reciever >= 64){
+      reciever = 64;
     }
-    u++;
-    if (receivedChars[u] == 1){
+    u++; //Now equals 1 + last postion
+    if (receivedChars[u] == '1'){
       value = HIGH;
     } else {
       value = LOW;
     }
     Serial.print("digitalWrite(");
-    Serial.print(x);
+    Serial.print(reciever);
     Serial.print(", ");
     Serial.print(value);
     Serial.println(")");
+    digitalWrite(reciever,value);
 }
 
 
