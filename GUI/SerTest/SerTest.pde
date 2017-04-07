@@ -7,34 +7,99 @@ String outByte;
 ControlP5 cp5;
 String temp;
 String endchar = "\n";
-
+Textarea consoletext;
+Println console;
 //Variables
 boolean firstContact = false;
 
 
 void setup() 
 {  
-  size(600,400); //make our canvas 200 x 200 pixels big
+  size(800,450);
   cp5 = new ControlP5(this);
-  
-  cp5.addTextfield("text1")
-    .setSize(100,30)
-    .setCaptionLabel("Text test")
-    .setPosition(100,10)
+  cp5.enableShortcuts();
+  cp5.addTextfield("console")
+    .setSize(360,35)
+    .setCaptionLabel("Console")
+    .setPosition(20,380)
+    .setFont(createFont("arial",20))
     .setAutoClear(true)
     ;
-  
+    
+  cp5.addTextfield("Timer1")
+    .setId(1)
+    .setPosition(20,20)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 1")
+    ;
+  cp5.addTextfield("Timer2")
+    .setId(2)
+    .setPosition(20,80)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 2")
+    ;
+  cp5.addTextfield("Timer3")
+    .setId(3)
+    .setPosition(20,140)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 3")
+    ;
+  cp5.addTextfield("Timer4")
+    .setId(4)
+    .setPosition(20,200)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 4")
+    ;
+  cp5.addTextfield("Timer5")
+    .setId(5)
+    .setPosition(20,260)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 5")
+    ;
+  cp5.addTextfield("Timer6")
+    .setId(6)
+    .setPosition(20,320)
+    .setSize(200,35)
+    .setFont(createFont("arial",20))
+    .setAutoClear(true)
+    .setCaptionLabel("Timer 6")
+    ;
   cp5.addButton("button1")
     .setSize(60,20)
     .setCaptionLabel("LED On")
-    .setPosition(20,40)
+    .setPosition(235,20)
     ;
   cp5.addButton("button2")
     .setSize(60,20)
     .setCaptionLabel("LED Off")
-    .setPosition(20,100)
+    .setPosition(235,50)
     ;
+consoletext = cp5.addTextarea("txt")
+                  .setPosition(390,20)
+                  .setSize(400, 400)
+                  .setFont(createFont("", 11))
+                  .setLineHeight(14)
+                  .setColor(color(200))
+                  .setColorBackground(color(100, 100))
+                  .setColorForeground(color(255, 100));
+  ;
+  cp5.addTextlabel("ctext")
+    .setText("Console")
+    .setPosition(386,3)
+    .setColorValue(255)
+    .setFont(createFont("Arial",14));
     
+  console = cp5.addConsole(consoletext);//
   //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, "COM3", 9600);
   myPort.bufferUntil('\n');
@@ -46,6 +111,7 @@ void draw() {
 }
 void controlEvent(ControlEvent test) {
   if(test.isAssignableFrom(Textfield.class)){
+    if("console".equals(test.getName())){
     temp = test.getStringValue();
     if("Update".equals(temp)){
       println("Control success");
@@ -57,19 +123,49 @@ void controlEvent(ControlEvent test) {
       myPort.write("1");
       println("SYSTEM TX: LED OFF");
     }else {
-      myPort.write(temp + '\n');
-      println("SYSTEM TX: " +temp);
+      myPort.write(temp.toUpperCase() + '\n');
+      println("SYSTEM TX: " +temp.toUpperCase());
     }
-    //myPort.write("\n");
+    }
+    boolean StrTest = test.getName().startsWith("Timer");
+    
+    if(StrTest == true){
+      println("Sending EEPROM Update to controller");
+      println("Updating Timer: " +test.getId() +" to Value: " +test.getStringValue());
+      Timefunc(test.getId(), test.getStringValue());
+    }
   }
 }
 public void button1(){
-  println("SYSTEM TX: 2");
-  myPort.write('2' +endchar);
+  println("SYSTEM TX: pin.10.1");
+  myPort.write("PIN.10.1" +endchar);
 }
 public void button2(){
-  println("SYSTEM TX: 1");
-  myPort.write('1' +endchar);
+  println("SYSTEM TX: pin.10.0");
+  myPort.write("PIN.10.0" +endchar);
+}
+
+public void Timefunc(int Id, String value){
+  byte overboard = 0;
+  int control = Integer.parseInt(value);
+  if(control > 5100){
+    control=5100; 
+  }
+  control = control/10;
+  if(control >= 256){
+    overboard = 1;
+  }
+  if(overboard == 0){
+    myPort.write("EEPROM." +Id +'.' +control +endchar);
+    Id++;
+    myPort.write("EEPROM." +Id +'.' +"0" +endchar);
+  }
+  if(overboard == 1){
+    control = control - 255;
+    myPort.write("EEPROM." +Id +'.' +"255" +endchar);
+    Id++;
+    myPort.write("EEPROM." +Id +'.' +control +endchar);
+  }
 }
 
 void serialEvent(Serial myPort) {
@@ -79,7 +175,7 @@ void serialEvent(Serial myPort) {
     println("SYSTEM RX: " +inByte);
     
     if (firstContact == false) {
-      if (inByte.equals("<Arduino is ready>")) {
+      if (inByte.equals("<Controller is ready>")) {
         myPort.clear();
         firstContact = true;
         //myPort.write("A");

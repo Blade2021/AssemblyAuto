@@ -808,7 +808,7 @@ void changetime(int sysPosition) {
         lcd.print("ERROR: MAX VALUE HIT");
         preLCDClear = currentTime;
       }
-      if (tempa > 2550) {
+      if (tempa >= 2550) {
         sysArray[sysPosition] = tempa;
         int ytemp = 0;
         unsigned long address = 0;

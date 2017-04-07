@@ -2,13 +2,13 @@ const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
 char pear[] = {0};
 long reciever = 0;
-int x;
+unsigned long land[] = {1000, 200, 10, 14};
 boolean newData = false;
 String apple = "";
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("<Arduino is ready>");
+    Serial.println("<Controller is ready>");
     pinMode(13, OUTPUT);
     pinMode(10, OUTPUT);
 }
@@ -49,17 +49,23 @@ void showNewData() {
         newData = false;
         if (apple.length() >= 5){
           if (apple.substring(0,6) == "EEPROM") {
-            eepromApple();
+            eepromUpdate();
           }
-          if (apple.substring(0,3) == "pin") {
-            pinApple();
+          if (apple.substring(0,3) == "PIN") {
+            pinUpdate();
+          }
+          if (apple.substring(0,4) == "VARU") {
+            variableUpdate();
+          }
+          if (apple.substring(0,4) == "CALL") {
+            reCall();
           }
         }
         apple = "";
     }
 }
 
-void eepromApple() {
+void eepromUpdate() {
   int tree = 0;
   char grape[numChars] = {0};
   int u = 0;
@@ -77,7 +83,7 @@ void eepromApple() {
       else{
         int z = y - 7;
         pear[z] = '\0';
-        u = y;
+        u = y + 1;
         break;
       }
       delay(10);
@@ -87,7 +93,6 @@ void eepromApple() {
     if (reciever >= 256){
       reciever = 1;
     }
-    u++;
     for(u; u <= apple.length(); u++) {
       grape[tree] = receivedChars[u];
       tree++;
@@ -103,7 +108,7 @@ void eepromApple() {
     Serial.println(")");
 }
 
-void pinApple() {
+void pinUpdate() {
   boolean value = LOW;
   int u = 0;
     Serial.println("Processing PIN Update....");
@@ -127,17 +132,68 @@ void pinApple() {
       reciever = 64;
     }
     u++; //Now equals 1 + last postion
-    if (receivedChars[u] == '1'){
-      value = HIGH;
-    } else {
+    if (receivedChars[u] == '0'){
       value = LOW;
+    } else {
+      value = HIGH;
     }
-    Serial.print("digitalWrite(");
+    Serial.print("Updated PIN [");
     Serial.print(reciever);
-    Serial.print(", ");
-    Serial.print(value);
-    Serial.println(")");
+    Serial.print("] Value: ");
+    Serial.println(value);
     digitalWrite(reciever,value);
 }
 
+void reCall(){
+  int z;
+  int u;
+  for (int y = 5; y <= apple.length(); y++){
+    if (receivedChars[y] != '.'){
+      z = y - 5;
+      pear[z] = receivedChars[y];
+    } else {
+      z = y - 5;
+      pear[z] = '\0';
+      u = y + 1;
+    }
+  }
+  reciever = atoi(pear);
+  Serial.print("ARRAY: LoC: ");
+  Serial.print(reciever);
+  Serial.print(" Value: ");
+  Serial.println(land[reciever]);
+}
+
+void variableUpdate(){
+  int u = 0;
+  int z = 0;
+  char grape[numChars];
+  for (int y = 5; y <= apple.length(); y++){
+    if (receivedChars[y] != '.'){
+      z = y - 5;
+      pear[z] = receivedChars[y];
+    } else {
+      z = y - 5;
+      pear[z] = '\0';
+      u = y + 1;
+    }
+  }
+  reciever = atoi(pear);
+  for (int y = u; y <= apple.length(); y++){
+    if (receivedChars[y] != '.'){
+      z = y - u;
+      grape[z] = receivedChars[y];
+    } else {
+      z = y - u;
+      grape[z] = '\0';
+      u = y + 1;
+    }
+  }
+  int value2 = atoi(grape);
+  Serial.print("Value 1: ");
+  Serial.println(reciever);
+  Serial.print("Value 2: ");
+  Serial.println(value2);
+  land[reciever] = value2;
+}
 
