@@ -1,5 +1,5 @@
 /*  VERSION 1.2.8
-    Last succcessful run: 1.2.7
+    Last succcessful run: 1.2.8
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
@@ -615,7 +615,10 @@ void inactive(int sysPosition) {
   } //END OF MAIN SWITCH
 } // End of Inactive void
 
-
+//Save trigger function.
+/* This function is for saving values from manual button changes.
+ * For Keypad function see: changetime
+ */
 void savetrigger(int sysPosition) {
   if (sysArray[sysPosition] >= 5101){
     sysArray[sysPosition] = 5100;
@@ -870,7 +873,7 @@ void changetime(int sysPosition) {
 }
 //End of ChangeTime function
 
-//Clear last line of LCD
+//Clear last line of LCD every x(seconds)
 void lcdClear() {
   unsigned long currentTime = millis();
   if (currentTime - preLCDClear >= LCDClearTime)
@@ -881,7 +884,7 @@ void lcdClear() {
   }
 }
 
-
+//Set one LED to HIGH.
 void setLEDS(byte LEDSnumber)
 {
   digitalWrite(PanelLed1, LOW);
