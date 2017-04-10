@@ -84,10 +84,20 @@ void setup()
     .setCaptionLabel("LED Off")
     .setPosition(235,50)
     ;
+  cp5.addButton("button3")
+    .setSize(60,20)
+    .setCaptionLabel("Relays On")
+    .setPosition(235,80)
+    ;
+  cp5.addButton("button4")
+    .setSize(60,20)
+    .setCaptionLabel("Relays Off")
+    .setPosition(235,110)
+    ;
 consoletext = cp5.addTextarea("txt")
                   .setPosition(390,20)
-                  .setSize(400, 400)
-                  .setFont(createFont("", 11))
+                  .setSize(400, 398)
+                  .setFont(createFont("", 12))
                   .setLineHeight(14)
                   .setColor(color(200))
                   .setColorBackground(color(100, 100))
@@ -132,7 +142,7 @@ void controlEvent(ControlEvent test) {
     if(StrTest == true){
       println("Sending EEPROM Update to controller");
       println("Updating Timer: " +test.getId() +" to Value: " +test.getStringValue());
-      Timefunc(test.getId(), test.getStringValue());
+      Timefunc(test.getId()-1, test.getStringValue());
     }
   }
 }
@@ -143,6 +153,28 @@ public void button1(){
 public void button2(){
   println("SYSTEM TX: pin.10.0");
   myPort.write("PIN.10.0" +endchar);
+}
+public void button3(){
+  println("SYSTEM TX: Relays On");
+  myPort.write("PIN.22.0" +endchar);
+  myPort.write("PIN.24.0" +endchar);
+  myPort.write("PIN.26.0" +endchar);
+  myPort.write("PIN.28.0" +endchar);
+  myPort.write("PIN.30.0" +endchar);
+  myPort.write("PIN.32.0" +endchar);
+  myPort.write("PIN.34.0" +endchar);
+  myPort.write("PIN.36.0" +endchar);
+}
+public void button4(){
+  println("SYSTEM TX: Relays Off");
+  myPort.write("PIN.22.1" +endchar);
+  myPort.write("PIN.24.1" +endchar);
+  myPort.write("PIN.26.1" +endchar);
+  myPort.write("PIN.28.1" +endchar);
+  myPort.write("PIN.30.1" +endchar);
+  myPort.write("PIN.32.1" +endchar);
+  myPort.write("PIN.34.1" +endchar);
+  myPort.write("PIN.36.1" +endchar);
 }
 
 public void Timefunc(int Id, String value){

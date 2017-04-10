@@ -1,8 +1,22 @@
+#include <EEPROM.h>
+
+const byte Relay1 = 22;
+const byte Relay2 = 24;
+const byte Relay3 = 26;
+const byte Relay4 = 28;
+const byte Relay5 = 30;
+const byte Relay6 = 32;
+const byte Relay7 = 34;
+const byte Relay8 = 36;
+
+
+
+const byte refractor = 10;
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
 char pear[] = {0};
 long reciever = 0;
-unsigned long land[] = {1000, 200, 10, 14};
+unsigned long land[refractor];
 boolean newData = false;
 String apple = "";
 
@@ -11,6 +25,16 @@ void setup() {
     Serial.println("<Controller is ready>");
     pinMode(13, OUTPUT);
     pinMode(10, OUTPUT);
+    pinMode(Relay1, OUTPUT);
+    pinMode(Relay2, OUTPUT);
+    pinMode(Relay3, OUTPUT);
+    pinMode(Relay4, OUTPUT);
+    pinMode(Relay5, OUTPUT);
+    pinMode(Relay6, OUTPUT);
+    pinMode(Relay7, OUTPUT);
+    pinMode(Relay8, OUTPUT);
+    
+    reloadArray();
 }
 
 void loop() {
@@ -89,9 +113,9 @@ void eepromUpdate() {
       delay(10);
     }
     reciever = atoi(pear);
-    
-    if (reciever >= 256){
-      reciever = 1;
+    if (reciever >= EEPROM.length()){
+      reciever = 0;
+      Serial.println("EEPROM LIMIT HIT!");
     }
     for(u; u <= apple.length(); u++) {
       grape[tree] = receivedChars[u];
@@ -106,6 +130,8 @@ void eepromUpdate() {
     Serial.print(", ");
     Serial.print(value);
     Serial.println(")");
+    EEPROM.update(reciever,value);
+    reloadArray();
 }
 
 void pinUpdate() {
@@ -145,30 +171,50 @@ void pinUpdate() {
 }
 
 void reCall(){
-  int z;
-  int u;
-  for (int y = 5; y <= apple.length(); y++){
-    if (receivedChars[y] != '.'){
-      z = y - 5;
-      pear[z] = receivedChars[y];
-    } else {
-      z = y - 5;
-      pear[z] = '\0';
-      u = y + 1;
+  byte z;
+  byte u;
+  byte all = 0;
+  byte pos = apple.lastIndexOf('A');
+  if (pos == 5){
+    all = 1;
+  } else {
+    for (int y = 5; y <= apple.length(); y++){
+      if (receivedChars[y] != '.'){
+        z = y - 5;
+        if (receivedChars[z]=='A'){
+        } else {
+          pear[z] = receivedChars[y];
+        }
+      } else {
+        z = y - 5;
+        pear[z] = '\0';
+        u = y + 1;
+      }
+      delay(10);
     }
   }
-  reciever = atoi(pear);
-  Serial.print("ARRAY: LoC: ");
-  Serial.print(reciever);
-  Serial.print(" Value: ");
-  Serial.println(land[reciever]);
+  if (all == 0){
+    reciever = atoi(pear);
+    Serial.print("ARRAY: LoC: ");
+    Serial.print(reciever);
+    Serial.print(" Value: ");
+    Serial.println(land[reciever]);
+  } else {
+    for (byte k=0;k<refractor;k++){
+      Serial.print("ARRAY: LoC: ");
+      Serial.print(k);
+      Serial.print(" Value: ");
+      Serial.println(land[k]);
+      delay(50);
+    }
+  }
 }
 
 void variableUpdate(){
-  int u = 0;
-  int z = 0;
+  byte u = 0;
+  byte z = 0;
   char grape[numChars];
-  for (int y = 5; y <= apple.length(); y++){
+  for (byte y = 5; y <= apple.length(); y++){
     if (receivedChars[y] != '.'){
       z = y - 5;
       pear[z] = receivedChars[y];
@@ -179,7 +225,7 @@ void variableUpdate(){
     }
   }
   reciever = atoi(pear);
-  for (int y = u; y <= apple.length(); y++){
+  for (byte y = u; y <= apple.length(); y++){
     if (receivedChars[y] != '.'){
       z = y - u;
       grape[z] = receivedChars[y];
@@ -190,10 +236,17 @@ void variableUpdate(){
     }
   }
   int value2 = atoi(grape);
-  Serial.print("Value 1: ");
-  Serial.println(reciever);
-  Serial.print("Value 2: ");
+  Serial.print("Array Index: ");
+  Serial.print(reciever);
+  Serial.print("Value: ");
   Serial.println(value2);
   land[reciever] = value2;
+}
+
+void reloadArray(){
+  for(int k = 0; k < refractor; k++){
+    land[k] = EEPROM.read(k);
+    delay(10);
+    }
 }
 

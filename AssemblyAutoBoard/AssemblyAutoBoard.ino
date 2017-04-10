@@ -1,5 +1,6 @@
-/*  VERSION 1.2.8
+/*  VERSION 1.2.9
     Last succcessful run: 1.2.8
+    Last Upload SHA Token: 8de98c
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
@@ -38,7 +39,7 @@ const byte FeedTable = 7;
 const byte MainAir = 14;
 const byte HookShaker = 15;
 //LCD Variables
-int sysPosition = 0;
+byte sysPosition = 0;
 const int LCDClearTime = 7000;
 byte pos = 15;
 int j = 0;
@@ -87,7 +88,7 @@ char StateArray[8] = {0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 byte Error = 0;
 //LOGIC CONTROLS
-int LogicCount = 0; //Counter of material flow
+byte LogicCount = 0; //Counter of material flow
 byte BNextLogic = 0; //Button Next Logic
 byte BUpLogic = 0;
 byte BDownLogic = 0;
@@ -133,7 +134,7 @@ void setup() {
   
   Serial.begin(9600);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.8");
+  Serial.println("Program Version 1.2.9");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
