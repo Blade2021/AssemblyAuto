@@ -8,7 +8,7 @@ const byte Relay5 = 30;
 const byte Relay6 = 32;
 const byte Relay7 = 34;
 const byte Relay8 = 36;
-
+boolean checkvar = true;
 
 
 const byte refractor = 10;
@@ -19,6 +19,7 @@ long reciever = 0;
 unsigned long land[refractor];
 boolean newData = false;
 String apple = "";
+
 
 void setup() {
     Serial.begin(9600);
@@ -40,6 +41,10 @@ void setup() {
 void loop() {
     recvWithEndMarker();
     showNewData();
+    if((land[1] == 230) && (checkvar == true)){
+      Serial.println("Relay1");
+      checkvar = false;
+    }
 }
 
 void recvWithEndMarker() {
@@ -137,7 +142,7 @@ void eepromUpdate() {
 void pinUpdate() {
   boolean value = LOW;
   int u = 0;
-    Serial.println("Processing PIN Update....");
+    //Serial.println("Processing PIN Update....");
     for (int y = 4; y <= apple.length(); y++){
       if(receivedChars[y] != '.'){
         int z = y - 4;

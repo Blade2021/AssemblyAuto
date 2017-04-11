@@ -1,6 +1,7 @@
 /*  VERSION 1.2.9
     Last succcessful run: 1.2.8
     Last Upload SHA Token: 8de98c
+    This line is a test line.
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
@@ -38,12 +39,14 @@ const byte Crimp = 19;
 const byte FeedTable = 7;
 const byte MainAir = 14;
 const byte HookShaker = 15;
+
 //LCD Variables
 byte sysPosition = 0;
 const int LCDClearTime = 7000;
 byte pos = 15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
+
 //Time Controls
 const int buttonWait = 300;
 unsigned long preLCDClear = 0;
@@ -54,8 +57,10 @@ unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
 unsigned long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
+
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
 //Keypad
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -87,6 +92,7 @@ byte SOverride = 1;
 char StateArray[8] = {0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 byte Error = 0;
+
 //LOGIC CONTROLS
 byte LogicCount = 0; //Counter of material flow
 byte BNextLogic = 0; //Button Next Logic
