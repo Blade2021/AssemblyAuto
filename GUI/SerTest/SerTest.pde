@@ -406,10 +406,3 @@ void serialEvent(Serial myPort) {
     }
   }
 }
-
-class MyControlListener implements ControlListener {
-  int mode;
-  public void controlEvent(ControlEvent theEvent) {
-    
-  }
-}
