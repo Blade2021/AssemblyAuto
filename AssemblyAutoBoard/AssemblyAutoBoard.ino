@@ -1,7 +1,6 @@
 /*  VERSION 1.2.9
     Last succcessful run: 1.2.8
     Last Upload SHA Token: 8de98c
-    This line is a test line.
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
