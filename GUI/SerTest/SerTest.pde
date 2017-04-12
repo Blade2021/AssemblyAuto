@@ -8,6 +8,13 @@ ControlP5 cp5;
 String temp;
 String endchar = "\n";
 Toggle Relay1;
+Toggle Relay2;
+Toggle Relay3;
+Toggle Relay4;
+Toggle Relay5;
+Toggle Relay6;
+Toggle Relay7;
+Toggle Relay8;
 Textarea consoletext;
 Println console;
 //Variables
@@ -105,33 +112,50 @@ void setup()
      //.setColorActive(color(35, 255, 53, 255))
      ;
      
-  cp5.addToggle("Relay2")
+  Relay2 = cp5.addToggle("Relay2")
      .setPosition(310,90)
      .setSize(60,30)
      .setId(2)
      .setCaptionLabel("Relay 2")
      ;
        
-  cp5.addToggle("Relay3")
+  Relay3 = cp5.addToggle("Relay3")
      .setPosition(310,130)
      .setSize(60,30)
      .setId(3)
      .setCaptionLabel("Relay 3")
      ;
        
-  cp5.addToggle("Relay4")
+  Relay4 = cp5.addToggle("Relay4")
      .setPosition(310,170)
      .setSize(60,30)
      .setId(4)
      .setCaptionLabel("Relay 4")
      ;
        
-  cp5.addToggle("Relay5")
+  Relay5 = cp5.addToggle("Relay5")
      .setPosition(310,210)
      .setSize(60,30)
      .setId(5)
      .setCaptionLabel("Relay 5")
-     .getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER)
+     ;
+  Relay6 = cp5.addToggle("Relay6")
+     .setPosition(310,250)
+     .setSize(60,30)
+     .setId(6)
+     .setCaptionLabel("Relay 6")
+     ;
+  Relay7 = cp5.addToggle("Relay7")
+     .setPosition(310,290)
+     .setSize(60,30)
+     .setId(7)
+     .setCaptionLabel("Relay 7")
+     ;
+  Relay8 = cp5.addToggle("Relay8")
+     .setPosition(310,330)
+     .setSize(60,30)
+     .setId(8)
+     .setCaptionLabel("Relay 8")
      ;
 consoletext = cp5.addTextarea("txt")
                   .setPosition(390,20)
@@ -257,6 +281,15 @@ public void Relay4(boolean Flag){
 public void Relay5(boolean Flag){
   RelayControl(30, Flag);
 }
+public void Relay6(boolean Flag){
+  RelayControl(32, Flag);
+}
+public void Relay7(boolean Flag){
+  RelayControl(34, Flag);
+}
+public void Relay8(boolean Flag){
+  RelayControl(36, Flag);
+}
 public void RelayControl(int Id, boolean Flag){
   byte status = 0;
   if(Flag == true){
@@ -297,7 +330,68 @@ void serialEvent(Serial myPort) {
     println("Recieved: " +inByte);
     if(inByte.contains("Relay")){
       char result = inByte.charAt(5);
+      char state = inByte.charAt(6);
+      boolean isOn;
+      if (state=='H'){
+        isOn = true;
+      } else {
+        isOn = false;
+      }
       if (result == '1'){
+        boolean status = Relay1.getState();
+        if(isOn != status){
+          status = !status;
+          Relay1.setValue(status);
+        }
+      }
+      if (result == '2'){
+        boolean status = Relay2.getState();
+        if(isOn != status){
+          status = !status;
+          Relay2.setValue(status);
+        }
+      }
+      if (result == '3'){
+        boolean status = Relay3.getState();
+        if(isOn != status){
+          status = !status;
+          Relay3.setValue(status);
+        }
+      }
+      if (result == '4'){
+        boolean status = Relay4.getState();
+        if(isOn != status){
+          status = !status;
+          Relay4.setValue(status);
+        }
+      }
+      if (result == '5'){
+        boolean status = Relay5.getState();
+        if(isOn != status){
+          status = !status;
+          Relay5.setValue(status);
+        }
+      }
+      if (result == '6'){
+        boolean status = Relay6.getState();
+        if(isOn != status){
+          status = !status;
+          Relay6.setValue(status);
+        }
+      }
+      if (result == '7'){
+        boolean status = Relay7.getState();
+        if(isOn != status){
+          status = !status;
+          Relay7.setValue(status);
+        }
+      }
+      if (result == '8'){
+        boolean status = Relay8.getState();
+        if(isOn != status){
+          status = !status;
+          Relay8.setValue(status);
+        }
       }
     }
     if (firstContact == false) {
