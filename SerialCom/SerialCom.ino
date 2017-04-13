@@ -1,5 +1,4 @@
 #include <EEPROM.h>
-//This is a test line
 const byte Relay1 = 22;
 const byte Relay2 = 24;
 const byte Relay3 = 26;
