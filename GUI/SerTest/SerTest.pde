@@ -1,4 +1,3 @@
-//Test line
 import processing.serial.*;
 import controlP5.*;
 
