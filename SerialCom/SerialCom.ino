@@ -114,11 +114,6 @@ void eepromUpdate() {
       if(receivedChars[y] != '.'){
         int z = y - 7;
         pear[z] = receivedChars[y];
-        /*
-        Serial.print(receivedChars[y]);
-        Serial.print(" was assigned to pear: ");
-        Serial.println(z);
-        */
       }
       else{
         int z = y - 7;
