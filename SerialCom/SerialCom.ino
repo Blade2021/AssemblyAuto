@@ -1,5 +1,5 @@
 #include <EEPROM.h>
-
+//This is a test line
 const byte Relay1 = 22;
 const byte Relay2 = 24;
 const byte Relay3 = 26;
@@ -42,7 +42,19 @@ void loop() {
     recvWithEndMarker();
     showNewData();
     if((land[1] == 230) && (checkvar == true)){
-      Serial.println("Relay1");
+      for(int k=1;k<9;k++){
+        Serial.print("Relay");
+        Serial.print(k);
+        Serial.println("H");
+      }
+      checkvar = false;
+    }
+    if((land[1] == 200) && (checkvar == true)){
+      for(int k=1;k<9;k++){
+        Serial.print("Relay");
+        Serial.print(k);
+        Serial.println("L");
+      }
       checkvar = false;
     }
 }
@@ -216,6 +228,7 @@ void reCall(){
 }
 
 void variableUpdate(){
+  checkvar = true;
   byte u = 0;
   byte z = 0;
   char grape[numChars];

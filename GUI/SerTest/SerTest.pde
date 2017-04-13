@@ -20,7 +20,6 @@ Println console;
 //Variables
 boolean firstContact = false;
 
-MyControlListener myListener;
 
 void setup() 
 {  
@@ -187,8 +186,6 @@ consoletext = cp5.addTextarea("txt")
   myPort = new Serial(this, "COM3", 9600);
   myPort.bufferUntil('\n');
   
-  myListener = new MyControlListener();
-  cp5.getController("Relay2").addListener(myListener);
 }
 
 void draw() {
