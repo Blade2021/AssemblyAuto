@@ -12,4 +12,4 @@ Timer was built as a test script for main functionality.  However Timer-2VAR[EEP
 ### Main Files
 AssemblyAuto.INO
 ### SubFiles
-root.PDE
+SerTest.pde
