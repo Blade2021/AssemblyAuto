@@ -341,18 +341,21 @@ void serialEvent(Serial myPort) {
     inByte = trim(inByte);
     println("Recieved: " +inByte);
     if(inByte.contains("PIN.")){
-      //String grave = inByte.substring(12, 14);
-      char result = inByte.charAt(5);
-      char state = inByte.charAt(6);
+      String result = inByte.substring(4,6);
+      char state = inByte.charAt(7);
       boolean isOn;
-      int gstatetrigger = Character.getNumericValue(result);
-      if (state=='H'){
+      if(state == '1'){
         isOn = true;
-      } else {
-        isOn = false;
       }
-      gstatetrigger--;
-      globalState[gstatetrigger] = isOn;
+      else{
+       isOn = false; 
+      }
+      int endresult = parseInt(result);
+      for(int i = 0;i<pin.length;i++){
+        if (endresult == pin[i]){
+          globalState[i] = isOn;
+        }
+      }
       delay(10);
     }
     if (firstContact == false) {

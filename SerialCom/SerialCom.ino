@@ -9,7 +9,10 @@ const byte Relay7 = 34;
 const byte Relay8 = 36;
 boolean checkvar = true;
 
-
+byte Active = 0;
+boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
+int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
+int index;
 const byte refractor = 10;
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
@@ -18,7 +21,10 @@ long reciever = 0;
 unsigned long land[refractor];
 boolean newData = false;
 String apple = "";
-
+unsigned long previousTime = 0;
+long checkTime = 800;
+int x;
+int y;
 
 void setup() {
     Serial.begin(9600);
@@ -38,24 +44,41 @@ void setup() {
 }
 
 void loop() {
+  unsigned long currentTime = millis();
     recvWithEndMarker();
     showNewData();
     if((land[1] == 230) && (checkvar == true)){
-      for(int k=1;k<9;k++){
-        Serial.print("Relay");
-        Serial.print(k);
-        Serial.println("H");
-      }
+      Active = 1;
       checkvar = false;
     }
     if((land[1] == 200) && (checkvar == true)){
-      for(int k=1;k<9;k++){
-        Serial.print("Relay");
-        Serial.print(k);
-        Serial.println("L");
-      }
+      Active = 0;
       checkvar = false;
     }
+  if (Active == 1){
+    if(currentTime - previousTime >= checkTime){
+      previousTime = currentTime;
+      state[index] = !state[index];
+      if (state[index] == LOW){
+        x = LOW;
+        y = 0;
+      }
+      else {
+        x = HIGH;
+        y = 1;
+      }
+      digitalWrite(pinArray[index], x);
+      Serial.print("PIN.");
+      Serial.print(pinArray[index]);
+      Serial.print(".");
+      Serial.print(y);
+      Serial.println(" ");
+      index++;
+      if (index > 7){
+        index = 0;
+      }
+    }
+  }
 }
 
 void recvWithEndMarker() {
