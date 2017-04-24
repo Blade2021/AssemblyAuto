@@ -7,25 +7,19 @@ String s;
 ControlP5 cp5;
 String temp;
 String endchar = "\n";
-Toggle Relay1;
-Toggle Relay2;
-Toggle Relay3;
-Toggle Relay4;
-Toggle Relay5;
-Toggle Relay6;
-Toggle Relay7;
-Toggle Relay8;
 Textarea consoletext;
 Println console;
 //Variables
 boolean firstContact = false;
-
+boolean globalState [] = {false, false, false, false, false, false, false, false};
+int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
 
 void setup() 
 {  
   size(800,500);
   cp5 = new ControlP5(this);
   cp5.enableShortcuts();
+  
   cp5.addTextfield("console")
     .setSize(360,35)
     .setCaptionLabel("Console")
@@ -102,7 +96,7 @@ void setup()
     .setCaptionLabel("Relays Off")
     .setPosition(235,160)
     ;
-  Relay1 = cp5.addToggle("Relay1")
+  cp5.addBang("Relay1")
      .setPosition(310,50)
      .setId(1)
      .setSize(60,30)
@@ -111,54 +105,54 @@ void setup()
      //.setColorActive(color(35, 255, 53, 255))
      ;
      
-  Relay2 = cp5.addToggle("Relay2")
+  cp5.addBang("Relay2")
      .setPosition(310,90)
      .setSize(60,30)
      .setId(2)
      .setCaptionLabel("Relay 2")
      ;
        
-  Relay3 = cp5.addToggle("Relay3")
+  cp5.addBang("Relay3")
      .setPosition(310,130)
      .setSize(60,30)
      .setId(3)
      .setCaptionLabel("Relay 3")
      ;
        
-  Relay4 = cp5.addToggle("Relay4")
+  cp5.addBang("Relay4")
      .setPosition(310,170)
      .setSize(60,30)
      .setId(4)
      .setCaptionLabel("Relay 4")
      ;
        
-  Relay5 = cp5.addToggle("Relay5")
+  cp5.addBang("Relay5")
      .setPosition(310,210)
      .setSize(60,30)
      .setId(5)
      .setCaptionLabel("Relay 5")
      ;
-  Relay6 = cp5.addToggle("Relay6")
+  cp5.addBang("Relay6")
      .setPosition(310,250)
      .setSize(60,30)
      .setId(6)
      .setCaptionLabel("Relay 6")
      ;
-  Relay7 = cp5.addToggle("Relay7")
+  cp5.addBang("Relay7")
      .setPosition(310,290)
      .setSize(60,30)
      .setId(7)
      .setCaptionLabel("Relay 7")
      ;
-  Relay8 = cp5.addToggle("Relay8")
+  cp5.addBang("Relay8")
      .setPosition(310,330)
      .setSize(60,30)
      .setId(8)
      .setCaptionLabel("Relay 8")
      ;
 consoletext = cp5.addTextarea("txt")
-                  .setPosition(390,20)
-                  .setSize(400, 465)
+                  .setPosition(440,20)
+                  .setSize(350, 465)
                   .setFont(createFont("", 12))
                   .setLineHeight(14)
                   .setColor(color(255, 255, 255, 255))
@@ -167,7 +161,7 @@ consoletext = cp5.addTextarea("txt")
   ;
   cp5.addTextlabel("ctext")
     .setText("Console")
-    .setPosition(386,3)
+    .setPosition(436,3)
     .setColorValue(255)
     .setFont(createFont("Arial",14));
   cp5.addTextlabel("stitle")
@@ -181,7 +175,9 @@ consoletext = cp5.addTextarea("txt")
     .setColorValue(200)
     .setFont(createFont("Arial",16));
     
-  console = cp5.addConsole(consoletext);//
+  console = cp5.addConsole(consoletext);
+  
+  
   //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, "COM3", 9600);
   myPort.bufferUntil('\n');
@@ -191,6 +187,16 @@ consoletext = cp5.addTextarea("txt")
 void draw() {
   background(0);
   fill(255);
+  for (int i=0;i<globalState.length;i++){
+    if (globalState[i] == false){
+      fill(color(200, 20, 0, 255));
+      rect(385, 50+i*40, 30, 30);
+    }
+    else{
+      fill(color(123, 255, 0, 255));
+      rect(385, 50+i*40, 30, 30);
+    }
+  }
 }
 void controlEvent(ControlEvent test) {
   if(test.isAssignableFrom(Textfield.class)){
@@ -263,31 +269,40 @@ public void button4(){
   myPort.write("PIN.34.1" +endchar);
   myPort.write("PIN.36.1" +endchar);
 }
-public void Relay1(boolean Flag){
-  RelayControl(22, Flag);
+public void Relay1(){
+  globalState[0] = !globalState[0];
+  RelayControl(pin[0], globalState[0]);
 }
-public void Relay2(boolean Flag){
-  RelayControl(24, Flag);
+public void Relay2(){
+  globalState[1] = !globalState[1];
+  RelayControl(pin[1], globalState[1]);
 }
-public void Relay3(boolean Flag){
-  RelayControl(26, Flag);
+public void Relay3(){
+  globalState[2] = !globalState[2];
+  RelayControl(pin[2], globalState[2]);
 }
-public void Relay4(boolean Flag){
-  RelayControl(28, Flag);
+public void Relay4(){
+  globalState[3] = !globalState[3];
+  RelayControl(pin[3], globalState[3]);
 }
-public void Relay5(boolean Flag){
-  RelayControl(30, Flag);
+public void Relay5(){
+  globalState[4] = !globalState[4];
+  RelayControl(pin[4], globalState[4]);
 }
-public void Relay6(boolean Flag){
-  RelayControl(32, Flag);
+public void Relay6(){
+  globalState[5] = !globalState[5];
+  RelayControl(pin[5], globalState[5]);
 }
-public void Relay7(boolean Flag){
-  RelayControl(34, Flag);
+public void Relay7(){
+  globalState[6] = !globalState[6];
+  RelayControl(pin[6], globalState[6]);
 }
-public void Relay8(boolean Flag){
-  RelayControl(36, Flag);
+public void Relay8(){
+  globalState[7] = !globalState[7];
+  RelayControl(pin[7], globalState[7]);
 }
 public void RelayControl(int Id, boolean Flag){
+  println("Triggered relay Control");
   byte status = 0;
   if(Flag == true){
     status = 1;
@@ -325,71 +340,20 @@ void serialEvent(Serial myPort) {
   if (inByte != null){
     inByte = trim(inByte);
     println("Recieved: " +inByte);
-    if(inByte.contains("Relay")){
+    if(inByte.contains("PIN.")){
+      //String grave = inByte.substring(12, 14);
       char result = inByte.charAt(5);
       char state = inByte.charAt(6);
       boolean isOn;
+      int gstatetrigger = Character.getNumericValue(result);
       if (state=='H'){
         isOn = true;
       } else {
         isOn = false;
       }
-      if (result == '1'){
-        boolean status = Relay1.getState();
-        if(isOn != status){
-          status = !status;
-          Relay1.setValue(status);
-        }
-      }
-      if (result == '2'){
-        boolean status = Relay2.getState();
-        if(isOn != status){
-          status = !status;
-          Relay2.setValue(status);
-        }
-      }
-      if (result == '3'){
-        boolean status = Relay3.getState();
-        if(isOn != status){
-          status = !status;
-          Relay3.setValue(status);
-        }
-      }
-      if (result == '4'){
-        boolean status = Relay4.getState();
-        if(isOn != status){
-          status = !status;
-          Relay4.setValue(status);
-        }
-      }
-      if (result == '5'){
-        boolean status = Relay5.getState();
-        if(isOn != status){
-          status = !status;
-          Relay5.setValue(status);
-        }
-      }
-      if (result == '6'){
-        boolean status = Relay6.getState();
-        if(isOn != status){
-          status = !status;
-          Relay6.setValue(status);
-        }
-      }
-      if (result == '7'){
-        boolean status = Relay7.getState();
-        if(isOn != status){
-          status = !status;
-          Relay7.setValue(status);
-        }
-      }
-      if (result == '8'){
-        boolean status = Relay8.getState();
-        if(isOn != status){
-          status = !status;
-          Relay8.setValue(status);
-        }
-      }
+      gstatetrigger--;
+      globalState[gstatetrigger] = isOn;
+      delay(10);
     }
     if (firstContact == false) {
       if (inByte.equals("<Controller is ready>")) {
