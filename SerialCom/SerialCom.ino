@@ -55,9 +55,17 @@ void loop() {
       Active = 0;
       checkvar = false;
     }
+    if((land[1] == 220) && (checkvar == true)){
+      for(byte t = 0; t<8; t++){
+        Serial.println("INCOMING:");
+        Serial.println(state[t]);
+      }
+      checkvar = false;
+    }
   if (Active == 1){
     if(currentTime - previousTime >= checkTime){
       previousTime = currentTime;
+      index = random(0,7);
       state[index] = !state[index];
       if (state[index] == LOW){
         x = LOW;
@@ -197,6 +205,11 @@ void pinUpdate() {
     } else {
       value = HIGH;
     }
+    for(byte checkmate = 0; checkmate < 8; checkmate++){
+      if (reciever == pinArray[checkmate]){
+        state[checkmate] = !state[checkmate];
+      }
+    }
     Serial.print("Updated PIN [");
     Serial.print(reciever);
     Serial.print("] Value: ");
@@ -232,13 +245,13 @@ void reCall(){
     Serial.print("ARRAY: LoC: ");
     Serial.print(reciever);
     Serial.print(" Value: ");
-    Serial.println(land[reciever]);
+    Serial.println(state[reciever]);
   } else {
-    for (byte k=0;k<refractor;k++){
+    for (byte k=0;k<8;k++){
       Serial.print("ARRAY: LoC: ");
       Serial.print(k);
       Serial.print(" Value: ");
-      Serial.println(land[k]);
+      Serial.println(state[k]);
       delay(50);
     }
   }
@@ -284,4 +297,36 @@ void reloadArray(){
     delay(10);
     }
 }
+
+void SensorCheck(byte checkpin, byte relaypin){
+  //boolean MainAir = HIGH;
+  byte tempx;
+  boolean currentstate;
+  boolean nextstate;
+  for(byte t=0; t<8; t++){
+    if(pinArray[t] == relaypin){
+      tempx = t;
+    }
+  }
+  boolean scair = HIGH;  //Remove this before final upload
+  //boolean scair = digitalRead(MainAir);
+  if (scair == HIGH){
+    boolean currentstate = state[tempx];
+    digitalWrite(relaypin, !state[tempx]);
+    delay(1300);
+    //boolean nextstate = digitalRead(checkpin)
+    digitalWrite(relaypin, state[tempx]);
+    if(currentstate != nextstate){
+      Serial.print("Sensor: ");
+      Serial.print(checkpin);
+      Serial.println(" is working!");
+    }
+    else {
+      Serial.print("Sensor: ");
+      Serial.print(checkpin);
+      Serial.println(" is NOT working!");
+    }
+  }
+}
+
 
