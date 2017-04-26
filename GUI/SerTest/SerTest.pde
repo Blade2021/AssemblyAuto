@@ -8,6 +8,7 @@ ControlP5 cp5;
 String temp;
 String endchar = "\n";
 Textarea consoletext;
+Textfield Timer1;
 Println console;
 //Variables
 boolean firstContact = false;
@@ -149,13 +150,13 @@ void setup()
      .setCaptionLabel("Relay 8")
      ;
 consoletext = cp5.addTextarea("txt")
-                  .setPosition(440,20)
-                  .setSize(350, 465)
-                  .setFont(createFont("", 12))
-                  .setLineHeight(14)
-                  .setColor(color(255, 255, 255, 255))
-                  .setColorBackground(color(100, 100))
-                  .setColorForeground(color(255, 100));
+  .setPosition(440,20)
+  .setSize(350, 465)
+  .setFont(createFont("", 12))
+  .setLineHeight(14)
+  .setColor(color(255, 255, 255, 255))
+  .setColorBackground(color(100, 100))
+  .setColorForeground(color(255, 100));
   ;
   cp5.addTextlabel("ctext")
     .setText("Console")
@@ -359,9 +360,12 @@ void serialEvent(Serial myPort) {
       }
       delay(10);
     }//End of PIN Function
-    
-    if(inByte.contains("SR.")){
-      
+    if(inByte.contains("SEN.")){
+      char firstvalue = inByte.charAt(5);
+      char secondvalue = inByte.charAt(7);
+      int fvresult = parseInt(firstvalue);
+      int svresult = parseInt(secondvalue);
+      cp5.getId(fvresult);
     }
     
     if (firstContact == false) {
