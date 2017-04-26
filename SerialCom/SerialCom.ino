@@ -12,6 +12,8 @@ boolean checkvar = true;
 byte Active = 0;
 boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
 int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
+const byte SolenoidArray[8] = {16, 17, 8, 18, 19, 7, 14, 15};
+int sensorArray[] = {38, 40, 42};
 int index;
 const byte refractor = 10;
 const byte numChars = 32;
@@ -39,7 +41,10 @@ void setup() {
     pinMode(Relay6, OUTPUT);
     pinMode(Relay7, OUTPUT);
     pinMode(Relay8, OUTPUT);
-    
+    for(byte set;set<8;set++){
+      pinMode(sensorArray[set], INPUT);
+      delay(10);
+    }
     reloadArray();
 }
 
@@ -116,7 +121,7 @@ void recvWithEndMarker() {
 void showNewData() {
     if (newData == true) {
         Serial.println(receivedChars);
-        reciever = atoi(receivedChars);
+        //reciever = atoi(receivedChars);
         newData = false;
         if (apple.length() >= 5){
           if (apple.substring(0,6) == "EEPROM") {
@@ -130,6 +135,19 @@ void showNewData() {
           }
           if (apple.substring(0,4) == "CALL") {
             reCall();
+          }
+          if (apple.substring(0,4) == "REF") {
+            for(byte t;t<8;t++){
+              Serial.print("SEN.");
+              Serial.print(t);
+              Serial.print(".");
+              Serial.println(pinArray[t])
+              delay(1);
+              Serial.print("SOL.");
+              Serial.print(t);
+              Serial.print(".");
+              Serial.println(SolenoidArray[t])
+            }
           }
         }
         apple = "";
