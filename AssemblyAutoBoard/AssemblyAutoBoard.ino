@@ -22,24 +22,29 @@ const byte PanelLed4 = 45;
 const byte PanelLed5 = 43;
 const byte ErrorLed = 13;
 //Sensors
-const byte HookRailEmpty = A0;
-const byte HookRailFull = A4;
-const byte HangerRackFull = A1;
-const byte HookCycleStart = A2;
-const byte HeadUp = A7;
-const byte HeadDown = A6;
-const byte StripOffOut = A5;
-const byte CrimpCycleStart = A3;
+const byte SensorArray[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
+/* SENSOR LIST
+ * A0 - HookRailEmpty
+ * A1 - HangerRackFull
+ * A2 - HookCycleStart
+ * A3 - SolenoidArray[4]CycleStart
+ * A4 - HookRailRull
+ * A5 - SolenoidArray[1]Out
+ * A6 - HeadDown
+ * A7 - HeadUp
+ */
 //Solenoids
-const byte ToolHead = 16;
-const byte StripOff = 17;
-const byte HookStopper = 8;
-const byte CrimpStopper = 18;
-const byte Crimp = 19;
-const byte FeedTable = 7;
-const byte MainAir = 14;
-const byte HookShaker = 15;
-
+const byte SolenoidArray[8] = {16, 17, 8, 18, 19, 7, 14, 15};
+/* 
+ * 16 - ToolHead
+ * 17 - StripOff
+ * 8  - HookStopper
+ * 18 - CrimpStopper
+ * 19 - Crimp
+ * 7  - FeedTable
+ * 14 - MainAir
+ * 15 - HookShaker
+ */
 //LCD Variables
 byte sysPosition = 0;
 const int LCDClearTime = 7000;
@@ -56,7 +61,7 @@ unsigned long previousTimer2 = 0;
 unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
-unsigned long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
+long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
 
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -118,24 +123,24 @@ void setup() {
   pinMode(DownButton, INPUT);
   pinMode(ToggleButton, INPUT);
   //Solenoids
-  pinMode(ToolHead, OUTPUT);
-  pinMode(HookStopper, OUTPUT);
-  pinMode(CrimpStopper, OUTPUT);
-  pinMode(Crimp, OUTPUT);
-  pinMode(FeedTable, OUTPUT);
-  pinMode(MainAir, OUTPUT);
-  pinMode(HookShaker, OUTPUT);
-  pinMode(StripOff, OUTPUT);
+  pinMode(SolenoidArray[0], OUTPUT);
+  pinMode(SolenoidArray[2], OUTPUT);
+  pinMode(SolenoidArray[3], OUTPUT);
+  pinMode(SolenoidArray[4], OUTPUT);
+  pinMode(SolenoidArray[5], OUTPUT);
+  pinMode(SolenoidArray[6], OUTPUT);
+  pinMode(SolenoidArray[7], OUTPUT);
+  pinMode(SolenoidArray[1], OUTPUT);
   //Photo
-  pinMode(HookCycleStart, INPUT_PULLUP);
-  pinMode(HangerRackFull, INPUT_PULLUP);
-  pinMode(CrimpCycleStart, INPUT_PULLUP);
+  pinMode(SensorArray[2], INPUT_PULLUP);
+  pinMode(SensorArray[1], INPUT_PULLUP);
+  pinMode(SensorArray[3], INPUT_PULLUP);
   //Prox
-  pinMode(HookRailEmpty, INPUT_PULLUP);
-  pinMode(HookRailFull, INPUT_PULLUP);
-  pinMode(HeadUp, INPUT_PULLUP);
-  pinMode(HeadDown, INPUT_PULLUP);
-  pinMode(StripOffOut, INPUT_PULLUP);
+  pinMode(SensorArray[0], INPUT_PULLUP);
+  pinMode(SensorArray[4], INPUT_PULLUP);
+  pinMode(SensorArray[7], INPUT_PULLUP);
+  pinMode(SensorArray[6], INPUT_PULLUP);
+  pinMode(SensorArray[5], INPUT_PULLUP);
   // END OF PINMODE
   
   Serial.begin(9600);
@@ -188,14 +193,14 @@ void loop() {
   if (SOverride == 0 || SOverride == 1) {
     //Run initial reset of all LED's and reset Relay status
     if (SOverride == 0 && Active != 0) { 
-      for (byte indx = 0; indx < 7; indx++) {
+      for (byte indx = 0; indx < 8; indx++) {
         StateArray[indx] = 0;
         Serial.print("Relay status INDEX: ");
         Serial.print(indx);
         Serial.println(" reset.");
       }
       //Add null to end of StateArray.  StateArray is used to keep track of the state of the relays.
-      StateArray[7] = '\0'; 
+      //StateArray[7] = '\0'; 
       lcd.setCursor(0,1);
       lcd.print("                    ");
       digitalWrite(PanelLed1, LOW);
@@ -277,10 +282,10 @@ void loop() {
     }
 // Active Mode start.  Machine will read sensors and run relays.
     if (Active == 1) {
-      digitalWrite(MainAir, HIGH);
+      digitalWrite(SolenoidArray[6], HIGH);
       ManualFeed = digitalRead(StartFeedButton);
-      FeedLoop = digitalRead(HookCycleStart);
-      FeedCheck = digitalRead(HangerRackFull);
+      FeedLoop = digitalRead(SensorArray[2]);
+      FeedCheck = digitalRead(SensorArray[1]);
       /* FeedLoop - Check your main cycle sensor
        * Error - Check to see if the machine went into Error Mode
        * SecStart - Restart machine after FeedCheck activates again
@@ -298,7 +303,7 @@ void loop() {
             precountTime = currentTime;
           }
           //Check Feed station for material.
-          FeedCheck = digitalRead(HangerRackFull);
+          FeedCheck = digitalRead(SensorArray[1]);
           if ((FeedCheck == HIGH) && (SecStart != 1)) {
             Serial.println("ERROR: Hanger Rack NOT full.");
             lcd.setCursor(0, 3);
@@ -331,7 +336,7 @@ void loop() {
       // FEED OPEN
       if ((FeedNext == 1) && (currentTime - previousTimer1 >= sysArray[0])) {
         previousTimer1 = currentTime;
-        digitalWrite(FeedTable, HIGH);
+        digitalWrite(SolenoidArray[5], HIGH);
         Serial.println("Feed Cycle | FEED OPEN");
         FeedNext = 2;
       }
@@ -339,34 +344,34 @@ void loop() {
       if ((FeedNext == 2) && (currentTime - previousTimer1 >= sysArray[1])) {
         Serial.println("Feed Cycle | FEED CLOSE");
         previousTimer1 = currentTime;
-        digitalWrite(FeedTable, LOW);
+        digitalWrite(SolenoidArray[5], LOW);
         digitalWrite(PanelLed1, LOW);
         FeedNext = 0;
       }
       // END OF FEED CYCLE
       // Vibrator Cycle
-      RailCheck = digitalRead(HookRailFull);
+      RailCheck = digitalRead(SensorArray[4]);
       if ((RailCheck == HIGH) && (RailCheckNext == 0)) {
         Serial.println("Rail Check Activated");
         previousTimer2 = currentTime;
         digitalWrite(PanelLed5, HIGH);
-        digitalWrite(HookShaker, HIGH);
+        digitalWrite(SolenoidArray[7], HIGH);
         RailCheckNext = 1;
       }
       if (RailCheckNext == 1) {
-        RailCheck = digitalRead(HookRailFull);
+        RailCheck = digitalRead(SensorArray[4]);
         if (RailCheck == LOW) {
           previousTimer2 = currentTime;
           RailCheckNext = 2;
         }
       }
       if (RailCheckNext == 2) {
-        RailCheck = digitalRead(HookRailFull);
+        RailCheck = digitalRead(SensorArray[4]);
         if (RailCheck == HIGH) {
           RailCheckNext = 1;
         }
         if ((RailCheck == LOW) && (currentTime - previousTimer2 >= sysArray[5])) {
-          digitalWrite(HookShaker, LOW);
+          digitalWrite(SolenoidArray[7], LOW);
           digitalWrite(PanelLed5, LOW);
           previousTimer2 = currentTime;
           Serial.println("Rail Check Finsihed");
@@ -375,35 +380,35 @@ void loop() {
       }
       // END OF VIBRATOR CYCLE
       // Crimp Cycle
-      CrimpLoop = digitalRead(CrimpCycleStart);
+      CrimpLoop = digitalRead(SensorArray[3]);
       if ((CrimpLoop == LOW) && (CrimpNext == 0)) {
-        Serial.println("Crimp Cycle Activated");
+        Serial.println("SolenoidArray[4] Cycle Activated");
         digitalWrite(PanelLed4, HIGH);
-        digitalWrite(CrimpStopper, HIGH);
+        digitalWrite(SolenoidArray[3], HIGH);
         previousTimer4 = currentTime;
         CrimpNext = 1;
       }
       if ((CrimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3])) {
         previousTimer4 = currentTime;
-        digitalWrite(Crimp, HIGH);
-        Serial.println("Crimp Cycle | Crimp");
+        digitalWrite(SolenoidArray[4], HIGH);
+        Serial.println("SolenoidArray[4] Cycle | SolenoidArray[4]");
         CrimpNext = 2;
       }
       if ((CrimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4])) {
-        Serial.println("Crimp Cycle | Reset");
+        Serial.println("SolenoidArray[4] Cycle | Reset");
         previousTimer4 = currentTime;
-        digitalWrite(Crimp, LOW);
-        digitalWrite(CrimpStopper, LOW);
+        digitalWrite(SolenoidArray[4], LOW);
+        digitalWrite(SolenoidArray[3], LOW);
         digitalWrite(PanelLed4, LOW);
         CrimpNext = 0;
       }
       // Hook Cycle
-      HookLoop = digitalRead(HookCycleStart);
+      HookLoop = digitalRead(SensorArray[2]);
       if ((HookLoop == LOW) && (HookNext == 0)) {
         Serial.println("Hook Cycle Activated");
         digitalWrite(PanelLed2, HIGH);
         boolean HookCheck;
-        HookCheck = digitalRead(HookRailEmpty);
+        HookCheck = digitalRead(SensorArray[0]);
         if (HookCheck == HIGH) {
           Serial.println("ERROR: Hook Check failed");
           lcd.setCursor(0, 3);
@@ -417,39 +422,39 @@ void loop() {
         }
         if (HookCheck == LOW) {
           previousTimer3 = currentTime;
-          digitalWrite(HookStopper, HIGH);
+          digitalWrite(SolenoidArray[2], HIGH);
           HookNext = 1;
         }
       }
       if ((HookNext == 1) && (currentTime - previousTimer3 >= sysArray[2])) {
         previousTimer3 = currentTime;
         Serial.println("Hook Cycle | Tool/Head OUT");
-        digitalWrite(ToolHead, HIGH);
+        digitalWrite(SolenoidArray[0], HIGH);
         HookNext = 2;
       }
       if (HookNext == 2) {
-        int HeadCheckDown = digitalRead(HeadDown);
+        int HeadCheckDown = digitalRead(SensorArray[6]);
         if (HeadCheckDown == LOW) {
-          digitalWrite(StripOff, HIGH);
+          digitalWrite(SolenoidArray[1], HIGH);
           HookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
       }
       if (HookNext == 3) {
-        int StripoffCheck = digitalRead(StripOffOut);
-        if (StripoffCheck == LOW) {
-          digitalWrite(ToolHead, LOW);
+        int StripOffCheck = digitalRead(SensorArray[5]);
+        if (StripOffCheck == LOW) {
+          digitalWrite(SolenoidArray[0], LOW);
           digitalWrite(PanelLed3, HIGH);
           digitalWrite(PanelLed2, LOW);
           HookNext = 4;
         }
       }
       if (HookNext == 4) {
-        int HeadUpCheck = digitalRead(HeadUp);
+        int HeadUpCheck = digitalRead(SensorArray[7]);
         if (HeadUpCheck == LOW) {
           Serial.println("Hook Cycle | Reset");
-          digitalWrite(StripOff, LOW);
-          digitalWrite(HookStopper, LOW);
+          digitalWrite(SolenoidArray[1], LOW);
+          digitalWrite(SolenoidArray[2], LOW);
           digitalWrite(PanelLed3, LOW);
           HookNext = 0;
         }
@@ -568,13 +573,13 @@ void inactive(int sysPosition) {
   //Trigger intital reset when exiting inactive mode
   SOverride = 0;
   digitalWrite(ErrorLed, HIGH);
-  digitalWrite(FeedTable, LOW);
-  digitalWrite(ToolHead, LOW);
-  digitalWrite(HookStopper, LOW);
-  digitalWrite(CrimpStopper, LOW);
-  digitalWrite(Crimp, LOW);
-  digitalWrite(MainAir, LOW);
-  digitalWrite(HookShaker, LOW);
+  digitalWrite(SolenoidArray[5], LOW);
+  digitalWrite(SolenoidArray[0], LOW);
+  digitalWrite(SolenoidArray[2], LOW);
+  digitalWrite(SolenoidArray[3], LOW);
+  digitalWrite(SolenoidArray[4], LOW);
+  digitalWrite(SolenoidArray[6], LOW);
+  digitalWrite(SolenoidArray[7], LOW);
   //If passcode was inserted from keypad, trigger override mode.
   if (sysArray[6] == passcode) {
     Serial.println("***** Override ACTIVATED *****");
@@ -604,13 +609,13 @@ void inactive(int sysPosition) {
     case 3:
       setLEDS(PanelLed4);
       lcd.setCursor(0, 1);
-      lcd.print("Crimp Cycle Wait    ");
+      lcd.print("SolenoidArray[4] Cycle Wait    ");
       changetime(sysPosition);
       break;
     case 4:
       setLEDS(PanelLed5);
       lcd.setCursor(0, 1);
-      lcd.print("Crimp Time          ");
+      lcd.print("SolenoidArray[4] Time          ");
       changetime(sysPosition);
       break;
     case 5:
@@ -700,7 +705,7 @@ void Override_Trigger(int RTrigger) {
     tempstate = HIGH;
   }
   if (RTrigger == 1) {
-    digitalWrite(FeedTable, tempstate);
+    digitalWrite(SolenoidArray[5], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 1 SET TO: ");
     lcd.print(lcdstate);
@@ -710,7 +715,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 2) {
-    digitalWrite(HookStopper, tempstate);
+    digitalWrite(SolenoidArray[2], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 2 SET TO: ");
     lcd.print(lcdstate);
@@ -720,7 +725,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 3) {
-    digitalWrite(ToolHead, tempstate);
+    digitalWrite(SolenoidArray[0], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 3 SET TO: ");
     lcd.print(lcdstate);
@@ -730,7 +735,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 4) {
-    digitalWrite(StripOff, tempstate);
+    digitalWrite(SolenoidArray[1], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 4 SET TO: ");
     lcd.print(lcdstate);
@@ -740,7 +745,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 5) {
-    digitalWrite(CrimpStopper, tempstate);
+    digitalWrite(SolenoidArray[3], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 5 SET TO: ");
     lcd.print(lcdstate);
@@ -750,7 +755,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 6) {
-    digitalWrite(Crimp, tempstate);
+    digitalWrite(SolenoidArray[4], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 6 SET TO: ");
     lcd.print(lcdstate);
@@ -760,7 +765,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 7) {
-    digitalWrite(HookShaker, tempstate);
+    digitalWrite(SolenoidArray[7], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 7 SET TO: ");
     lcd.print(lcdstate);
@@ -770,7 +775,7 @@ void Override_Trigger(int RTrigger) {
     preLCDClear = currentTime;
   }
   if (RTrigger == 8) {
-    digitalWrite(MainAir, tempstate);
+    digitalWrite(SolenoidArray[6], tempstate);
     lcd.setCursor(0, 3);
     lcd.print("Relay 8 SET TO: ");
     lcd.print(lcdstate);
