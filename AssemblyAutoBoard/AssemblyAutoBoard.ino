@@ -382,7 +382,7 @@ void loop() {
       // Crimp Cycle
       CrimpLoop = digitalRead(SensorArray[3]);
       if ((CrimpLoop == LOW) && (CrimpNext == 0)) {
-        Serial.println("SolenoidArray[4] Cycle Activated");
+        Serial.println("Crimp Cycle Activated");
         digitalWrite(PanelLed4, HIGH);
         digitalWrite(SolenoidArray[3], HIGH);
         previousTimer4 = currentTime;
@@ -391,11 +391,11 @@ void loop() {
       if ((CrimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3])) {
         previousTimer4 = currentTime;
         digitalWrite(SolenoidArray[4], HIGH);
-        Serial.println("SolenoidArray[4] Cycle | SolenoidArray[4]");
+        Serial.println("Crimp Cycle | Crimp");
         CrimpNext = 2;
       }
       if ((CrimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4])) {
-        Serial.println("SolenoidArray[4] Cycle | Reset");
+        Serial.println("Crimp Cycle | Reset");
         previousTimer4 = currentTime;
         digitalWrite(SolenoidArray[4], LOW);
         digitalWrite(SolenoidArray[3], LOW);
@@ -609,13 +609,13 @@ void inactive(int sysPosition) {
     case 3:
       setLEDS(PanelLed4);
       lcd.setCursor(0, 1);
-      lcd.print("SolenoidArray[4] Cycle Wait    ");
+      lcd.print("Crimp Cycle Wait    ");
       changetime(sysPosition);
       break;
     case 4:
       setLEDS(PanelLed5);
       lcd.setCursor(0, 1);
-      lcd.print("SolenoidArray[4] Time          ");
+      lcd.print("Crimp Time          ");
       changetime(sysPosition);
       break;
     case 5:
