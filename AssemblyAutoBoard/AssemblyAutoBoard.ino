@@ -1,48 +1,52 @@
-/*  VERSION 1.2.7
-    COMPILED SUCCESSFULLY ON 03.22.17
+
+/*  VERSION 1.2.9
+    Last succcessful run: 1.2.8
+    Last Upload SHA Token: 8de98c
 */
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
 
 //Panel Buttons
-const int StartFeedButton = 6;
-const int NextButton = 42;
-const int SaveButton = 46;
-const int UpButton = 48;
-const int DownButton = 44;
-const int ToggleButton = 50;
+const byte StartFeedButton = 6;
+const byte NextButton = 42;
+const byte SaveButton = 46;
+const byte UpButton = 48;
+const byte DownButton = 44;
+const byte ToggleButton = 50;
 // Panel LEDs
-const int PanelLed1 = 51;
-const int PanelLed2 = 49;
-const int PanelLed3 = 47;
-const int PanelLed4 = 45;
-const int PanelLed5 = 43;
-const int ErrorLed = 13;
+const byte PanelLed1 = 51;
+const byte PanelLed2 = 49;
+const byte PanelLed3 = 47;
+const byte PanelLed4 = 45;
+const byte PanelLed5 = 43;
+const byte ErrorLed = 13;
 //Sensors
-const int HookRailEmpty = A0;
-const int HookRailFull = A4;
-const int HangerRackFull = A1;
-const int HookCycleStart = A2;
-const int HeadUp = A7;
-const int HeadDown = A6;
-const int StripOffOut = A5;
-const int CrimpCycleStart = A3;
+const byte HookRailEmpty = A0;
+const byte HookRailFull = A4;
+const byte HangerRackFull = A1;
+const byte HookCycleStart = A2;
+const byte HeadUp = A7;
+const byte HeadDown = A6;
+const byte StripOffOut = A5;
+const byte CrimpCycleStart = A3;
 //Solenoids
-const int ToolHead = 16;
-const int StripOff = 17;
-const int HookStopper = 8;
-const int CrimpStopper = 18;
-const int Crimp = 19;
-const int FeedTable = 7;
-const int MainAir = 14;
-const int HookShaker = 15;
+const byte ToolHead = 16;
+const byte StripOff = 17;
+const byte HookStopper = 8;
+const byte CrimpStopper = 18;
+const byte Crimp = 19;
+const byte FeedTable = 7;
+const byte MainAir = 14;
+const byte HookShaker = 15;
+
 //LCD Variables
-int x = 0;
+byte sysPosition = 0;
 const int LCDClearTime = 7000;
-int pos = 15;
+byte pos = 15;
 int j = 0;
 char arraya [] = {0, 1, 2, 3, 0};
+
 //Time Controls
 const int buttonWait = 300;
 unsigned long preLCDClear = 0;
@@ -52,9 +56,11 @@ unsigned long previousTimer2 = 0;
 unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
-unsigned long y[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
+unsigned long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
+
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
 //Keypad
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -70,30 +76,31 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 //System Variables
 boolean Active = LOW;
-int ToggleLogic = 0;
-int FeedLoop = 0;
-int FeedCheck = 0;
-int FeedNext = 0;
-int HookNext = 0;
-int HookLoop = 0;
-int HookCheck = 0;
-int CrimpLoop = 0;
-int CrimpNext = 0;
-int RailCheck = LOW;
-int RailCheckNext = 0;
+byte ToggleLogic = 0;
+byte FeedLoop = 0;
+byte FeedCheck = 0;
+byte FeedNext = 0;
+byte HookNext = 0;
+byte HookLoop = 0;
+byte HookCheck = 0;
+byte CrimpLoop = 0;
+byte CrimpNext = 0;
+byte RailCheck = LOW;
+byte RailCheckNext = 0;
 byte rswitch = 0;
 byte SOverride = 1;
-char StateArray[] = {0, 0, 0, 0, 0, 0}; //Include extra 0 for the NULL END
+char StateArray[8] = {0}; //Include extra 0 for the NULL END
 int passcode = 7777;
-int Error = 0;
+byte Error = 0;
+
 //LOGIC CONTROLS
-int LogicCount = 0;
-int BNextLogic = 0;
-int BUpLogic = 0;
-int BDownLogic = 0;
-int SaveButtonTrigger = 0;
-int ManualFeed = 0;
-int SecStart = 0;
+byte LogicCount = 0; //Counter of material flow
+byte BNextLogic = 0; //Button Next Logic
+byte BUpLogic = 0;
+byte BDownLogic = 0;
+byte SaveButtonTrigger = 0;
+byte ManualFeed = 0;
+byte SecStart = 0;
 
 void setup() {
   //LEDs
@@ -133,7 +140,7 @@ void setup() {
   
   Serial.begin(9600);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.7");
+  Serial.println("Program Version 1.2.9");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -141,21 +148,21 @@ void setup() {
   lcd.print("*** BOOTING ***");
   
   //Load EEPROM Memory
-  for (int k = 0; k < 6; k++) {
-    int f = k * 2;
+  for (byte k = 0; k < 6; k++) {
+    byte f = k * 2;
     int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
     f++;
-    int gtemp = gtemp = EEPROM.read(f);
+    int gtemp = EEPROM.read(f);
     gtemp = gtemp * 10;
-    y[k] = gtemp + ytemp;
+    sysArray[k] = gtemp + ytemp;
     Serial.print("EEPROM[");
     Serial.print(k);
     Serial.print("]: ");
-    Serial.println(y[k]);
+    Serial.println(sysArray[k]);
     delay(10);
   }
-  Serial.println("********** System Variables ***********");
+  Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
   Serial.print("LCD Clear Time: ");
@@ -170,18 +177,25 @@ void setup() {
 }
 
 void loop() {
-  unsigned long currentTime = millis(); //MAIN Timer
-  lcdClear(); //Call LCD Clear function to clear 4th line of LCD
+  //Main Timer to keep track of entire machine!
+  unsigned long currentTime = millis(); 
+  //Call LCD Clear function to clear 4th line of LCD
+  lcdClear();
   lcd.setCursor(10, 0);
+  //Print run time on first line of LCD
   lcd.print(millis() / 1000);
+  // Check SOverride  If 0 or 1, It is considered "off"
   if (SOverride == 0 || SOverride == 1) {
-    if (SOverride == 0 && Active != 0) {
-      for (int indx = 0; indx < 7; indx++) {
+    //Run initial reset of all LED's and reset Relay status
+    if (SOverride == 0 && Active != 0) { 
+      for (byte indx = 0; indx < 7; indx++) {
         StateArray[indx] = 0;
         Serial.print("Relay status INDEX: ");
         Serial.print(indx);
         Serial.println(" reset.");
       }
+      //Add null to end of StateArray.  StateArray is used to keep track of the state of the relays.
+      StateArray[7] = '\0'; 
       lcd.setCursor(0,1);
       lcd.print("                    ");
       digitalWrite(PanelLed1, LOW);
@@ -189,55 +203,64 @@ void loop() {
       digitalWrite(PanelLed3, LOW);
       digitalWrite(PanelLed4, LOW);
       digitalWrite(PanelLed5, LOW);
-      LogicCount = 0; //Reset the count after leaving SOverride or inactive mode
-      SOverride = 1;
+      //Reset the count after leaving SOverride or inactive mode
+      LogicCount = 0;
+      SOverride = 1; //Exit initial reset
     }
+    //Listen for Next Button (Goes through different values inside sysArray)
     BNextLogic = digitalRead(NextButton);
     if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
-      x++;
-      if (x >= 6) {
-        x = 0;
+      sysPosition++;
+      //Reset back to value 0 if you get to the end of the array. (minus one for the override)
+      if (sysPosition >= 6) {
+        sysPosition = 0;
         Serial.print("Time VAR: ");
-        Serial.print(x + 1);
+        Serial.print(sysPosition + 1);
         Serial.print(" selected. | ");
-        Serial.println(y[x]);
+        Serial.println(sysArray[sysPosition]);
       }
       else {
         Serial.print("Time VAR: ");
-        Serial.print(x + 1);
+        Serial.print(sysPosition + 1);
         Serial.print(" selected. | ");
-        Serial.println(y[x]);
+        Serial.println(sysArray[sysPosition]);
       }
     }
+    //Raise the value of the selected variable inside the sysArray (ADD Time)
     BUpLogic = digitalRead(UpButton);
     if ((BUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
-      y[x] = y[x] + 100;
+      sysArray[sysPosition] = sysArray[sysPosition] + 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
-      Serial.print(x + 1);
+      Serial.print(sysPosition + 1);
       Serial.print(" is now: ");
-      Serial.println(y[x]);
+      Serial.println(sysArray[sysPosition]);
     }
+    //Lower the value of the selected variable inside the sysArray (Reduce Time)
     BDownLogic = digitalRead(DownButton);
     if ((BDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
-      y[x] = y[x] - 100;
+      sysArray[sysPosition] = sysArray[sysPosition] - 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
-      Serial.print(x + 1);
+      Serial.print(sysPosition + 1);
       Serial.print(" is now: ");
-      Serial.println(y[x]);
+      Serial.println(sysArray[sysPosition]);
     }
+    //Save the new value to the memory for next reset.
     SaveButtonTrigger = digitalRead(SaveButton);
     if ((SaveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (SOverride == 0 || SOverride == 1) {
         Serial.print("TimeVar ");
-        Serial.print(x + 1);
+        Serial.print(sysPosition + 1);
         Serial.println(" saved.");
-        savetrigger(x);
+        savetrigger(sysPosition);  //go to savetrigger function to save.
       }
     }
+    /* Trigger Active mode on/off
+     *  Active Mode: Sets wether the machine should read the sensors or ignore them.
+     */
     ToggleLogic = digitalRead(ToggleButton);
     if ((ToggleLogic == HIGH) && (Active == 0)) {
       Active = 1;
@@ -252,20 +275,29 @@ void loop() {
       Active = 0;
       digitalWrite(ErrorLed, HIGH);
     }
+// Active Mode start.  Machine will read sensors and run relays.
     if (Active == 1) {
       digitalWrite(MainAir, HIGH);
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(HookCycleStart);
       FeedCheck = digitalRead(HangerRackFull);
+      /* FeedLoop - Check your main cycle sensor
+       * Error - Check to see if the machine went into Error Mode
+       * SecStart - Restart machine after FeedCheck activates again
+       * FeedCheck - Check Feed station for material.
+       * ManualFeed - Ignore other variables and trigger on button press
+       */
       if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
         if (FeedNext == 0) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0,2);
           lcd.print("Feed Reset:");
+          //Start counting time for TimeKeepr function
           if (LogicCount == 0) {
             precountTime = currentTime;
           }
+          //Check Feed station for material.
           FeedCheck = digitalRead(HangerRackFull);
           if ((FeedCheck == HIGH) && (SecStart != 1)) {
             Serial.println("ERROR: Hanger Rack NOT full.");
@@ -278,6 +310,7 @@ void loop() {
             lcd.print("ON ");
           }
           else {
+            //Add one to logic count
             LogicCount++;
             SecStart = 0;
             lcd.setCursor(11,2);
@@ -296,14 +329,14 @@ void loop() {
         }
       }
       // FEED OPEN
-      if ((FeedNext == 1) && (currentTime - previousTimer1 >= y[0])) {
+      if ((FeedNext == 1) && (currentTime - previousTimer1 >= sysArray[0])) {
         previousTimer1 = currentTime;
         digitalWrite(FeedTable, HIGH);
         Serial.println("Feed Cycle | FEED OPEN");
         FeedNext = 2;
       }
       //FEED CLOSE
-      if ((FeedNext == 2) && (currentTime - previousTimer1 >= y[1])) {
+      if ((FeedNext == 2) && (currentTime - previousTimer1 >= sysArray[1])) {
         Serial.println("Feed Cycle | FEED CLOSE");
         previousTimer1 = currentTime;
         digitalWrite(FeedTable, LOW);
@@ -332,7 +365,7 @@ void loop() {
         if (RailCheck == HIGH) {
           RailCheckNext = 1;
         }
-        if ((RailCheck == LOW) && (currentTime - previousTimer2 >= y[5])) {
+        if ((RailCheck == LOW) && (currentTime - previousTimer2 >= sysArray[5])) {
           digitalWrite(HookShaker, LOW);
           digitalWrite(PanelLed5, LOW);
           previousTimer2 = currentTime;
@@ -350,13 +383,13 @@ void loop() {
         previousTimer4 = currentTime;
         CrimpNext = 1;
       }
-      if ((CrimpNext == 1) && (currentTime - previousTimer4 >= y[3])) {
+      if ((CrimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3])) {
         previousTimer4 = currentTime;
         digitalWrite(Crimp, HIGH);
         Serial.println("Crimp Cycle | Crimp");
         CrimpNext = 2;
       }
-      if ((CrimpNext == 2) && (currentTime - previousTimer4 >= y[4])) {
+      if ((CrimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4])) {
         Serial.println("Crimp Cycle | Reset");
         previousTimer4 = currentTime;
         digitalWrite(Crimp, LOW);
@@ -388,7 +421,7 @@ void loop() {
           HookNext = 1;
         }
       }
-      if ((HookNext == 1) && (currentTime - previousTimer3 >= y[2])) {
+      if ((HookNext == 1) && (currentTime - previousTimer3 >= sysArray[2])) {
         previousTimer3 = currentTime;
         Serial.println("Hook Cycle | Tool/Head OUT");
         digitalWrite(ToolHead, HIGH);
@@ -421,16 +454,30 @@ void loop() {
           HookNext = 0;
         }
       }// END OF HOOK CYCLE
+      /* When LogicCount Variable reaches 100,
+       *  Trigger TimeKeeper to run
+       *  TimeKeeper will reset LogicCount back to 0.
+       */
       if (LogicCount >= 100) {
         TimeKeeper();
       }
-    }//END OF ACTIVE
+    }//END OF ACTIVE MODE
+    /*Start of INACTIVE MODE
+     * Inactive Mode:
+     * - Change time variables
+     * - Listen for keypad input
+     * - Go into Override Mode (on key input)
+     */
     if (Active == 0) {
       lcd.setCursor(0, 2);
       lcd.print("Time:");
-      inactive(x);
+      inactive(sysPosition);
     } // End of Active 0 (containing switch)
-  } // End of Override Statement
+  } // End of Override Statement (SOverride = 0 or 1)
+  /* Start System Override
+   * - Trigger Relays individually
+   * - Record state of relay for display and toggle
+   */
   if (SOverride == 2) {
     digitalWrite(PanelLed1, HIGH);
     digitalWrite(PanelLed2, HIGH);
@@ -460,9 +507,10 @@ void loop() {
       Serial.println("SYSTEM OVERRIDE | Deactivated ");
       preLCDClear = currentTime;
       SOverride = 0;
-      x = 0;
+      sysPosition = 0;
     }
     else {
+      //Get keypad input
       char key;
       key = keypad.getKey();
       if (key) {
@@ -470,9 +518,11 @@ void loop() {
         bxyz[j++] = key;
         bxyz[j];
         int tempb = atoi(bxyz);
+        //Send keypad input to Override_Trigger function
         Override_Trigger(tempb);
         j = 0;
       }
+      //Display current selected relay on LCD (For use of manual buttons)
       switch (rswitch) {
         case 0:
           lcd.setCursor(0, 2);
@@ -514,7 +564,8 @@ void loop() {
 } // *****************************  End of LOOP Void ************************
 
 
-void inactive(int x) {
+void inactive(int sysPosition) {
+  //Trigger intital reset when exiting inactive mode
   SOverride = 0;
   digitalWrite(ErrorLed, HIGH);
   digitalWrite(FeedTable, LOW);
@@ -524,62 +575,66 @@ void inactive(int x) {
   digitalWrite(Crimp, LOW);
   digitalWrite(MainAir, LOW);
   digitalWrite(HookShaker, LOW);
-  if (y[6] == passcode) {
+  //If passcode was inserted from keypad, trigger override mode.
+  if (sysArray[6] == passcode) {
     Serial.println("***** Override ACTIVATED *****");
-    y[6] = 0;
+    sysArray[6] = 0;
     SOverride = 2;
     return;
   }
-  switch (x) {
+  switch (sysPosition) {
     case 0:
       setLEDS(PanelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Feed Wait Time:     ");
-      changetime(x);
+      changetime(sysPosition);
       break;
     case 1:
       setLEDS(PanelLed2);
       lcd.setCursor(0, 1);
       lcd.print("Feed Open Time      ");
-      changetime(x);
+      changetime(sysPosition);
       break;
     case 2:
       setLEDS(PanelLed3);
       lcd.setCursor(0, 1);
       lcd.print("Hook Cycle Wait     ");
-      changetime(x);
+      changetime(sysPosition);
       break;
     case 3:
       setLEDS(PanelLed4);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Cycle Wait    ");
-      changetime(x);
+      changetime(sysPosition);
       break;
     case 4:
       setLEDS(PanelLed5);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Time          ");
-      changetime(x);
+      changetime(sysPosition);
       break;
     case 5:
       setLEDS(PanelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Vibrator Time     ");
-      changetime(x);
+      changetime(sysPosition);
       break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
 
-
-void savetrigger(int x) {
-  if (y[x] >= 5101){
-    y[x] = 5100;
+//Save trigger function.
+/* This function is for saving values from manual button changes.
+ * For Keypad function see: changetime
+ */
+void savetrigger(int sysPosition) {
+  if (sysArray[sysPosition] >= 5101){
+    sysArray[sysPosition] = 5100;
     lcd.setCursor(0,3);
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  int address = x * 2;
-  int ytemp = ytemp = y[x] / 10;
+  unsigned long address = sysPosition * 2;
+  int ytemp = ytemp = sysArray[sysPosition] / 10;
   if (ytemp > 255) {
     ytemp = ytemp - 255;
     EEPROM.update(address, ytemp);
@@ -609,7 +664,7 @@ void savetrigger(int x) {
       Serial.println("*** SYSTEM ERROR [EE0008]");
     }
   }
-  ytemp = x + 1;
+  ytemp = sysPosition + 1;
   lcd.setCursor(0, 3);
   lcd.print("EE.Update VAR[");
   lcd.print(ytemp);
@@ -627,7 +682,6 @@ void savetrigger(int x) {
   delay(200);
   digitalWrite(ErrorLed, state);
 }
-//************************* VOID END ******************************
 
 
 void Override_Trigger(int RTrigger) {
@@ -728,10 +782,10 @@ void Override_Trigger(int RTrigger) {
 }
 
 
-void changetime(int x) {
+void changetime(int sysPosition) {
   unsigned long currentTime = millis();
   lcd.setCursor(5, 2);
-  lcd.print(y[x]);
+  lcd.print(sysArray[sysPosition]);
   lcd.print("       ");
   lcd.setCursor(pos, 2);
   char key;
@@ -750,7 +804,7 @@ void changetime(int x) {
       Serial.print("SYSTEM | Keypad Input: ");
       Serial.println(tempa);
       if (tempa == passcode) {
-        y[6] = passcode;
+        sysArray[6] = passcode;
         pos = 15;
         lcd.setCursor(pos, 2);
         lcd.print("       ");
@@ -764,12 +818,12 @@ void changetime(int x) {
         lcd.print("ERROR: MAX VALUE HIT");
         preLCDClear = currentTime;
       }
-      if (tempa > 2550) {
-        y[x] = tempa;
+      if (tempa >= 2550) {
+        sysArray[sysPosition] = tempa;
         int ytemp = 0;
-        int address = 0;
-        ytemp = y[x] / 10;
-        address = x * 2;
+        unsigned long address = 0;
+        ytemp = sysArray[sysPosition] / 10;
+        address = sysPosition * 2;
         ytemp = ytemp - 255;
         EEPROM.update(address, 255);
         address = address + 1;
@@ -785,14 +839,14 @@ void changetime(int x) {
         Serial.print("SYSTEM | EEPROM | ");
         Serial.print(ytemp + 255);
         Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(x);
+        Serial.println(sysPosition);
       }
       if (tempa < 2550) {
-        y[x] = tempa;
+        sysArray[sysPosition] = tempa;
         int ytemp = 0;
-        int address = 0;
-        ytemp = y[x] / 10;
-        address = x * 2;
+        unsigned long address = 0;
+        ytemp = sysArray[sysPosition] / 10;
+        address = sysPosition * 2;
         EEPROM.update(address, ytemp);
         address = address + 1;
         if (address == EEPROM.length()) {
@@ -807,7 +861,7 @@ void changetime(int x) {
         Serial.print("EEPROM | ");
         Serial.print(ytemp);
         Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(x);
+        Serial.println(sysPosition);
       }
       pos = 15;
       lcd.setCursor(pos, 2);
@@ -824,9 +878,9 @@ void changetime(int x) {
     }
   } //End of If(Key)
 }
-//End of ChangeTime Void
+//End of ChangeTime function
 
-
+//Clear last line of LCD every x(seconds)
 void lcdClear() {
   unsigned long currentTime = millis();
   if (currentTime - preLCDClear >= LCDClearTime)
@@ -837,7 +891,7 @@ void lcdClear() {
   }
 }
 
-
+//Set one LED to HIGH.
 void setLEDS(byte LEDSnumber)
 {
   digitalWrite(PanelLed1, LOW);
@@ -849,7 +903,7 @@ void setLEDS(byte LEDSnumber)
   digitalWrite(LEDSnumber, HIGH);
 }
 
-
+//Write how long it took to run 100 parts & reset LogicCount
 void TimeKeeper() {
   unsigned long tempvarj = ((millis() - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
