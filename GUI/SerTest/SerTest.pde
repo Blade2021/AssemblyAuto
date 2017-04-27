@@ -8,8 +8,8 @@ ControlP5 cp5;
 String temp;
 String endchar = "\n";
 Textarea consoletext;
-Textfield Timer1;
-Textfield Timer2;
+Textfield timer1;
+Textfield timer2;
 Textfield RPin1;
 Textfield RPin2;
 Textfield RPin3;
@@ -24,6 +24,7 @@ Println console;
 boolean firstContact = false;
 boolean globalState [] = {false, false, false, false, false, false, false, false};
 int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
+int sensorPin [] = {10,20,30,40,50,60,70,80};
 int tabID = 111;
 
 
@@ -43,53 +44,53 @@ void setup()
 
     ;
 
-  Timer1 = cp5.addTextfield("Timer1")
+  timer1 = cp5.addTextfield("timer1")
     .setId(1)
     .setPosition(20, 70)
     .setSize(200, 35)
     .setFont(createFont("arial", 16))
     .setAutoClear(true)
-    .setCaptionLabel("EEPROM: Timer 1")
+    .setCaptionLabel("EEPROM: timer 1")
     ;
-  Timer2 = cp5.addTextfield("Timer2")
+  timer2 = cp5.addTextfield("timer2")
     .setId(2)
     .setPosition(20, 130)
     .setSize(200, 35)
     .setFont(createFont("arial", 16))
     .setAutoClear(true)
-    .setCaptionLabel("EEPROM: Timer 2")
+    .setCaptionLabel("EEPROM: timer 2")
     ;
-  cp5.addTextfield("Timer3")
+  cp5.addTextfield("timer3")
     .setId(3)
     .setPosition(20, 190)
     .setSize(200, 35)
     .setFont(createFont("arial", 12))
     .setAutoClear(true)
-    .setCaptionLabel("EEPROM: Timer 3")
+    .setCaptionLabel("EEPROM: timer 3")
     ;
-  cp5.addTextfield("Timer4")
+  cp5.addTextfield("timer4")
     .setId(4)
     .setPosition(20, 250)
     .setSize(200, 35)
     .setFont(createFont("arial", 12))
     .setAutoClear(false)
-    .setCaptionLabel("EEPROM: Timer 4")
+    .setCaptionLabel("EEPROM: timer 4")
     ;
-  cp5.addTextfield("Timer5")
+  cp5.addTextfield("timer5")
     .setId(5)
     .setPosition(20, 310)
     .setSize(200, 35)
     .setFont(createFont("arial", 12))
     .setAutoClear(false)
-    .setCaptionLabel("EEPROM: Timer 5")
+    .setCaptionLabel("EEPROM: timer 5")
     ;
-  cp5.addTextfield("Timer6")
+  cp5.addTextfield("timer6")
     .setId(6)
     .setPosition(20, 370)
     .setSize(200, 35)
     .setFont(createFont("arial", 12))
     .setAutoClear(false)
-    .setCaptionLabel("EEPROM: Timer 6")
+    .setCaptionLabel("EEPROM: timer 6")
     ;
   cp5.addButton("button1")
     .setSize(60, 20)
@@ -169,56 +170,56 @@ void setup()
     .setFont(createFont("Arial", 18))
     .setColor(color(25, 143, 250, 255))
     ;
-  cp5.addTextfield("Sensor1")
+  cp5.addTextfield("sensor0")
     .setPosition(430, 50)
     .setSize(100, 35)
     .setId(31)
     .setCaptionLabel("Hanger Rack")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor2")
+  cp5.addTextfield("sensor1")
     .setPosition(430, 110)
     .setSize(100, 35)
     .setId(32)
     .setCaptionLabel("Main Cycle")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor3")
+  cp5.addTextfield("sensor2")
     .setPosition(430, 170)
     .setSize(100, 35)
     .setId(33)
     .setCaptionLabel("LWR Hook Rail")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor4")
+  cp5.addTextfield("sensor3")
     .setPosition(430, 230)
     .setSize(100, 35)
     .setId(34)
     .setCaptionLabel("UPR Hook Rail")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor5")
+  cp5.addTextfield("sensor4")
     .setPosition(430, 290)
     .setSize(100, 35)
     .setId(35)
     .setCaptionLabel("Strip Off")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor6")
+  cp5.addTextfield("sensor5")
     .setPosition(430, 350)
     .setSize(100, 35)
     .setId(36)
     .setCaptionLabel("Head UP")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor7")
+  cp5.addTextfield("sensor6")
     .setPosition(430, 410)
     .setSize(100, 35)
     .setId(37)
     .setCaptionLabel("Head Down")
     .setFont(createFont("arial", 14))
     ;
-  cp5.addTextfield("Sensor8")
+  cp5.addTextfield("sensor7")
     .setPosition(430, 470)
     .setSize(100, 35)
     .setId(38)
@@ -366,7 +367,7 @@ void controlEvent(ControlEvent test) {
         println("/  - Varu.x.y - Updates the position (x) with value of (y) in array");
         println("/");
         println("/");
-        println("/  Timer values should stay within value of 5100");
+        println("/  timer values should stay within value of 5100");
         println("/");
       } else {
         String result = temp.substring(0, 6);
@@ -384,11 +385,11 @@ void controlEvent(ControlEvent test) {
         }
       }
     }
-    boolean StrTest = test.getName().startsWith("Timer");
+    boolean StrTest = test.getName().startsWith("timer");
 
     if (StrTest == true) {
       println("Sending EEPROM Update to controller");
-      println("Updating Timer: " +test.getId() +" to Value: " +test.getStringValue());
+      println("Updating timer: " +test.getId() +" to Value: " +test.getStringValue());
       Timefunc(test.getId()-1, test.getStringValue());
     }
     //Recieve Pin Update for Relays
@@ -404,7 +405,7 @@ void controlEvent(ControlEvent test) {
   }
   if (test.isTab()) {
     String tempx = test.getTab().getName();
-    if (tempx == "Sensors") {
+    if (tempx == "sensors") {
       tabID = 222;
     } else {
       tabID = 111;
@@ -475,7 +476,7 @@ public void RelayControl(int Id, boolean Flag) {
   myPort.write("PIN." +Id +'.' +status +endchar);
 }
 
-void SensorCheck(int value) {
+void sensorCheck(int value) {
   myPort.write("SC." +value +endchar);
 }
 
@@ -524,31 +525,25 @@ void serialEvent(Serial myPort) {
       }
       delay(10);
     }//End of PIN Function
+    //Inside Main serial function
     if (inByte.contains("SEN.")) {
+      //firstvalue determines what controller to EDIT.
       char firstvalue = inByte.charAt(4);
+      //secondvalue determines what value to change the controller from first value.
       String secondvalue = inByte.substring(6, inByte.length());
-      int fvresult = Character.getNumericValue(firstvalue);
-      //int svresult = Integer.parseInt(secondvalue);
-      //String fvstring = "Timer" + firstvalue;
-      //println("FirstValue String =" +fvstring);
-      //Controller jess = cp5.getController(fvstring);
-      //println(jess.getValue());
-      switch (fvresult) {
-      case 1:
-        Timer1.setText(secondvalue);
-        break;
-      case 2:
-        Timer2.setText(secondvalue);
-        break;
-      default:
-        println("SYSTEM: Value recieved was irregular");
-        break;
-      }
+      
+      //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
+      String fvstring = "sensor" + firstvalue;
+      int firstint = Character.getNumericValue(firstvalue);
+      int secondint = Integer.parseInt(secondvalue);
+      sensorPin[firstint]=secondint;
+      cp5.get(Textfield.class,fvstring).setText(secondvalue);
     }
 
     if (firstContact == false) {
       if (inByte.equals("<Controller is ready>")) {
         myPort.clear();
+        
         firstContact = true;
         //myPort.write("A");
         println("SYSTEM: Contact Made");

@@ -12,8 +12,8 @@ boolean checkvar = true;
 byte Active = 0;
 boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
 int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
-const byte SolenoidArray[8] = {16, 17, 8, 18, 19, 7, 14, 15};
-int sensorArray[] = {38, 40, 42};
+const byte solenoidArray[8] = {16, 17, 8, 18, 19, 7, 14, 15};
+int sensorArray[] = {38, 40, 42, 44, 46, 48, 50, 51};
 int index;
 const byte refractor = 10;
 const byte numChars = 32;
@@ -136,17 +136,17 @@ void showNewData() {
           if (apple.substring(0,4) == "CALL") {
             reCall();
           }
-          if (apple.substring(0,4) == "REF") {
+          if (apple.substring(0,6) == "SITREP") {
             for(byte t;t<8;t++){
               Serial.print("SEN.");
               Serial.print(t);
               Serial.print(".");
-              Serial.println(pinArray[t])
+              Serial.println(sensorArray[t]);
               delay(1);
               Serial.print("SOL.");
               Serial.print(t);
               Serial.print(".");
-              Serial.println(SolenoidArray[t])
+              Serial.println(solenoidArray[t]);
             }
           }
         }
@@ -324,6 +324,7 @@ void SensorCheck(byte checkpin, byte relaypin){
   for(byte t=0; t<8; t++){
     if(pinArray[t] == relaypin){
       tempx = t;
+      //assign tempx to value for next step
     }
   }
   boolean scair = HIGH;  //Remove this before final upload
