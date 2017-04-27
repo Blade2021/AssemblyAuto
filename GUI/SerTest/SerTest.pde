@@ -16,7 +16,7 @@ boolean firstContact = false;
 boolean globalState [] = {false, false, false, false, false, false, false, false};
 int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
 int relayArray [] = {10, 20, 30, 40, 50, 60, 70, 80};
-int sensorPin [] = {10,20,30,40,50,60,70,80};
+int sensorPin [] = {10, 20, 30, 40, 50, 60, 70, 80};
 int tabID = 111;
 
 
@@ -345,7 +345,7 @@ void controlEvent(ControlEvent test) {
       } else if ("LED Off".equals(temp)) {
         myPort.write("1");
         println("Sent: LED OFF");
-      }  else if ("LED Off".equals(temp)) {
+      } else if ("LED Off".equals(temp)) {
         myPort.write("1");
         println("Sent: LED OFF");
       } else if ("Update".equals(temp)) {
@@ -379,7 +379,6 @@ void controlEvent(ControlEvent test) {
       }
     }
     boolean StrTest = test.getName().startsWith("timer");
-
     if (StrTest == true) {
       println("Sending EEPROM Update to controller");
       println("Updating timer: " +test.getId() +" to Value: " +test.getStringValue());
@@ -387,7 +386,7 @@ void controlEvent(ControlEvent test) {
     }
     //Recieve Pin Update for Relays
     boolean rstrTest = test.getName().startsWith("relayPin");
-    if(rstrTest == true){
+    if (rstrTest == true) {
       int rstrId = (test.getId()-40);
       relayArray[rstrId] = Integer.parseInt(test.getStringValue());
       println("RelayArray [" +rstrId +"] just updated to: " +relayArray[rstrId]);
@@ -404,13 +403,13 @@ public void button2() {
 }
 public void button3() {
   println("SYSTEM: Relays On");
-  for(byte t=0;t<8;t++){
+  for (byte t=0; t<8; t++) {
     myPort.write("PIN." +relayArray[t] +".0" +endchar);
   }
 }
 public void button4() {
   println("SYSTEM: Relays Off");
-  for(byte t=0;t<8;t++){
+  for (byte t=0; t<8; t++) {
     myPort.write("PIN." +relayArray[t] +".1" +endchar);
   }
 }
@@ -490,8 +489,8 @@ void serialEvent(Serial myPort) {
         isOn = false;
       }
       int endresult = parseInt(result);
-      for (int i = 0; i<pin.length; i++) {
-        if (endresult == pin[i]) {
+      for (int i = 0; i<relayArray.length; i++) {
+        if (endresult == relayArray[i]) {
           globalState[i] = isOn;
         }
       }
@@ -503,46 +502,46 @@ void serialEvent(Serial myPort) {
       char firstvalue = inByte.charAt(4);
       //secondvalue determines what value to change the controller from first value.
       String secondvalue = inByte.substring(6, inByte.length());
-      
+
       //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
       String fvstring = "sensor" + firstvalue;
       int firstint = Character.getNumericValue(firstvalue);
       int secondint = Integer.parseInt(secondvalue);
       sensorPin[firstint]=secondint;
-      cp5.get(Textfield.class,fvstring).setText(secondvalue);
+      cp5.get(Textfield.class, fvstring).setText(secondvalue);
     }
     if (inByte.contains("SOL.")) {
       //firstvalue determines what controller to EDIT.
       char firstvalue = inByte.charAt(4);
       //secondvalue determines what value to change the controller from first value.
       String secondvalue = inByte.substring(6, inByte.length());
-      
+
       //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
       String fvstring = "relayPin" + firstvalue;
       int firstint = Character.getNumericValue(firstvalue);
       int secondint = Integer.parseInt(secondvalue);
       relayArray[firstint]=secondint;
-      cp5.get(Textfield.class,fvstring).setText(secondvalue);
+      cp5.get(Textfield.class, fvstring).setText(secondvalue);
     }
     if (inByte.contains("EMU.")) {
       //firstvalue determines what controller to EDIT.
       char firstvalue = inByte.charAt(4);
       //secondvalue determines what value to change the controller from first value.
       String secondvalue = inByte.substring(6, inByte.length());
-      
+
       //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
       String fvstring = "timer" + firstvalue;
-      cp5.get(Textfield.class,fvstring).setText(secondvalue);
+      cp5.get(Textfield.class, fvstring).setText(secondvalue);
     }
     if (firstContact == false) {
       if (inByte.equals("<Controller is ready>")) {
         myPort.clear();
-        
         firstContact = true;
         //myPort.write("A");
         println("SYSTEM: Contact Made");
         delay(100);
         println("Control ready!");
+        myPort.write("SITREP" +endchar);
       }
     }
   }
