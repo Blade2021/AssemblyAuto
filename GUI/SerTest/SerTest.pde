@@ -10,20 +10,12 @@ String endchar = "\n";
 Textarea consoletext;
 Textfield timer1;
 Textfield timer2;
-Textfield RPin1;
-Textfield RPin2;
-Textfield RPin3;
-Textfield RPin4;
-Textfield RPin5;
-Textfield RPin6;
-Textfield RPin7;
-Textfield RPin8;
-
 Println console;
 //Variables
 boolean firstContact = false;
 boolean globalState [] = {false, false, false, false, false, false, false, false};
 int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
+int relayArray [] = {10, 20, 30, 40, 50, 60, 70, 80};
 int sensorPin [] = {10,20,30,40,50,60,70,80};
 int tabID = 111;
 
@@ -44,7 +36,7 @@ void setup()
 
     ;
 
-  timer1 = cp5.addTextfield("timer1")
+  timer1 = cp5.addTextfield("timer0")
     .setId(1)
     .setPosition(20, 70)
     .setSize(200, 35)
@@ -52,7 +44,7 @@ void setup()
     .setAutoClear(true)
     .setCaptionLabel("EEPROM: timer 1")
     ;
-  timer2 = cp5.addTextfield("timer2")
+  timer2 = cp5.addTextfield("timer1")
     .setId(2)
     .setPosition(20, 130)
     .setSize(200, 35)
@@ -60,7 +52,7 @@ void setup()
     .setAutoClear(true)
     .setCaptionLabel("EEPROM: timer 2")
     ;
-  cp5.addTextfield("timer3")
+  cp5.addTextfield("timer2")
     .setId(3)
     .setPosition(20, 190)
     .setSize(200, 35)
@@ -68,7 +60,7 @@ void setup()
     .setAutoClear(true)
     .setCaptionLabel("EEPROM: timer 3")
     ;
-  cp5.addTextfield("timer4")
+  cp5.addTextfield("timer3")
     .setId(4)
     .setPosition(20, 250)
     .setSize(200, 35)
@@ -76,7 +68,7 @@ void setup()
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 4")
     ;
-  cp5.addTextfield("timer5")
+  cp5.addTextfield("timer4")
     .setId(5)
     .setPosition(20, 310)
     .setSize(200, 35)
@@ -84,7 +76,7 @@ void setup()
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 5")
     ;
-  cp5.addTextfield("timer6")
+  cp5.addTextfield("timer5")
     .setId(6)
     .setPosition(20, 370)
     .setSize(200, 35)
@@ -226,7 +218,7 @@ void setup()
     .setCaptionLabel("Crimp Cycle")
     .setFont(createFont("arial", 14))
     ;
-  RPin1 = cp5.addTextfield("RelayPin1")
+  cp5.addTextfield("relayPin0")
     .setPosition(560, 50)
     .setSize(100, 35)
     .setId(40)
@@ -234,7 +226,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin2 = cp5.addTextfield("RelayPin2")
+  cp5.addTextfield("relayPin1")
     .setPosition(560, 110)
     .setSize(100, 35)
     .setId(41)
@@ -242,7 +234,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin3 = cp5.addTextfield("RelayPin3")
+  cp5.addTextfield("relayPin2")
     .setPosition(560, 170)
     .setSize(100, 35)
     .setId(42)
@@ -250,7 +242,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin4 = cp5.addTextfield("RelayPin4")
+  cp5.addTextfield("relayPin3")
     .setPosition(560, 230)
     .setSize(100, 35)
     .setId(43)
@@ -258,7 +250,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin5 = cp5.addTextfield("RelayPin5")
+  cp5.addTextfield("relayPin4")
     .setPosition(560, 290)
     .setSize(100, 35)
     .setId(44)
@@ -266,7 +258,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin6 = cp5.addTextfield("RelayPin6")
+  cp5.addTextfield("relayPin5")
     .setPosition(560, 350)
     .setSize(100, 35)
     .setId(45)
@@ -274,7 +266,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin7 = cp5.addTextfield("RelayPin7")
+  cp5.addTextfield("relayPin6")
     .setPosition(560, 410)
     .setSize(100, 35)
     .setId(46)
@@ -282,7 +274,7 @@ void setup()
     .setFont(createFont("arial", 14))
     .setAutoClear(false);
   ;
-  RPin8 = cp5.addTextfield("RelayPin8")
+  cp5.addTextfield("relayPin7")
     .setPosition(560, 470)
     .setSize(100, 35)
     .setId(47)
@@ -322,7 +314,6 @@ void setup()
     ;
 
   console = cp5.addConsole(consoletext);
-  RelayUpdate();
 
   //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, "COM3", 9600);
@@ -354,7 +345,10 @@ void controlEvent(ControlEvent test) {
       } else if ("LED Off".equals(temp)) {
         myPort.write("1");
         println("Sent: LED OFF");
-      } else if ("help".equals(temp)) {
+      }  else if ("LED Off".equals(temp)) {
+        myPort.write("1");
+        println("Sent: LED OFF");
+      } else if ("Update".equals(temp)) {
         println("Help:");
         println("/  Commands:");
         println("/  - Update.x.y - Updates control pin layout.");
@@ -378,7 +372,6 @@ void controlEvent(ControlEvent test) {
           int orange = Integer.parseInt(apple);
           int grape = Integer.parseInt(pear);
           pin[orange] = grape;
-          RelayUpdate();
         } else {
           myPort.write(temp.toUpperCase() + '\n');
           println("Sent: " +temp.toUpperCase());
@@ -393,25 +386,14 @@ void controlEvent(ControlEvent test) {
       Timefunc(test.getId()-1, test.getStringValue());
     }
     //Recieve Pin Update for Relays
-    if (test.getId()>=40) {
-      for (byte t=0; t<8; t++) {
-        if (test.getId()==(40+t)) {
-          int tempx = Integer.parseInt(test.getStringValue());
-          pin[t]=tempx;
-        }
-      }
-      RelayUpdate();
+    boolean rstrTest = test.getName().startsWith("relayPin");
+    if(rstrTest == true){
+      int rstrId = (test.getId()-40);
+      relayArray[rstrId] = Integer.parseInt(test.getStringValue());
+      println("RelayArray [" +rstrId +"] just updated to: " +relayArray[rstrId]);
     }
   }
-  if (test.isTab()) {
-    String tempx = test.getTab().getName();
-    if (tempx == "sensors") {
-      tabID = 222;
-    } else {
-      tabID = 111;
-    }
-  }
-}
+} //End of controlEvent
 public void button1() {
   println("Sent: pin.10.1");
   myPort.write("PIN.10.1" +endchar);
@@ -422,49 +404,39 @@ public void button2() {
 }
 public void button3() {
   println("SYSTEM: Relays On");
-  myPort.write("PIN.22.0" +endchar);
-  myPort.write("PIN.24.0" +endchar);
-  myPort.write("PIN.26.0" +endchar);
-  myPort.write("PIN.28.0" +endchar);
-  myPort.write("PIN.30.0" +endchar);
-  myPort.write("PIN.32.0" +endchar);
-  myPort.write("PIN.34.0" +endchar);
-  myPort.write("PIN.36.0" +endchar);
+  for(byte t=0;t<8;t++){
+    myPort.write("PIN." +relayArray[t] +".0" +endchar);
+  }
 }
 public void button4() {
   println("SYSTEM: Relays Off");
-  myPort.write("PIN.22.1" +endchar);
-  myPort.write("PIN.24.1" +endchar);
-  myPort.write("PIN.26.1" +endchar);
-  myPort.write("PIN.28.1" +endchar);
-  myPort.write("PIN.30.1" +endchar);
-  myPort.write("PIN.32.1" +endchar);
-  myPort.write("PIN.34.1" +endchar);
-  myPort.write("PIN.36.1" +endchar);
+  for(byte t=0;t<8;t++){
+    myPort.write("PIN." +relayArray[t] +".1" +endchar);
+  }
 }
 public void Relay1() {
-  RelayControl(pin[0], !globalState[0]);
+  RelayControl(relayArray[0], !globalState[0]);
 }
 public void Relay2() {
-  RelayControl(pin[1], !globalState[1]);
+  RelayControl(relayArray[1], !globalState[1]);
 }
 public void Relay3() {
-  RelayControl(pin[2], !globalState[2]);
+  RelayControl(relayArray[2], !globalState[2]);
 }
 public void Relay4() {
-  RelayControl(pin[3], !globalState[3]);
+  RelayControl(relayArray[3], !globalState[3]);
 }
 public void Relay5() {
-  RelayControl(pin[4], !globalState[4]);
+  RelayControl(relayArray[4], !globalState[4]);
 }
 public void Relay6() {
-  RelayControl(pin[5], !globalState[5]);
+  RelayControl(relayArray[5], !globalState[5]);
 }
 public void Relay7() {
-  RelayControl(pin[6], !globalState[6]);
+  RelayControl(relayArray[6], !globalState[6]);
 }
 public void Relay8() {
-  RelayControl(pin[7], !globalState[7]);
+  RelayControl(relayArray[7], !globalState[7]);
 }
 public void RelayControl(int Id, boolean Flag) {
   byte status = 0;
@@ -539,7 +511,29 @@ void serialEvent(Serial myPort) {
       sensorPin[firstint]=secondint;
       cp5.get(Textfield.class,fvstring).setText(secondvalue);
     }
-
+    if (inByte.contains("SOL.")) {
+      //firstvalue determines what controller to EDIT.
+      char firstvalue = inByte.charAt(4);
+      //secondvalue determines what value to change the controller from first value.
+      String secondvalue = inByte.substring(6, inByte.length());
+      
+      //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
+      String fvstring = "relayPin" + firstvalue;
+      int firstint = Character.getNumericValue(firstvalue);
+      int secondint = Integer.parseInt(secondvalue);
+      relayArray[firstint]=secondint;
+      cp5.get(Textfield.class,fvstring).setText(secondvalue);
+    }
+    if (inByte.contains("EMU.")) {
+      //firstvalue determines what controller to EDIT.
+      char firstvalue = inByte.charAt(4);
+      //secondvalue determines what value to change the controller from first value.
+      String secondvalue = inByte.substring(6, inByte.length());
+      
+      //Assign the character from firstvalue to string labeled "timer" to change the string to timer1, timer2, timer3, etc.
+      String fvstring = "timer" + firstvalue;
+      cp5.get(Textfield.class,fvstring).setText(secondvalue);
+    }
     if (firstContact == false) {
       if (inByte.equals("<Controller is ready>")) {
         myPort.clear();
@@ -550,40 +544,6 @@ void serialEvent(Serial myPort) {
         delay(100);
         println("Control ready!");
       }
-    }
-  }
-}
-
-void RelayUpdate() {
-  println("Updating relay variables to current settings");
-  for (byte t=0; t<8; t++) {
-    switch(t) {
-    case 0:
-      RPin1.setText(Integer.toString(pin[0]));
-      break;
-    case 1:
-      RPin2.setText(Integer.toString(pin[1]));
-      break;
-    case 2:
-      RPin3.setText(Integer.toString(pin[2]));
-      break;
-    case 3:
-      RPin4.setText(Integer.toString(pin[3]));
-      break;
-    case 4:
-      RPin5.setText(Integer.toString(pin[4]));
-      break;
-    case 5:
-      RPin6.setText(Integer.toString(pin[5]));
-      break;
-    case 6:
-      RPin7.setText(Integer.toString(pin[6]));
-      break;
-    case 7:
-      RPin8.setText(Integer.toString(pin[7]));
-      break;
-    default:
-      break;
     }
   }
 }

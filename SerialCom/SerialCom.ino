@@ -12,9 +12,8 @@ boolean checkvar = true;
 byte Active = 0;
 boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
 int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
-const byte solenoidArray[8] = {16, 17, 8, 18, 19, 7, 14, 15};
+const byte solenoidArray[8] = {22, 24, 26, 28, 30, 32, 34, 36};
 int sensorArray[] = {38, 40, 42, 44, 46, 48, 50, 51};
-int index;
 const byte refractor = 10;
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
@@ -70,7 +69,7 @@ void loop() {
   if (Active == 1){
     if(currentTime - previousTime >= checkTime){
       previousTime = currentTime;
-      index = random(0,7);
+      static byte index = random(0,7);
       state[index] = !state[index];
       if (state[index] == LOW){
         x = LOW;
@@ -80,9 +79,9 @@ void loop() {
         x = HIGH;
         y = 1;
       }
-      digitalWrite(pinArray[index], x);
+      digitalWrite(solenoidArray[index], x);
       Serial.print("PIN.");
-      Serial.print(pinArray[index]);
+      Serial.print(solenoidArray[index]);
       Serial.print(".");
       Serial.print(y);
       Serial.println(" ");
@@ -147,6 +146,13 @@ void showNewData() {
               Serial.print(t);
               Serial.print(".");
               Serial.println(solenoidArray[t]);
+              if(t<6){
+                int mem = EEPROM.read(t);
+                Serial.print("EMU.");
+                Serial.print(t);
+                Serial.print(".");
+                Serial.println(mem);
+              }
             }
           }
         }
@@ -224,7 +230,7 @@ void pinUpdate() {
       value = HIGH;
     }
     for(byte checkmate = 0; checkmate < 8; checkmate++){
-      if (reciever == pinArray[checkmate]){
+      if (reciever == solenoidArray[checkmate]){
         state[checkmate] = !state[checkmate];
       }
     }
