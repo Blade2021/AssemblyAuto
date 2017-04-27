@@ -11,7 +11,6 @@ boolean checkvar = true;
 
 byte Active = 0;
 boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
-int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
 const byte solenoidArray[8] = {22, 24, 26, 28, 30, 32, 34, 36};
 int sensorArray[] = {38, 40, 42, 44, 46, 48, 50, 51};
 const byte refractor = 10;
@@ -147,12 +146,17 @@ void showNewData() {
               Serial.print(".");
               Serial.println(solenoidArray[t]);
               if(t<6){
-                int mem = EEPROM.read(t);
+                byte address = t;
+                byte alpha = EEPROM.read(address);
+                address++;
+                byte beta = EEPROM.read(address);
+                int package = ((alpha+beta)*10);
                 Serial.print("EMU.");
                 Serial.print(t);
                 Serial.print(".");
-                Serial.println(mem);
+                Serial.println(package);
               }
+              delay(50);
             }
           }
         }
@@ -325,10 +329,9 @@ void reloadArray(){
 void SensorCheck(byte checkpin, byte relaypin){
   //boolean MainAir = HIGH;
   byte tempx;
-  boolean currentstate;
-  boolean nextstate;
+  //boolean nextstate;
   for(byte t=0; t<8; t++){
-    if(pinArray[t] == relaypin){
+    if(solenoidArray[t] == relaypin){
       tempx = t;
       //assign tempx to value for next step
     }
@@ -336,9 +339,10 @@ void SensorCheck(byte checkpin, byte relaypin){
   boolean scair = HIGH;  //Remove this before final upload
   //boolean scair = digitalRead(MainAir);
   if (scair == HIGH){
+    boolean nextstate;
     boolean currentstate = state[tempx];
     digitalWrite(relaypin, !state[tempx]);
-    delay(1300);
+    delay(2000);
     //boolean nextstate = digitalRead(checkpin)
     digitalWrite(relaypin, state[tempx]);
     if(currentstate != nextstate){
