@@ -7,6 +7,7 @@ String s;
 ControlP5 cp5;
 String temp;
 String endchar = "\n";
+Button sbutton;
 Textarea consoletext;
 Textfield timer1;
 Textfield timer2;
@@ -18,6 +19,7 @@ int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
 int relayArray [] = {10, 20, 30, 40, 50, 60, 70, 80};
 int sensorPin [] = {10, 20, 30, 40, 50, 60, 70, 80};
 int tabID = 111;
+boolean varLoad = false;
 
 
 void setup() 
@@ -41,7 +43,7 @@ void setup()
     .setPosition(20, 70)
     .setSize(200, 35)
     .setFont(createFont("arial", 16))
-    .setAutoClear(true)
+    .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 1")
     ;
   timer2 = cp5.addTextfield("timer1")
@@ -49,22 +51,22 @@ void setup()
     .setPosition(20, 130)
     .setSize(200, 35)
     .setFont(createFont("arial", 16))
-    .setAutoClear(true)
+    .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 2")
     ;
   cp5.addTextfield("timer2")
     .setId(3)
     .setPosition(20, 190)
     .setSize(200, 35)
-    .setFont(createFont("arial", 12))
-    .setAutoClear(true)
+    .setFont(createFont("arial", 16))
+    .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 3")
     ;
   cp5.addTextfield("timer3")
     .setId(4)
     .setPosition(20, 250)
     .setSize(200, 35)
-    .setFont(createFont("arial", 12))
+    .setFont(createFont("arial", 16))
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 4")
     ;
@@ -72,7 +74,7 @@ void setup()
     .setId(5)
     .setPosition(20, 310)
     .setSize(200, 35)
-    .setFont(createFont("arial", 12))
+    .setFont(createFont("arial", 16))
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 5")
     ;
@@ -80,7 +82,7 @@ void setup()
     .setId(6)
     .setPosition(20, 370)
     .setSize(200, 35)
-    .setFont(createFont("arial", 12))
+    .setFont(createFont("arial", 16))
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 6")
     ;
@@ -104,13 +106,20 @@ void setup()
     .setCaptionLabel("Relays Off")
     .setPosition(235, 160)
     ;
+  sbutton = cp5.addButton("sitrepbutton")
+    .setSize(60, 40)
+    .setCaptionLabel("Load")
+    .setPosition(235, 190)
+    .setFont(createFont("arial", 16))
+    .setColorBackground(color(200, 0, 0, 255))
+    .setColorForeground(color(200, 0, 0, 180))
+    ;
   cp5.addBang("Relay1")
     .setPosition(310, 50)
     .setId(1)
     .setSize(60, 30)
-    .setCaptionLabel("relay1")
+    .setCaptionLabel("Relay1")
     ;
-
   cp5.addBang("Relay2")
     .setPosition(310, 95)
     .setSize(60, 30)
@@ -217,6 +226,12 @@ void setup()
     .setId(38)
     .setCaptionLabel("Crimp Cycle")
     .setFont(createFont("arial", 14))
+    ;
+  cp5.addTextlabel("rtext")
+    .setText("Relay PINs")
+    .setPosition(560, 25)
+    .setFont(createFont("Arial", 18))
+    .setColor(color(25, 143, 250, 255))
     ;
   cp5.addTextfield("relayPin0")
     .setPosition(560, 50)
@@ -403,39 +418,66 @@ public void button2() {
 }
 public void button3() {
   println("SYSTEM: Relays On");
-  for (byte t=0; t<8; t++) {
-    myPort.write("PIN." +relayArray[t] +".0" +endchar);
+  if (varLoad != false) {
+    for (byte t=0; t<8; t++) {
+      myPort.write("PIN." +relayArray[t] +".0" +endchar);
+    }
   }
 }
 public void button4() {
   println("SYSTEM: Relays Off");
-  for (byte t=0; t<8; t++) {
-    myPort.write("PIN." +relayArray[t] +".1" +endchar);
+  if (varLoad != false) {
+    for (byte t=0; t<8; t++) {
+      myPort.write("PIN." +relayArray[t] +".1" +endchar);
+    }
   }
 }
+public void sitrepbutton() {
+  println("SYSTEM: SITREP Triggered");
+  myPort.write("SITREP" +endchar);
+  cp5.get("sitrepbutton").setColorBackground(color(0, 255, 0, 255));
+  cp5.get("sitrepbutton").setColorForeground(color(0, 255, 0, 180));
+  varLoad = true;
+}
 public void Relay1() {
-  RelayControl(relayArray[0], !globalState[0]);
+  if (varLoad != false) {
+    RelayControl(relayArray[0], !globalState[0]);
+  }
 }
 public void Relay2() {
-  RelayControl(relayArray[1], !globalState[1]);
+  if (varLoad != false) {
+    RelayControl(relayArray[1], !globalState[1]);
+  }
 }
 public void Relay3() {
-  RelayControl(relayArray[2], !globalState[2]);
+  if (varLoad != false) {
+    RelayControl(relayArray[2], !globalState[2]);
+  }
 }
 public void Relay4() {
-  RelayControl(relayArray[3], !globalState[3]);
+  if (varLoad != false) {
+    RelayControl(relayArray[3], !globalState[3]);
+  }
 }
 public void Relay5() {
-  RelayControl(relayArray[4], !globalState[4]);
+  if (varLoad != false) {
+    RelayControl(relayArray[4], !globalState[4]);
+  }
 }
 public void Relay6() {
-  RelayControl(relayArray[5], !globalState[5]);
+  if (varLoad != false) {
+    RelayControl(relayArray[5], !globalState[5]);
+  }
 }
 public void Relay7() {
-  RelayControl(relayArray[6], !globalState[6]);
+  if (varLoad != false) {
+    RelayControl(relayArray[6], !globalState[6]);
+  }
 }
 public void Relay8() {
-  RelayControl(relayArray[7], !globalState[7]);
+  if (varLoad != false) {
+    RelayControl(relayArray[7], !globalState[7]);
+  }
 }
 public void RelayControl(int Id, boolean Flag) {
   byte status = 0;
@@ -541,7 +583,7 @@ void serialEvent(Serial myPort) {
         println("SYSTEM: Contact Made");
         delay(100);
         println("Control ready!");
-        myPort.write("SITREP" +endchar);
+        //myPort.write("SITREP" +endchar);
       }
     }
   }
