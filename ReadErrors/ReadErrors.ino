@@ -1,5 +1,22 @@
 #include <EEPROM.h>
-ErrorArray[]={0};
+#include <LiquidCrystal.h>
+
+// start of TEST VARIABLES
+int NextButton = LOW;
+int DownButton = LOW;
+int UpButton = LOW;
+int currentTime = 0;
+int preButtonTime = 0;
+int ButtonWait = 0;
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+// end of TEST VARIABLES
+void setup(){
+}
+
+void loop() {
+}
+
 
 void ReadErrors(){
   byte ErrorArray[10] = {0};
@@ -12,15 +29,16 @@ void ReadErrors(){
   for(byte k = 1; k < ErrorArray[0];k++){
     ErrorArray[k] = EEPROM.read(ErrorStart+k);
   }
-  while(byte k < ErrorArray[0]){
-    switch(errorID){
+  byte whilevariable = 0;
+  while(whilevariable < ErrorArray[0]){
+    switch(whilevariable){
       case 001:
         break;
       default:
         break;
     }
     if((NextButton == HIGH) && (currentTime - preButtonTime >= ButtonWait)){
-      k++
+      whilevariable++;
     }
     if(DownButton == HIGH){
       quickexit = 1;
@@ -33,7 +51,8 @@ void ReadErrors(){
   if(quickexit == 0){
     lcd.print("End of ERRORS");
   }
-  while(byte erase == 0){
+  byte erase = 0;
+  while(1==1){
     lcd.print("Erase Error List?");
     if(UpButton == HIGH){
       EEPROM.update(ErrorStart, 0);
