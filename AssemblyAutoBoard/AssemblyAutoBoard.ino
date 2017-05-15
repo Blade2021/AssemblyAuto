@@ -49,7 +49,7 @@ const byte SolenoidArray[8] = {7, 8, 16, 17, 18, 19, 15, 14};
 byte sysPosition = 0;
 const int LCDClearTime = 7000;
 byte pos = 15;
-byte jindx = 0;;
+byte jindx = 0;
 char arraya [] = {0, 1, 2, 3, 0};
 
 //Time Controls
@@ -62,8 +62,8 @@ unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long safeTimer1 = 0;
 unsigned long precountTime = 0;
-long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};
-long safeArray[] = {1200, 1000};
+long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 3000};  //Time variables
+long safeArray[] = {1200, 1000}; //Safety Variables
 
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -92,7 +92,7 @@ byte HookLoop = 0;
 byte HookCheck = 0;
 byte CrimpLoop = 0;
 byte CrimpNext = 0;
-byte RailCheck = LOW;
+byte RailCheck = 0;  // Was set to LOW
 byte RailCheckNext = 0;
 byte rswitch = 0;
 byte SOverride = 1;
@@ -104,11 +104,12 @@ byte malfunc = 0;
 //LOGIC CONTROLS
 byte LogicCount = 0; //Counter of material flow
 byte BNextLogic = 0; //Button Next Logic
-byte BUpLogic = 0;
-byte BDownLogic = 0;
-byte SaveButtonTrigger = 0;
-byte ManualFeed = 0;
-byte SecStart = 0;
+byte BUpLogic = 0; //Button Up Logic
+byte BDownLogic = 0; //Button Down Logic
+byte SaveButtonTrigger = 0; //Save Button Logic
+byte ManualFeed = 0; //Manual Feed Logic
+byte SecStart = 0; //Second Start
+
 
 void setup() {
   //LEDs
@@ -126,6 +127,12 @@ void setup() {
   pinMode(DownButton, INPUT);
   pinMode(ToggleButton, INPUT);
   //Solenoids
+  /*
+  for(byte k;k<8;k++){
+    pinMode(SolenoidArray[k], OUTPUT);
+    pinMode(SensorArray[k], INPUT_PULLUP);
+  }
+  */
   pinMode(SolenoidArray[0], OUTPUT);
   pinMode(SolenoidArray[2], OUTPUT);
   pinMode(SolenoidArray[3], OUTPUT);
@@ -485,7 +492,7 @@ void loop() {
        Inactive Mode:
        - Change time variables
        - Listen for keypad input
-          - Go into Override Mode (on key input)
+          - Go into Override Mode (on correct key input)
     */
     if (Active == 0) {
       lcd.setCursor(0, 2);
@@ -719,86 +726,18 @@ void Override_Trigger(int RTrigger) {
     lcdstate = "ON";
     tempstate = HIGH;
   }
-  if (RTrigger == 1) {
-    digitalWrite(SolenoidArray[0], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 1 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 1 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 2) {
-    digitalWrite(SolenoidArray[1], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 2 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 2 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 3) {
-    digitalWrite(SolenoidArray[2], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 3 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 3 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 4) {
-    digitalWrite(SolenoidArray[3], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 4 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 4 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 5) {
-    digitalWrite(SolenoidArray[4], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 5 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 5 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 6) {
-    digitalWrite(SolenoidArray[5], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 6 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 6 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 7) {
-    digitalWrite(SolenoidArray[6], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 7 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 7 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
-  if (RTrigger == 8) {
-    digitalWrite(SolenoidArray[7], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay 8 SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print("SYSTEM OVERRIDE | Relay 8 | ");
-    Serial.println(lcdstate);
-    preLCDClear = currentTime;
-  }
+  digitalWrite(SolenoidArray[RTrigger-1], tempstate);
+  lcd.setCursor(0,3);
+  lcd.print("Relay ");
+  lcd.print(RTrigger);
+  lcd.print(" SET TO: ");
+  lcd.print(lcdstate);
+  lcd.print(" ");
+  Serial.print("SYSTEM OVERRIDE | Relay ");
+  Serial.print(RTrigger);
+  Serial.print(" | ");
+  Serial.println(lcdstate);
+  preLCDClear = currentTime;
 }
 
 
