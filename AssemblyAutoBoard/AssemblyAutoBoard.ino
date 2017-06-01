@@ -34,7 +34,7 @@ const byte SensorArray[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte SolenoidArray[8] = {7, 8, 16, 17, 18, 19, 15, 14};
+const byte SolenoidArray[8] = {7, 8, 16, 17, 18, 19, 15, 14, 20};
 /*
    7  - [AL-0] Hanger Feed
    8  - [AL-1] Hook Stopper
@@ -44,6 +44,7 @@ const byte SolenoidArray[8] = {7, 8, 16, 17, 18, 19, 15, 14};
    19 - [AL-5] Crimp
    15 - [AL-6] Vibrator
    14 - [AL-7] MainAir
+   20 - [AL-8] Motor Relay
 */
 //LCD Variables
 byte sysPosition = 0;
@@ -128,10 +129,10 @@ void setup() {
   pinMode(ToggleButton, INPUT);
   //Solenoids
   /*
-  for(byte k;k<8;k++){
+    for(byte k;k<8;k++){
     pinMode(SolenoidArray[k], OUTPUT);
     pinMode(SensorArray[k], INPUT_PULLUP);
-  }
+    }
   */
   pinMode(SolenoidArray[0], OUTPUT);
   pinMode(SolenoidArray[2], OUTPUT);
@@ -141,6 +142,7 @@ void setup() {
   pinMode(SolenoidArray[6], OUTPUT);
   pinMode(SolenoidArray[7], OUTPUT);
   pinMode(SolenoidArray[1], OUTPUT);
+  pinMode(SolenoidArray[8], OUTPUT);
   //Photo
   pinMode(SensorArray[2], INPUT_PULLUP);
   pinMode(SensorArray[1], INPUT_PULLUP);
@@ -291,7 +293,7 @@ void loop() {
       digitalWrite(ErrorLed, HIGH);
     }
     // Active Mode start.  Machine will read sensors and run relays.
-    if (Active == 1) {
+    if ((Active == 1) && (machineStop == 0)) {
       digitalWrite(SolenoidArray[7], HIGH);
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(SensorArray[2]);
@@ -303,7 +305,7 @@ void loop() {
          ManualFeed - Ignore other variables and trigger on button press
       */
       if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
-        if (FeedNext == 0) {
+        if ((FeedNext == 0) && (previousTimer1 - currentTime >= safeArray[0])) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0, 2);
@@ -341,6 +343,12 @@ void loop() {
             FeedNext = 1;
             previousTimer1 = currentTime;
           }
+        }
+        if (previousTimer1 - currenTime <= safeArray[0]) {
+          previousTimer1 = currentTime;
+          //turn off motor
+          digitalWrite(SolenoidArray[8], HIGH);
+          machineStop = 1;
         }
       }
       // FEED OPEN
@@ -415,25 +423,32 @@ void loop() {
       // Hook Cycle
       HookLoop = digitalRead(SensorArray[2]);
       if ((HookLoop == LOW) && (HookNext == 0)) {
-        Serial.println("Hook Cycle Activated");
-        digitalWrite(PanelLed2, HIGH);
-        boolean HookCheck;
-        HookCheck = digitalRead(SensorArray[0]);
-        if (HookCheck == HIGH) {
-          Serial.println("ERROR: Hook Check failed");
-          lcd.setCursor(0, 3);
-          lcd.print("ERROR: Hook Check");
-          preLCDClear = currentTime;
-          //Error = 1;
-          digitalWrite(PanelLed2, LOW);
-          FeedLoop = 0;
-          FeedNext = 0;
-          digitalWrite(ErrorLed, HIGH);
+        if (previousTimer3 - currentTime >= safeArray[1]) {
+          Serial.println("Hook Cycle Activated");
+          digitalWrite(PanelLed2, HIGH);
+          boolean HookCheck;
+          HookCheck = digitalRead(SensorArray[0]);
+          if (HookCheck == HIGH) {
+            Serial.println("ERROR: Hook Check failed");
+            lcd.setCursor(0, 3);
+            lcd.print("ERROR: Hook Check");
+            preLCDClear = currentTime;
+            //Error = 1;
+            digitalWrite(PanelLed2, LOW);
+            FeedLoop = 0;
+            FeedNext = 0;
+            digitalWrite(ErrorLed, HIGH);
+          }
+          if (HookCheck == LOW) {
+            previousTimer3 = currentTime;
+            digitalWrite(SolenoidArray[1], HIGH);
+            HookNext = 1;
+          }
         }
-        if (HookCheck == LOW) {
+        if (previousTimer3 - currentTime <= safeArray[0]) {
+          machineStop = 1;
           previousTimer3 = currentTime;
-          digitalWrite(SolenoidArray[1], HIGH);
-          HookNext = 1;
+          digitalWrite(SolenoidArray[8], HIGH);
         }
       }
       //Send Head Down
@@ -446,12 +461,12 @@ void loop() {
       //Send StripOff Out
       if (HookNext == 2) {
         int HeadCheckDown = digitalRead(SensorArray[6]);
-        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 <= safeArray[0])) {
+        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 <= safeArray[1])) {
           digitalWrite(SolenoidArray[3], HIGH);
           HookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
-        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 >= safeArray[0])) {
+        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 >= safeArray[1])) {
           safeTimer1 = currentTime;
           malfunc++;
           digitalWrite(SolenoidArray[3], HIGH);
@@ -726,8 +741,8 @@ void Override_Trigger(int RTrigger) {
     lcdstate = "ON";
     tempstate = HIGH;
   }
-  digitalWrite(SolenoidArray[RTrigger-1], tempstate);
-  lcd.setCursor(0,3);
+  digitalWrite(SolenoidArray[RTrigger - 1], tempstate);
+  lcd.setCursor(0, 3);
   lcd.print("Relay ");
   lcd.print(RTrigger);
   lcd.print(" SET TO: ");
