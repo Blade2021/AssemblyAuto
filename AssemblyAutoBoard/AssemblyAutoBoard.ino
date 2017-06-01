@@ -293,7 +293,7 @@ void loop() {
       digitalWrite(ErrorLed, HIGH);
     }
     // Active Mode start.  Machine will read sensors and run relays.
-    if ((Active == 1) && (machineStop == 0)) {
+    if ((Active == 1) && (runCheck == 1)) {
       digitalWrite(SolenoidArray[7], HIGH);
       ManualFeed = digitalRead(StartFeedButton);
       FeedLoop = digitalRead(SensorArray[2]);
@@ -305,7 +305,7 @@ void loop() {
          ManualFeed - Ignore other variables and trigger on button press
       */
       if (((FeedLoop == LOW) && (Error == 0)) || ((SecStart == 1) && (FeedCheck == LOW)) || (ManualFeed == HIGH)) {
-        if ((FeedNext == 0) && (previousTimer1 - currentTime >= safeArray[0])) {
+        if ((FeedNext == 0) && (currentTime - previousTimer1 >= safeArray[0])) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0, 2);
@@ -344,11 +344,9 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (previousTimer1 - currenTime <= safeArray[0]) {
+        if (currentTime - previousTime1 <= safeArray[0]) {
           previousTimer1 = currentTime;
-          //turn off motor
-          digitalWrite(SolenoidArray[8], HIGH);
-          machineStop = 1;
+          machStop(0);
         }
       }
       // FEED OPEN
@@ -423,7 +421,7 @@ void loop() {
       // Hook Cycle
       HookLoop = digitalRead(SensorArray[2]);
       if ((HookLoop == LOW) && (HookNext == 0)) {
-        if (previousTimer3 - currentTime >= safeArray[1]) {
+        if (currentTime - previousTimer3 >= safeArray[1]) {
           Serial.println("Hook Cycle Activated");
           digitalWrite(PanelLed2, HIGH);
           boolean HookCheck;
@@ -445,10 +443,10 @@ void loop() {
             HookNext = 1;
           }
         }
-        if (previousTimer3 - currentTime <= safeArray[0]) {
-          machineStop = 1;
+        if (currentTime - previousTimer3 < safeArray[0]) {
+          runCheck = 0;
           previousTimer3 = currentTime;
-          digitalWrite(SolenoidArray[8], HIGH);
+          machStop(0);
         }
       }
       //Send Head Down
@@ -527,6 +525,8 @@ void loop() {
     digitalWrite(PanelLed5, HIGH);
     lcd.setCursor(0, 1);
     lcd.print("OVERRIDE: ON        ");
+    lcd.setCursor(0, 2);
+    lcd.print("SYSTEM: Relay ");
     BNextLogic = digitalRead(NextButton);
     if ((BNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
@@ -564,7 +564,9 @@ void loop() {
         jindx = 0;
       }
       //Display current selected relay on LCD (For use of manual buttons)
-      switch (rswitch) {
+      lcd.setCursor(14, 2);
+      lcd.print(rswitch+1);
+      /*switch (rswitch) {
         case 0:
           lcd.setCursor(0, 2);
           lcd.print("SYSTEM: Relay 1    ");
@@ -599,7 +601,7 @@ void loop() {
           break;
         case 8:
           break;
-      } // End of Rswitch
+      } // End of Rswitch*/
     } // End of Else Statment
   } // End of SOverride2
 } // *****************************  End of LOOP Void ************************
@@ -876,6 +878,18 @@ void setLEDS(byte LEDSnumber)
 
   digitalWrite(LEDSnumber, HIGH);
 }
+
+
+void machStop(byte airoff) {
+  digitalWrite(SolenoidArray[8], HIGH);
+  for(byte k; k<7; k++){
+    digitalWrite(SolenoidArray[k], LOW);
+  }
+  if(airoff >= 1){
+    digitalWrite(SolenoidArray[7], LOW);
+  }
+}
+
 
 //Write how long it took to run 100 parts & reset LogicCount
 void TimeKeeper() {
