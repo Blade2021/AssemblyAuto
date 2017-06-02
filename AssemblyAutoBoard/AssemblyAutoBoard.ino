@@ -34,17 +34,17 @@ const byte sensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte solenoidArray[] = {7, 8, 16, 17, 18, 19, 15, 14, 9 };
+const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
 /*
-   7  - [AL-0] Hanger Feed
-   8  - [AL-1] Hook Stopper
-   16 - [AL-2] Head/Tooling
-   17 - [AL-3] Strip Off
-   18 - [AL-4] Crimp Stopper
-   19 - [AL-5] Crimp
-   15 - [AL-6] Vibrator
-   14 - [AL-7] MainAir
-   20 - [AL-8] Motor Relay
+   14 - [AL-0] Hanger Feed
+   15 - [AL-1] Hook Stopper
+   19 - [AL-2] Head/Tooling
+   18 - [AL-3] Strip Off
+   17 - [AL-4] Crimp Stopper
+   16 - [AL-5] Crimp
+   8 - [AL-6] Vibrator
+   7 - [AL-7] MainAir
+   9  - [AL-8] Motor Relay
 */
 //LCD Variables
 byte sysPosition = 0;
@@ -61,7 +61,6 @@ unsigned long previousTimer1 = 0;
 unsigned long previousTimer2 = 0;
 unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
-unsigned long safeTimer1 = 0;
 unsigned long precountTime = 0;
 long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 1200, 1000};  //Time variables
 
@@ -129,12 +128,6 @@ void setup() {
   pinMode(DownButton, INPUT);
   pinMode(ToggleButton, INPUT);
   //Solenoids
-  /*
-    for(byte k;k<8;k++){
-    pinMode(solenoidArray[k], OUTPUT);
-    pinMode(sensorArray[k], INPUT_PULLUP);
-    }
-  */
   pinMode(solenoidArray[0], OUTPUT);
   pinMode(solenoidArray[2], OUTPUT);
   pinMode(solenoidArray[3], OUTPUT);
@@ -166,7 +159,7 @@ void setup() {
   lcd.print("*** BOOTING ***");
 
   //Load EEPROM Memory
-  for (byte k = 0; k < 6; k++) {
+  for (byte k = 0; k < 8; k++) {
     byte f = k * 2;
     int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
@@ -212,8 +205,6 @@ void loop() {
         Serial.print(indx);
         Serial.println(" reset.");
       }
-      //Add null to end of stateArray.  stateArray is used to keep track of the state of the relays.
-      //stateArray[7] = '\0';
       lcd.setCursor(0, 1);
       lcd.print("                    ");
       digitalWrite(panelLed1, LOW);
@@ -460,13 +451,12 @@ void loop() {
       //Send StripOff Out
       if (hookNext == 2) {
         int HeadCheckDown = digitalRead(sensorArray[6]);
-        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 <= sysArray[7])) {
+        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 <= sysArray[7])) {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
-        if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 >= sysArray[7])) {
-          safeTimer1 = currentTime;
+        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 >= sysArray[7])) {
           mfcount++;
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
@@ -569,7 +559,7 @@ void loop() {
       lcd.print(rswitch + 1);
     } // End of Else Statment
   } // End of sOverride2
-} // *****************************  End of LOOP Void ************************
+} //End of LOOP Void
 
 
 void inactive(int sysPosition) {
@@ -619,6 +609,18 @@ void inactive(int sysPosition) {
       setLEDS(panelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Vibrator Time     ");
+      changetime(sysPosition);
+      break;
+    case 6:
+      setLEDS(panelLed2);
+      lcd.setCursor(0, 1);
+      lcd.print("Main Cycle Safe CHK ");
+      changetime(sysPosition);
+      break;
+    case 7:
+      setLEDS(panelLed3);
+      lcd.setCursor(0, 1);
+      lcd.print("Hook Cycle Safe CHK ");
       changetime(sysPosition);
       break;
   } //END OF MAIN SWITCH
