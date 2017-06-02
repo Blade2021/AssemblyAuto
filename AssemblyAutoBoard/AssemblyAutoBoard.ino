@@ -22,7 +22,7 @@ const byte PanelLed4 = 45;
 const byte PanelLed5 = 43;
 const byte ErrorLed = 13;
 //Sensors
-const byte SensorArray[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
+const byte SensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
 /* SENSOR LIST
    A0 - HookRailEmpty
    A1 - HangerRackFull
@@ -34,7 +34,7 @@ const byte SensorArray[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte SolenoidArray[8] = {7, 8, 16, 17, 18, 19, 15, 14, 20};
+const byte SolenoidArray[] = {7, 8, 16, 17, 18, 19, 15, 14, 9 };
 /*
    7  - [AL-0] Hanger Feed
    8  - [AL-1] Hook Stopper
@@ -100,7 +100,8 @@ byte SOverride = 1;
 char StateArray[8] = {0}; //Include extra 0 for the NULL END
 int passcode = 7777;
 byte Error = 0;
-byte malfunc = 0;
+byte runCheck = 1;  //Initalize as 1 until machine error. 
+byte mfcount;
 
 //LOGIC CONTROLS
 byte LogicCount = 0; //Counter of material flow
@@ -344,7 +345,7 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (currentTime - previousTime1 <= safeArray[0]) {
+        if (currentTime - previousTimer1 <= safeArray[0]) {
           previousTimer1 = currentTime;
           machStop(0);
         }
@@ -466,7 +467,7 @@ void loop() {
         }
         if ((HeadCheckDown == LOW) && (currentTime - safeTimer1 >= safeArray[1])) {
           safeTimer1 = currentTime;
-          malfunc++;
+          mfcount++;
           digitalWrite(SolenoidArray[3], HIGH);
           HookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
