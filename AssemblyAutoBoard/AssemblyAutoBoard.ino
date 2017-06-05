@@ -336,9 +336,19 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (currentTime - previousTimer1 <= sysArray[6]) {
+        if ((currentTime - previousTimer1 <= sysArray[6]) && (manualFeed == LOW)) {
+          //previousTimer1 = currentTime;
+          //machStop(0);
+          Serial.println("Motor stopped due to ERROR[0032]");
+          Serial.print("preTime: ");
+          Serial.print(previousTimer1);
+          Serial.print(" - ");
+          Serial.print("currentTime: ");
+          Serial.print(currentTime);
+          Serial.print(" > ");
+          Serial.print("varTime: ");
+          Serial.println(sysArray[6]);
           previousTimer1 = currentTime;
-          machStop(0);
         }
       }
       // FEED OPEN
