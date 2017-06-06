@@ -83,6 +83,7 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 //System Variables
 boolean active = LOW;
+byte mpsEnable = 0;
 byte toggleLogic = 0;
 byte feedLoop = 0;
 byte feedCheck = 0;
@@ -192,10 +193,11 @@ void loop() {
   //Main Timer to keep track of entire machine!
   unsigned long currentTime = millis();
   //Call LCD Clear function to clear 4th line of LCD
-  lcdClear();
+  lcdControl();
+  /*
   lcd.setCursor(10, 0);
   //Print run time on first line of LCD
-  lcd.print(millis() / 1000);
+  lcd.print(millis() / 1000);*/
   // Check sOverride  If 0 or 1, It is considered "off"
   if (sOverride == 0 || sOverride == 1) {
     //Run initial reset of all LED's and reset Relay status
@@ -337,6 +339,7 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
+        if (mpsEnable >= 1) {
           if ((currentTime - previousTimer1 <= sysArray[6]) && (currentTime - previousTimer1 >= buttonWait) && (manualFeed == LOW)) {
             //previousTimer1 = currentTime;
             //machStop(0);
@@ -835,8 +838,10 @@ void changetime(int sysPosition) {
 //End of ChangeTime function
 
 //Clear last line of LCD every x(seconds)
-void lcdClear() {
+void lcdControl() {
   unsigned long currentTime = millis();
+  lcd.setCursor(10, 0);
+  lcd.print(currentTime/1000);
   if (currentTime - preLCDClear >= lcdClearTime)
   {
     preLCDClear = currentTime;
@@ -873,12 +878,17 @@ void mpsInput() {
   //key = keypad.getKey();
   while (!key)
   {
+    lcdControl();
     key = keypad.getKey();
     if(key){
-      mpsEnable = key;
+      byte k = key;
+      if(k > 4){
+        k = 4;
+      }
+      mpsEnable = k;
       lcd.setCursor(0,3);
       lcd.print("MPS set to: ");
-      lcd.print(key);
+      lcd.print(mpsEnable);
       EEPROM.update(16, mpsEnable);
       Serial.print("SYSTEM: Updated mpsEnable: ");
       Serial.println(mpsEnable);
