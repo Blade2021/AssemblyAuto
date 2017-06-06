@@ -194,10 +194,6 @@ void loop() {
   unsigned long currentTime = millis();
   //Call LCD Clear function to clear 4th line of LCD
   lcdControl();
-  /*
-  lcd.setCursor(10, 0);
-  //Print run time on first line of LCD
-  lcd.print(millis() / 1000);*/
   // Check sOverride  If 0 or 1, It is considered "off"
   if (sOverride == 0 || sOverride == 1) {
     //Run initial reset of all LED's and reset Relay status
@@ -466,7 +462,7 @@ void loop() {
       //Send StripOff Out
       if (hookNext == 2) {
         int HeadCheckDown = digitalRead(sensorArray[6]);
-        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 <= sysArray[7])) {
+        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 < sysArray[7])) {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
@@ -561,10 +557,10 @@ void loop() {
       char key;
       key = keypad.getKey();
       if (key) {
-        char bxyz[] = {0};
-        bxyz[jindx++] = key;
-        bxyz[jindx];
-        int tempb = atoi(bxyz);
+        char keyInput[] = {0};
+        keyInput[jindx++] = key;
+        keyInput[jindx];
+        int tempb = atoi(keyInput);
         //Send keypad input to Override_Trigger function
         Override_Trigger(tempb);
         jindx = 0;
@@ -875,13 +871,18 @@ void machStop(byte airoff) {
 
 void mpsInput() {
   char key;
-  //key = keypad.getKey();
+  lcd.setCursor(0,1);
+  lcd.print("Enter key for MPS");
+  lcd.setCursor(0,2);
+  lcd.print("Current: ");
+  lcd.print(mpsEnable);
   while (!key)
   {
     lcdControl();
     key = keypad.getKey();
     if(key){
-      byte k = key;
+      int k = key - '0';
+      Serial.println(k);
       if(k > 4){
         k = 4;
       }
