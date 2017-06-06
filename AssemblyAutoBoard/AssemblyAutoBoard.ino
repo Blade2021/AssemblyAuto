@@ -8,7 +8,7 @@
 #include <EEPROM.h>
 
 //Panel Buttons
-const byte StartFeedButton = 6;
+const byte manualButton = 6;
 const byte NextButton = 42;
 const byte SaveButton = 46;
 const byte UpButton = 48;
@@ -42,8 +42,8 @@ const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
    18 - [AL-3] Strip Off
    17 - [AL-4] Crimp Stopper
    16 - [AL-5] Crimp
-   8 - [AL-6] Vibrator
-   7 - [AL-7] MainAir
+   8  - [AL-6] Vibrator
+   7  - [AL-7] MainAir
    9  - [AL-8] Motor Relay
 */
 //LCD Variables
@@ -108,7 +108,7 @@ byte logicCount = 0; //Counter of material flow
 byte bNextLogic = 0; //Button Next Logic
 byte bUpLogic = 0; //Button Up Logic
 byte bDownLogic = 0; //Button Down Logic
-byte saveButtonTrigger = 0; //Save Button Logic
+byte saveButtonLogic = 0; //Save Button Logic
 byte manualFeed = 0; //Manual Feed Logic
 byte secStart = 0; //Second Start
 
@@ -122,7 +122,7 @@ void setup() {
   pinMode(panelLed5, OUTPUT);
   pinMode(errorLed, OUTPUT);
   //Buttons
-  pinMode(StartFeedButton, INPUT);
+  pinMode(manualButton, INPUT);
   pinMode(NextButton, INPUT);
   pinMode(SaveButton, INPUT);
   pinMode(UpButton, INPUT);
@@ -256,14 +256,24 @@ void loop() {
       Serial.println(sysArray[sysPosition]);
     }
     //Save the new value to the memory for next reset.
-    saveButtonTrigger = digitalRead(SaveButton);
-    if ((saveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    saveButtonLogic = digitalRead(SaveButton);
+    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (sOverride == 0 || sOverride == 1) {
         Serial.print("TimeVar ");
         Serial.print(sysPosition + 1);
         Serial.println(" saved.");
         savetrigger(sysPosition);  //go to savetrigger function to save.
+      }
+    }
+    if (mpsEnable > 0){
+      manualFeed = digitalRead(manualButton);
+      if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+        buttonPreviousTime = currentTime;
+        runCheck = 1;
+        Serial.println("RunCheck reset!");
+        lcd.setCursor(0,3);
+        lcd.print("RunCheck Reset!");
       }
     }
     /* Trigger active mode on/off
@@ -286,7 +296,7 @@ void loop() {
     // active Mode start.  Machine will read sensors and run relays.
     if ((active == 1) && (runCheck == 1)) {
       digitalWrite(solenoidArray[7], HIGH);
-      manualFeed = digitalRead(StartFeedButton);
+      manualFeed = digitalRead(manualButton);
       feedLoop = digitalRead(sensorArray[2]);
       feedCheck = digitalRead(sensorArray[1]);
       /* feedLoop - Check your main cycle sensor
@@ -537,8 +547,8 @@ void loop() {
         rswitch = 0;
       }
     }
-    saveButtonTrigger = digitalRead(SaveButton);
-    if ((saveButtonTrigger == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    saveButtonLogic = digitalRead(SaveButton);
+    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       Override_Trigger(rswitch + 1);
     }
@@ -742,6 +752,9 @@ void changetime(int sysPosition) {
       mpsInput();
       return;
     }
+    if (key == 'B'){
+      mfcount = 0;
+    }
     lcd.print(key);
     pos++;
     lcd.setCursor(pos, 2);
@@ -837,7 +850,7 @@ void changetime(int sysPosition) {
 void lcdControl() {
   unsigned long currentTime = millis();
   lcd.setCursor(10, 0);
-  lcd.print(currentTime/1000);
+  lcd.print(currentTime / 1000);
   if (currentTime - preLCDClear >= lcdClearTime)
   {
     preLCDClear = currentTime;
@@ -871,23 +884,26 @@ void machStop(byte airoff) {
 
 void mpsInput() {
   char key;
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print("Enter key for MPS");
-  lcd.setCursor(0,2);
+  lcd.setCursor(0, 2);
   lcd.print("Current: ");
   lcd.print(mpsEnable);
   while (!key)
   {
     lcdControl();
     key = keypad.getKey();
-    if(key){
+    if (key) {
+      if(key == '#'){
+        return;
+      }
       int k = key - '0';
       Serial.println(k);
-      if(k > 4){
+      if (k > 4) {
         k = 4;
       }
       mpsEnable = k;
-      lcd.setCursor(0,3);
+      lcd.setCursor(0, 3);
       lcd.print("MPS set to: ");
       lcd.print(mpsEnable);
       EEPROM.update(16, mpsEnable);
