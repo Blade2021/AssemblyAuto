@@ -35,6 +35,7 @@ void setup()
     .setPosition(20, 630)
     .setFont(createFont("arial", 14))
     .setAutoClear(true)
+
     ;
 
   timer1 = cp5.addTextfield("timer0")
@@ -232,13 +233,6 @@ void setup()
     .setFont(createFont("Arial", 18))
     .setColor(color(25, 143, 250, 255))
     ;
-  cp5.addTextlabel("rstext0")
-    .setText("Off")
-    .setPosition(383, 52)
-    .bringToFront()
-    .setFont(createFont("Arial", 16))
-    .setColor(color(255, 255, 255, 255))
-    ;
   cp5.addTextfield("relayPin0")
     .setPosition(560, 50)
     .setSize(100, 35)
@@ -352,10 +346,6 @@ void draw() {
       } else {
         fill(color(123, 255, 0, 255));
         rect(385, 50+i*45, 30, 30);
-        String label = ("rstext" + i);
-        if("rtext0".equals(label)){
-          cp5.get(Textlabel.class, label).setText("ON");
-        }
       }
     }
   }
