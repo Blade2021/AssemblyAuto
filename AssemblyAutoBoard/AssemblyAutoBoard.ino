@@ -99,7 +99,6 @@ byte rswitch = 0;
 byte sOverride = 1;
 byte stateArray[9] = {0}; //Include extra 0 for the NULL END
 const int passcode = 7777;
-byte error = 0;
 byte runCheck = 1;  //Initalize as 1 until machine error.
 byte mfcount;
 
@@ -567,13 +566,9 @@ void loop() {
       char key;
       key = keypad.getKey();
       if (key) {
-        char keyInput[] = {0};
-        keyInput[jindx++] = key;
-        keyInput[jindx];
-        int tempb = atoi(keyInput);
+        int tempb = key - '0';
         //Send keypad input to Override_Trigger function
         Override_Trigger(tempb);
-        jindx = 0;
       }
       //Display current selected relay on LCD (For use of manual buttons)
       lcd.setCursor(14, 2);
