@@ -173,6 +173,7 @@ void setup() {
     Serial.println(sysArray[k]);
     delay(10);
   }
+  mpsEnable = EEPROM.read(16);
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
@@ -336,19 +337,20 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if ((currentTime - previousTimer1 <= sysArray[6]) && (manualFeed == LOW)) {
-          //previousTimer1 = currentTime;
-          //machStop(0);
-          Serial.println("Motor stopped due to ERROR[0032]");
-          Serial.print("preTime: ");
-          Serial.print(previousTimer1);
-          Serial.print(" - ");
-          Serial.print("currentTime: ");
-          Serial.print(currentTime);
-          Serial.print(" > ");
-          Serial.print("varTime: ");
-          Serial.println(sysArray[6]);
-          previousTimer1 = currentTime;
+          if ((currentTime - previousTimer1 <= sysArray[6]) && (currentTime - previousTimer1 >= buttonWait) && (manualFeed == LOW)) {
+            //previousTimer1 = currentTime;
+            //machStop(0);
+            Serial.println("Motor stopped due to ERROR[0032]");
+            Serial.print("preTime: ");
+            Serial.print(previousTimer1);
+            Serial.print(" - ");
+            Serial.print("currentTime: ");
+            Serial.print(currentTime);
+            Serial.print(" > ");
+            Serial.print("varTime: ");
+            Serial.println(sysArray[6]);
+            previousTimer1 = currentTime;
+          }
         }
       }
       // FEED OPEN
@@ -737,6 +739,10 @@ void changetime(int sysPosition) {
   char key;
   key = keypad.getKey();
   if (key) {
+    if ((key == 'A') || (key == 'a')) {
+      mpsInput();
+      return;
+    }
     lcd.print(key);
     pos++;
     lcd.setCursor(pos, 2);
@@ -745,6 +751,7 @@ void changetime(int sysPosition) {
     if (pos > 20) {
       pos = 15;
     }
+
     if (key == '*') {
       int tempa = atoi(arraya);
       Serial.print("SYSTEM | Keypad Input: ");
@@ -861,6 +868,24 @@ void machStop(byte airoff) {
   }
 }
 
+void mpsInput() {
+  char key;
+  //key = keypad.getKey();
+  while (!key)
+  {
+    key = keypad.getKey();
+    if(key){
+      mpsEnable = key;
+      lcd.setCursor(0,3);
+      lcd.print("MPS set to: ");
+      lcd.print(key);
+      EEPROM.update(16, mpsEnable);
+      Serial.print("SYSTEM: Updated mpsEnable: ");
+      Serial.println(mpsEnable);
+      preLCDClear = millis();
+    }
+  }
+}
 
 //Write how long it took to run 100 parts & reset logicCount
 void TimeKeeper() {
