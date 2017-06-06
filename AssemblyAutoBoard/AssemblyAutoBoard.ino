@@ -83,6 +83,7 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 //System Variables
 boolean active = LOW;
+byte partError = 0;
 byte mpsEnable = 0;
 byte toggleLogic = 0;
 byte feedLoop = 0;
@@ -304,7 +305,7 @@ void loop() {
          feedCheck - Check Feed station for material.
          manualFeed - Ignore other variables and trigger on button press
       */
-      if (((feedLoop == LOW) && (error == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
+      if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
         if ((feedNext == 0) && (currentTime - previousTimer1 >= sysArray[6])) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
@@ -321,7 +322,7 @@ void loop() {
             lcd.setCursor(0, 3);
             lcd.print("ERROR: Hanger Rack");
             preLCDClear = currentTime;
-            error = 1;
+            partError = 1;
             secStart = 1;
             lcd.setCursor(11, 2);
             lcd.print("ON ");
@@ -332,7 +333,7 @@ void loop() {
             secStart = 0;
             lcd.setCursor(11, 2);
             lcd.print("OFF");
-            error = 0;
+            partError = 0;
             lcd.setCursor(0, 1);
             lcd.print("SC: ");
             lcd.setCursor(4, 1);
@@ -443,7 +444,7 @@ void loop() {
             lcd.setCursor(0, 3);
             lcd.print("ERROR: Hook Check");
             preLCDClear = currentTime;
-            //error = 1;
+            //partError = 1;
             digitalWrite(panelLed2, LOW);
             feedLoop = 0;
             feedNext = 0;
