@@ -434,7 +434,7 @@ void loop() {
       // Hook Cycle
       hookLoop = digitalRead(sensorArray[2]);
       if ((hookLoop == LOW) && (hookNext == 0)) {
-        if (currentTime - previousTimer3 >= sysArray[7]) {
+        if (currentTime - previousTimer3 >= sysArray[6]) {
           Serial.println("Hook Cycle Activated");
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
@@ -456,7 +456,7 @@ void loop() {
             hookNext = 1;
           }
         }
-        if ((currentTime - previousTimer3 < sysArray[6]) && (mpsEnable >= 4)) {
+        if ((currentTime - previousTimer3 < sysArray[6]) && (currentTime - previousTimer3 >= buttonWait) && (mpsEnable >= 4)) {
           runCheck = 0;
           previousTimer3 = currentTime;
           machStop(0);
