@@ -176,7 +176,7 @@ void setup() {
     Serial.println(sysArray[k]);
     delay(10);
   }
-  mpsEnable = EEPROM.read(16);
+  mpsEnable = EEPROM.read(25);
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
@@ -754,10 +754,15 @@ void changetime(int sysPosition) {
   if (key) {
     if ((key == 'A') || (key == 'a')) {
       mpsInput();
+      Serial.println("MPS Activated");
       return;
     }
     if (key == 'B'){
       mfcount = 0;
+      Serial.print("SYSTEM | Reset Malfunction count");
+      lcd.setCursor(0,3);
+      lcd.print("Reset MalFunc Count");
+      preLCDClear = currentTime;
     }
     lcd.print(key);
     pos++;
@@ -893,24 +898,25 @@ void mpsInput() {
   lcd.setCursor(0, 2);
   lcd.print("Current: ");
   lcd.print(mpsEnable);
+  key = keypad.getKey();
   while (!key)
   {
-    lcdControl();
     key = keypad.getKey();
+    lcdControl();
     if (key) {
       if(key == '#'){
         return;
       }
-      int k = key - '0';
-      Serial.println(k);
-      if (k > 4) {
-        k = 4;
+      int keyValue = key - '0';
+      Serial.println(keyValue);
+      if (keyValue > 4) {
+        keyValue = 4;
       }
-      mpsEnable = k;
+      mpsEnable = keyValue;
       lcd.setCursor(0, 3);
       lcd.print("MPS set to: ");
       lcd.print(mpsEnable);
-      EEPROM.update(16, mpsEnable);
+      EEPROM.update(25, mpsEnable);
       Serial.print("SYSTEM: Updated mpsEnable: ");
       Serial.println(mpsEnable);
       preLCDClear = millis();
