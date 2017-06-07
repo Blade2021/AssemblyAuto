@@ -9,11 +9,11 @@
 
 //Panel Buttons
 const byte manualButton = 6;
-const byte NextButton = 42;
-const byte SaveButton = 46;
-const byte UpButton = 48;
-const byte DownButton = 44;
-const byte ToggleButton = 50;
+const byte nextButton = 42;
+const byte saveButton = 46;
+const byte upButton = 48;
+const byte downButton = 44;
+const byte toggleButton = 50;
 // Panel LEDs
 const byte panelLed1 = 51;
 const byte panelLed2 = 49;
@@ -123,11 +123,11 @@ void setup() {
   pinMode(errorLed, OUTPUT);
   //Buttons
   pinMode(manualButton, INPUT);
-  pinMode(NextButton, INPUT);
-  pinMode(SaveButton, INPUT);
-  pinMode(UpButton, INPUT);
-  pinMode(DownButton, INPUT);
-  pinMode(ToggleButton, INPUT);
+  pinMode(nextButton, INPUT);
+  pinMode(saveButton, INPUT);
+  pinMode(upButton, INPUT);
+  pinMode(downButton, INPUT);
+  pinMode(toggleButton, INPUT);
   //Solenoids
   pinMode(solenoidArray[0], OUTPUT);
   pinMode(solenoidArray[2], OUTPUT);
@@ -216,7 +216,7 @@ void loop() {
       sOverride = 1; //Exit initial reset
     }
     //Listen for Next Button (Goes through different values inside sysArray)
-    bNextLogic = digitalRead(NextButton);
+    bNextLogic = digitalRead(nextButton);
     if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       sysPosition++;
@@ -236,7 +236,7 @@ void loop() {
       }
     }
     //Raise the value of the selected variable inside the sysArray (ADD Time)
-    bUpLogic = digitalRead(UpButton);
+    bUpLogic = digitalRead(upButton);
     if ((bUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] + 100;
       buttonPreviousTime = currentTime;
@@ -246,7 +246,7 @@ void loop() {
       Serial.println(sysArray[sysPosition]);
     }
     //Lower the value of the selected variable inside the sysArray (Reduce Time)
-    bDownLogic = digitalRead(DownButton);
+    bDownLogic = digitalRead(downButton);
     if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] - 100;
       buttonPreviousTime = currentTime;
@@ -256,7 +256,7 @@ void loop() {
       Serial.println(sysArray[sysPosition]);
     }
     //Save the new value to the memory for next reset.
-    saveButtonLogic = digitalRead(SaveButton);
+    saveButtonLogic = digitalRead(saveButton);
     if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (sOverride == 0 || sOverride == 1) {
@@ -279,7 +279,7 @@ void loop() {
     /* Trigger active mode on/off
         active Mode: Sets wether the machine should read the sensors or ignore them.
     */
-    toggleLogic = digitalRead(ToggleButton);
+    toggleLogic = digitalRead(toggleButton);
     if ((toggleLogic == HIGH) && (active == 0)) {
       active = 1;
       digitalWrite(panelLed1, LOW);
@@ -539,7 +539,7 @@ void loop() {
     lcd.print("OVERRIDE: ON        ");
     lcd.setCursor(0, 2);
     lcd.print("SYSTEM: Relay ");
-    bNextLogic = digitalRead(NextButton);
+    bNextLogic = digitalRead(nextButton);
     if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       rswitch++;
@@ -547,12 +547,12 @@ void loop() {
         rswitch = 0;
       }
     }
-    saveButtonLogic = digitalRead(SaveButton);
+    saveButtonLogic = digitalRead(saveButton);
     if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       Override_Trigger(rswitch + 1);
     }
-    bDownLogic = digitalRead(DownButton);
+    bDownLogic = digitalRead(downButton);
     if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       lcd.setCursor(0, 3);
