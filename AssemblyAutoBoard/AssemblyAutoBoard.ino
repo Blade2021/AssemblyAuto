@@ -52,6 +52,7 @@ const int lcdClearTime = 7000;
 byte pos = 15;
 byte jindx = 0;
 char arraya [] = {0, 1, 2, 3, 0};
+const int sysLength = 9;
 
 //Time Controls
 const int buttonWait = 300;
@@ -62,7 +63,8 @@ unsigned long previousTimer2 = 0;
 unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
-long sysArray[] = {1000, 1000, 1000, 1000, 2300, 2000, 1200, 1000};  //Time variables
+//System Time Variables
+int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200}; 
 
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -160,7 +162,7 @@ void setup() {
   lcd.print("*** BOOTING ***");
 
   //Load EEPROM Memory
-  for (byte k = 0; k < 8; k++) {
+  for (byte k = 0; k < sysLength; k++) {
     byte f = k * 2;
     int ytemp = EEPROM.read(f);
     ytemp = ytemp * 10;
@@ -221,7 +223,7 @@ void loop() {
       buttonPreviousTime = currentTime;
       sysPosition++;
       //Reset back to value 0 if you get to the end of the array.
-      if (sysPosition >= 8) {
+      if (sysPosition >= sysLength) {
         sysPosition = 0;
         Serial.print("Time VAR: ");
         Serial.print(sysPosition + 1);
@@ -306,7 +308,7 @@ void loop() {
          manualFeed - Ignore other variables and trigger on button press
       */
       if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
-        if ((feedNext == 0) && (currentTime - previousTimer1 >= sysArray[6])) {
+        if ((feedNext == 0) && (currentTime - previousTimer1 >= sysArray[7])) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0, 2);
@@ -346,7 +348,7 @@ void loop() {
           }
         }
         if (mpsEnable >= 1) {
-          if ((currentTime - previousTimer1 <= sysArray[6]) && (currentTime - previousTimer1 >= buttonWait) && (manualFeed == LOW)) {
+          if ((currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
             //previousTimer1 = currentTime;
             //machStop(0);
             Serial.println("Motor stopped due to ERROR[0032]");
@@ -357,7 +359,7 @@ void loop() {
             Serial.print(currentTime);
             Serial.print(" > ");
             Serial.print("varTime: ");
-            Serial.println(sysArray[6]);
+            Serial.println(sysArray[7]);
             previousTimer1 = currentTime;
           }
         }
@@ -434,7 +436,7 @@ void loop() {
       // Hook Cycle
       hookLoop = digitalRead(sensorArray[2]);
       if ((hookLoop == LOW) && (hookNext == 0)) {
-        if (currentTime - previousTimer3 >= sysArray[6]) {
+        if (currentTime - previousTimer3 >= sysArray[7]) {
           Serial.println("Hook Cycle Activated");
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
@@ -456,7 +458,7 @@ void loop() {
             hookNext = 1;
           }
         }
-        if ((currentTime - previousTimer3 < sysArray[6]) && (currentTime - previousTimer3 >= buttonWait) && (mpsEnable >= 4)) {
+        if ((currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6]) && (mpsEnable >= 4)) {
           runCheck = 0;
           previousTimer3 = currentTime;
           machStop(0);
@@ -472,12 +474,12 @@ void loop() {
       //Send StripOff Out
       if (hookNext == 2) {
         int HeadCheckDown = digitalRead(sensorArray[6]);
-        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 < sysArray[7])) {
+        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 < sysArray[8])) {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
-        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 >= sysArray[7])) {
+        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 >= sysArray[8])) {
           mfcount++;
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
@@ -631,13 +633,19 @@ void inactive(int sysPosition) {
     case 6:
       setLEDS(panelLed2);
       lcd.setCursor(0, 1);
-      lcd.print("Main Cycle Safe CHK ");
+      lcd.print("Sensor Ignore [MPS] ");
       changetime(sysPosition);
       break;
     case 7:
       setLEDS(panelLed3);
       lcd.setCursor(0, 1);
-      lcd.print("Hook Cycle Safe CHK ");
+      lcd.print("Main Cycle [MPS]   ");
+      changetime(sysPosition);
+      break;
+    case 8:
+      setLEDS(panelLed4);
+      lcd.setCursor(0, 1);
+      lcd.print("Head LOC [MPS]     ");
       changetime(sysPosition);
       break;
   } //END OF MAIN SWITCH
@@ -739,7 +747,7 @@ void changetime(int sysPosition) {
   unsigned long currentTime = millis();
   lcd.setCursor(5, 2);
   lcd.print(sysArray[sysPosition]);
-  lcd.print("       ");
+  lcd.print("      ");
   lcd.setCursor(pos, 2);
   char key;
   key = keypad.getKey();
