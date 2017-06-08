@@ -17,3 +17,7 @@ Timer was built as a test script for main functionality.  However Timer-2VAR[EEP
 AssemblyAuto.INO
 ### SubFiles
 SerTest.pde
+
+##To-Do
+- WatchDog Timer
+- MPS(further expansion)
