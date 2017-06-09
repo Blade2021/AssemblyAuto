@@ -6,6 +6,7 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
+#include <util/crc16.h>
 
 //Panel Buttons
 const byte manualButton = 6;
@@ -192,7 +193,7 @@ void setup() {
     memAddress++;
     int memBlockTwo = EEPROM.read(memAddress);
     //Do the same as memBlockOne
-    memBlockTwomp = memBlockTwo * 10;
+    memBlockTwo = memBlockTwo * 10;
     if ((memBlockOne > 2550) || (memBlockOne < 0)) {
       Serial.print("ERROR | Corrupted memory LOC:");
       Serial.print(memAddress);
@@ -356,7 +357,7 @@ void loop() {
           //Check Feed station for material.
           feedCheck = digitalRead(sensorArray[1]);
           if ((feedCheck == HIGH) && (secStart != 1)) {
-            Serial.println("ERROR: Hanger Rack NOT full.");
+            Serial.println(F("ERROR: Hanger Rack NOT full."));
             lcd.setCursor(0, 3);
             lcd.print("ERROR: Hanger Rack");
             preLCDClear = currentTime;
@@ -387,7 +388,7 @@ void loop() {
           if ((currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
             //previousTimer1 = currentTime;
             //machStop(0);
-            Serial.println("Motor stopped due to ERROR[0032]");
+            Serial.println(F("Motor stopped due to ERROR[0032]"));
             Serial.print("preTime: ");
             Serial.print(previousTimer1);
             Serial.print(" - ");
@@ -795,7 +796,7 @@ void changetime(int sysPosition) {
     }
     if (key == 'B') {
       mfcount = 0;
-      Serial.print("SYSTEM | Reset Malfunction count");
+      Serial.print(F("SYSTEM | Reset Malfunction count"));
       lcd.setCursor(0, 3);
       lcd.print("Reset MalFunc Count");
       preLCDClear = currentTime;
@@ -963,13 +964,12 @@ void mpsInput() {
 uint16_t make_crc()
 {
   uint16_t crc = 0;
-  for (int i = 0; i < EEPROM.length(); i++)
+  for (int i = 0; i < 200; i++)
   {
     crc = _crc16_update(crc, EEPROM.read(i));
   }
   return crc;
 }
-
 //Write how long it took to run 100 parts & reset logicCount
 void TimeKeeper() {
   unsigned long tempvarj = ((millis() - precountTime) / 1000);
