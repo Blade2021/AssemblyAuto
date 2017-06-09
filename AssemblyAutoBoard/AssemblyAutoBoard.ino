@@ -64,8 +64,17 @@ unsigned long previousTimer3 = 0;
 unsigned long previousTimer4 = 0;
 unsigned long precountTime = 0;
 //System Time Variables
-int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200}; 
-
+int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200};
+/*AL-0 - Feed Cycle Delay
+  AL-1 - Feed Open Delay
+  AL-2 - Hook Cycle Delay
+  AL-3 - Crimp Cycle Delay
+  AL-4 - Crimp Time
+  AL-5 - RailCheck Delay
+  AL-6 - Sensor Ignore Delay
+  AL-7 - Feed/Hook [MPS]
+  AL-8 - Head LOC [MPS]
+*/
 //LiquidCrystal
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
@@ -162,18 +171,45 @@ void setup() {
   lcd.print("*** BOOTING ***");
 
   //Load EEPROM Memory
-  for (byte k = 0; k < sysLength; k++) {
-    byte f = k * 2;
-    int ytemp = EEPROM.read(f);
-    ytemp = ytemp * 10;
-    f++;
-    int gtemp = EEPROM.read(f);
-    gtemp = gtemp * 10;
-    sysArray[k] = gtemp + ytemp;
+  for (byte k; k < sysLength; k++) {
+    //Times the value of k by 2 to get the first address for each variable.
+    byte memAddress = k * 2;
+    int memBlockOne = EEPROM.read(memAddress);
+    //times the value from the EEPROM * 10 to get desired result for this sketch.
+    memBlockOne = memBlockOne * 10;
+    //See if the value falls within the limits of the variable.
+    if ((memBlockOne > 2550) || (memBlockOne < 0)) {
+      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(memAddress);
+      Serial.print(" Result:");
+      Serial.println(memBlockOne);
+      lcd.setCursor(0, 0);
+      lcd.print("MEMCORE:");
+      lcd.print(memAddress);
+      break;
+    }
+    //Increment the address by one to get second value.
+    memAddress++;
+    int memBlockTwo = EEPROM.read(memAddress);
+    //Do the same as memBlockOne
+    memBlockTwomp = memBlockTwo * 10;
+    if ((memBlockOne > 2550) || (memBlockOne < 0)) {
+      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(memAddress);
+      Serial.print(" Result:");
+      Serial.println(memBlockOne);
+      lcd.setCursor(0, 0);
+      lcd.print("MEMCORE:");
+      lcd.print(memAddress);
+      break;
+    }
+    //Load the value into the system array for use by the sketch.
+    sysArray[k] = memBlockTwo + memBlockOne;
     Serial.print("EEPROM[");
     Serial.print(k);
     Serial.print("]: ");
     Serial.println(sysArray[k]);
+    //Small delay to keep from overprocessing
     delay(10);
   }
   mpsEnable = EEPROM.read(25);
@@ -268,13 +304,13 @@ void loop() {
         savetrigger(sysPosition);  //go to savetrigger function to save.
       }
     }
-    if (mpsEnable > 0){
+    if (mpsEnable > 0) {
       manualFeed = digitalRead(manualButton);
-      if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)){
+      if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime;
         runCheck = 1;
         Serial.println("RunCheck reset!");
-        lcd.setCursor(0,3);
+        lcd.setCursor(0, 3);
         lcd.print("RunCheck Reset!");
       }
     }
@@ -757,10 +793,10 @@ void changetime(int sysPosition) {
       Serial.println("MPS Activated");
       return;
     }
-    if (key == 'B'){
+    if (key == 'B') {
       mfcount = 0;
       Serial.print("SYSTEM | Reset Malfunction count");
-      lcd.setCursor(0,3);
+      lcd.setCursor(0, 3);
       lcd.print("Reset MalFunc Count");
       preLCDClear = currentTime;
     }
@@ -904,7 +940,7 @@ void mpsInput() {
     key = keypad.getKey();
     lcdControl();
     if (key) {
-      if(key == '#'){
+      if (key == '#') {
         return;
       }
       int keyValue = key - '0';
@@ -922,6 +958,16 @@ void mpsInput() {
       preLCDClear = millis();
     }
   }
+}
+
+uint16_t make_crc()
+{
+  uint16_t crc = 0;
+  for (int i = 0; i < EEPROM.length(); i++)
+  {
+    crc = _crc16_update(crc, EEPROM.read(i));
+  }
+  return crc;
 }
 
 //Write how long it took to run 100 parts & reset logicCount
