@@ -305,7 +305,7 @@ void loop() {
         savetrigger(sysPosition);  //go to savetrigger function to save.
       }
     }
-    if (mpsEnable > 0) {
+    if ((mpsEnable > 0) && (runCheck = 0)) {
       manualFeed = digitalRead(manualButton);
       if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime;
@@ -345,7 +345,23 @@ void loop() {
          manualFeed - Ignore other variables and trigger on button press
       */
       if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
-        if ((feedNext == 0) && (currentTime - previousTimer1 >= sysArray[7])) {
+        if (mpsEnable >= 1) {
+          if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
+            //machStop(0);
+            runCheck = 0;
+            Serial.println(F("Motor stopped due to ERROR[0032]"));
+            Serial.print("preTime: ");
+            Serial.print(previousTimer1);
+            Serial.print(" - ");
+            Serial.print("currentTime: ");
+            Serial.print(currentTime);
+            Serial.print(" > ");
+            Serial.print("varTime: ");
+            Serial.println(sysArray[7]);
+            previousTimer1 = currentTime;
+          }
+        }
+        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || (manualFeed == HIGH)) {
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0, 2);
@@ -381,22 +397,6 @@ void loop() {
             digitalWrite(panelLed1, HIGH);
             digitalWrite(errorLed, LOW);
             feedNext = 1;
-            previousTimer1 = currentTime;
-          }
-        }
-        if (mpsEnable >= 1) {
-          if ((currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
-            //previousTimer1 = currentTime;
-            //machStop(0);
-            Serial.println(F("Motor stopped due to ERROR[0032]"));
-            Serial.print("preTime: ");
-            Serial.print(previousTimer1);
-            Serial.print(" - ");
-            Serial.print("currentTime: ");
-            Serial.print(currentTime);
-            Serial.print(" > ");
-            Serial.print("varTime: ");
-            Serial.println(sysArray[7]);
             previousTimer1 = currentTime;
           }
         }
@@ -473,7 +473,7 @@ void loop() {
       // Hook Cycle
       hookLoop = digitalRead(sensorArray[2]);
       if ((hookLoop == LOW) && (hookNext == 0)) {
-        if (currentTime - previousTimer3 >= sysArray[7]) {
+        if ((mpsEnable < 2) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7]))) {
           Serial.println("Hook Cycle Activated");
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
@@ -495,7 +495,7 @@ void loop() {
             hookNext = 1;
           }
         }
-        if ((currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6]) && (mpsEnable >= 4)) {
+        if ((mpsEnable >= 2) && (currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6])) {
           runCheck = 0;
           previousTimer3 = currentTime;
           machStop(0);
