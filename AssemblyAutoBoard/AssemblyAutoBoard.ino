@@ -53,7 +53,7 @@ const int lcdClearTime = 7000;
 byte pos = 15;
 byte jindx = 0;
 char arraya [] = {0, 1, 2, 3, 0};
-const int sysLength = 9;
+const byte sysLength = 9;
 
 //Time Controls
 const int buttonWait = 300;
@@ -252,6 +252,7 @@ void loop() {
       digitalWrite(panelLed5, LOW);
       //Reset the count after leaving sOverride or inactive mode
       logicCount = 0;
+      runCheck = 1;
       sOverride = 1; //Exit initial reset
     }
     //Listen for Next Button (Goes through different values inside sysArray)
@@ -305,7 +306,7 @@ void loop() {
         savetrigger(sysPosition);  //go to savetrigger function to save.
       }
     }
-    if ((mpsEnable > 0) && (runCheck = 0)) {
+    if ((mpsEnable > 0) && (runCheck == 0)) {
       manualFeed = digitalRead(manualButton);
       if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime;
@@ -347,7 +348,7 @@ void loop() {
       if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
         if (mpsEnable >= 1) {
           if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
-            //machStop(0);
+            //machStop(1);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
             Serial.print("preTime: ");
@@ -496,9 +497,10 @@ void loop() {
           }
         }
         if ((mpsEnable >= 2) && (currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6])) {
+          //Check if MPS is enabled.  If so, check value of time sensor triggered.
           runCheck = 0;
           previousTimer3 = currentTime;
-          machStop(0);
+          //machStop(0);
         }
       }
       //Send Head Down
@@ -516,8 +518,12 @@ void loop() {
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
-        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 >= sysArray[8])) {
+        if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8])) {
           mfcount++;
+          if (mpsEnable >= 4){
+            //machStop(1);
+            //Turn off machine
+          }
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
@@ -926,6 +932,7 @@ void machStop(byte airoff) {
   if (airoff >= 1) {
     digitalWrite(solenoidArray[7], LOW);
   }
+  return;
 }
 
 void mpsInput() {
