@@ -56,7 +56,7 @@ char arraya [] = {0, 1, 2, 3, 0};
 const byte sysLength = 9;
 
 //Time Controls
-const int buttonWait = 300;
+const int buttonWait = 400;
 unsigned long preLCDClear = 0;
 unsigned long buttonPreviousTime = 0;
 unsigned long previousTimer1 = 0;
@@ -311,6 +311,7 @@ void loop() {
       if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime;
         runCheck = 1;
+        digitalWrite(solenoidArray[8], LOW);
         Serial.println("RunCheck reset!");
         lcd.setCursor(0, 3);
         lcd.print("RunCheck Reset!");
@@ -348,7 +349,7 @@ void loop() {
       if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
         if (mpsEnable >= 1) {
           if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
-            //machStop(1);
+            machStop(1);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
             Serial.print("preTime: ");
@@ -500,7 +501,7 @@ void loop() {
           //Check if MPS is enabled.  If so, check value of time sensor triggered.
           runCheck = 0;
           previousTimer3 = currentTime;
-          //machStop(0);
+          machStop(0);
         }
       }
       //Send Head Down
@@ -521,7 +522,18 @@ void loop() {
         if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8])) {
           mfcount++;
           if (mpsEnable >= 4){
-            //machStop(1);
+            machStop(1);
+            runCheck = 0;
+            Serial.println(F("Motor stopped due to ERROR[0034]"));
+            Serial.print("preTime: ");
+            Serial.print(previousTimer1);
+            Serial.print(" - ");
+            Serial.print("currentTime: ");
+            Serial.print(currentTime);
+            Serial.print(" > ");
+            Serial.print("varTime: ");
+            Serial.println(sysArray[7]);
+            previousTimer3 = currentTime;
             //Turn off machine
           }
           digitalWrite(solenoidArray[3], HIGH);
@@ -932,6 +944,8 @@ void machStop(byte airoff) {
   if (airoff >= 1) {
     digitalWrite(solenoidArray[7], LOW);
   }
+  feedNext = 0;
+  hookNext = 0;
   return;
 }
 
