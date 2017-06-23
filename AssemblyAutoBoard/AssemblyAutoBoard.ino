@@ -110,7 +110,7 @@ byte railCheck = 0;  // Was set to LOW
 byte railCheckNext = 0;
 byte rswitch = 0;
 byte sOverride = 1;
-byte stateArray[9] = {0}; //Include extra 0 for the NULL END
+byte stateArray[10] = {0}; //Include extra 0 for the NULL END
 const int passcode = 7777;
 byte runCheck = 1;  //Initalize as 1 until machine error.
 byte mfcount;
@@ -237,7 +237,7 @@ void loop() {
   if (sOverride == 0 || sOverride == 1) {
     //Run initial reset of all LED's and reset Relay status
     if (sOverride == 0 && active != 0) {
-      for (byte indx = 0; indx < 8; indx++) {
+      for (byte indx = 0; indx < 9; indx++) {
         stateArray[indx] = 0;
         Serial.print("Relay status INDEX: ");
         Serial.print(indx);
@@ -444,7 +444,7 @@ void loop() {
           digitalWrite(solenoidArray[6], LOW);
           digitalWrite(panelLed5, LOW);
           previousTimer2 = currentTime;
-          Serial.println("Rail Check Finsihed");
+          Serial.println("Rail Check Finished");
           railCheckNext = 0;
         }
       }
@@ -519,25 +519,31 @@ void loop() {
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
+        if((mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
+          machStop(1);
+          runCheck = 0;
+          hookNext = 0;
+        }
         if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8])) {
           mfcount++;
+          hookNext = 3;
           if (mpsEnable >= 4){
             machStop(1);
             runCheck = 0;
+            hookNext = 0;
             Serial.println(F("Motor stopped due to ERROR[0034]"));
             Serial.print("preTime: ");
-            Serial.print(previousTimer1);
+            Serial.print(previousTimer3);
             Serial.print(" - ");
             Serial.print("currentTime: ");
             Serial.print(currentTime);
             Serial.print(" > ");
             Serial.print("varTime: ");
-            Serial.println(sysArray[7]);
+            Serial.println(sysArray[8]);
             previousTimer3 = currentTime;
             //Turn off machine
           }
           digitalWrite(solenoidArray[3], HIGH);
-          hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
           Serial.println("Malfunction detected");
         }
@@ -802,7 +808,7 @@ void changetime(int sysPosition) {
   unsigned long currentTime = millis();
   lcd.setCursor(5, 2);
   lcd.print(sysArray[sysPosition]);
-  lcd.print("      ");
+  lcd.print("       ");
   lcd.setCursor(pos, 2);
   char key;
   key = keypad.getKey();
@@ -967,8 +973,8 @@ void mpsInput() {
       }
       int keyValue = key - '0';
       Serial.println(keyValue);
-      if (keyValue > 4) {
-        keyValue = 4;
+      if (keyValue > 5) {
+        keyValue = 5;
       }
       mpsEnable = keyValue;
       lcd.setCursor(0, 3);
