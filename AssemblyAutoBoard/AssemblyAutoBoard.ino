@@ -29,7 +29,7 @@ const byte sensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A1 - HangerRackFull
    A2 - HookCycleStart
    A3 - CrimpCycleStart
-   A4 - HookRailRull
+   A4 - HookRailFull
    A5 - StripOffOut
    A6 - HeadDown
    A7 - HeadUp
@@ -122,7 +122,7 @@ byte bUpLogic = 0; //Button Up Logic
 byte bDownLogic = 0; //Button Down Logic
 byte saveButtonLogic = 0; //Save Button Logic
 byte manualFeed = 0; //Manual Feed Logic
-byte secStart = 0; //Second Start
+byte secStart = 0; //Second Sta\rt
 
 
 void setup() {
@@ -309,7 +309,7 @@ void loop() {
     if ((mpsEnable > 0) && (runCheck == 0)) {
       manualFeed = digitalRead(manualButton);
       if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
-        buttonPreviousTime = currentTime;
+        buttonPreviousTime = currentTime + 2000;
         runCheck = 1;
         digitalWrite(solenoidArray[8], LOW);
         Serial.println("RunCheck reset!");
@@ -349,7 +349,7 @@ void loop() {
       if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
         if (mpsEnable >= 1) {
           if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
-            machStop(1);
+            machStop(0);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
             Serial.print("preTime: ");
@@ -363,7 +363,10 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || (manualFeed == HIGH)) {
+        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait))) {
+          if(manualFeed == HIGH){
+            buttonPreviousTime = currentTime;
+          }
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
           lcd.setCursor(0, 2);
@@ -521,6 +524,7 @@ void loop() {
         }
         if((mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
           machStop(1);
+          Serial.println("Motor stopped due to ERROR[0036]");
           runCheck = 0;
           hookNext = 0;
         }
