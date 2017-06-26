@@ -956,6 +956,7 @@ void machStop(byte airoff) {
   }
   feedNext = 0;
   hookNext = 0;
+  railCheckNext = 0;
   return;
 }
 
@@ -1012,3 +1013,6 @@ void TimeKeeper() {
   lcd.print(tempvarj);
   logicCount = 0;
 }
+
+
+
