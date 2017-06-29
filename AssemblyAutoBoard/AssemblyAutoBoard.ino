@@ -122,7 +122,7 @@ byte bUpLogic = 0; //Button Up Logic
 byte bDownLogic = 0; //Button Down Logic
 byte saveButtonLogic = 0; //Save Button Logic
 byte manualFeed = 0; //Manual Feed Logic
-byte secStart = 0; //Second Sta\rt
+byte secStart = 0; //Second Start
 
 
 void setup() {
@@ -253,6 +253,10 @@ void loop() {
       //Reset the count after leaving sOverride or inactive mode
       logicCount = 0;
       runCheck = 1;
+      feedNext = 0;
+      hookNext = 0;
+      crimpNext = 0;
+      railCheckNext = 0;
       sOverride = 1; //Exit initial reset
     }
     //Listen for Next Button (Goes through different values inside sysArray)
