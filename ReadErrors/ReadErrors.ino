@@ -10,13 +10,13 @@ int preButtonTime = 0;
 int ButtonWait = 0;
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-// end of TEST VARIABLES
+
 void setup(){
 }
 
 void loop() {
 }
-
+// end of TEST VARIABLES
 
 void ReadErrors(){
   byte ErrorArray[10] = {0};
