@@ -11,8 +11,8 @@ boolean checkvar = true;
 
 byte Active = 0;
 boolean state [] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
-int pinArray[] = {22, 24, 26, 28, 30, 32, 34, 36};
-int index;
+const byte solenoidArray[8] = {22, 24, 26, 28, 30, 32, 34, 36};
+int sensorArray[] = {38, 40, 42, 44, 46, 48, 50, 51};
 const byte refractor = 10;
 const byte numChars = 32;
 char receivedChars[numChars];   // an array to store the received data
@@ -39,7 +39,10 @@ void setup() {
     pinMode(Relay6, OUTPUT);
     pinMode(Relay7, OUTPUT);
     pinMode(Relay8, OUTPUT);
-    
+    for(byte set;set<8;set++){
+      pinMode(sensorArray[set], INPUT);
+      delay(10);
+    }
     reloadArray();
 }
 
@@ -65,7 +68,7 @@ void loop() {
   if (Active == 1){
     if(currentTime - previousTime >= checkTime){
       previousTime = currentTime;
-      index = random(0,7);
+      static byte index = random(0,7);
       state[index] = !state[index];
       if (state[index] == LOW){
         x = LOW;
@@ -75,9 +78,9 @@ void loop() {
         x = HIGH;
         y = 1;
       }
-      digitalWrite(pinArray[index], x);
+      digitalWrite(solenoidArray[index], x);
       Serial.print("PIN.");
-      Serial.print(pinArray[index]);
+      Serial.print(solenoidArray[index]);
       Serial.print(".");
       Serial.print(y);
       Serial.println(" ");
@@ -116,7 +119,7 @@ void recvWithEndMarker() {
 void showNewData() {
     if (newData == true) {
         Serial.println(receivedChars);
-        reciever = atoi(receivedChars);
+        //reciever = atoi(receivedChars);
         newData = false;
         if (apple.length() >= 5){
           if (apple.substring(0,6) == "EEPROM") {
@@ -130,6 +133,31 @@ void showNewData() {
           }
           if (apple.substring(0,4) == "CALL") {
             reCall();
+          }
+          if (apple.substring(0,6) == "SITREP") {
+            for(byte t;t<8;t++){
+              Serial.print("SEN.");
+              Serial.print(t);
+              Serial.print(".");
+              Serial.println(sensorArray[t]);
+              delay(1);
+              Serial.print("SOL.");
+              Serial.print(t);
+              Serial.print(".");
+              Serial.println(solenoidArray[t]);
+              if(t<6){
+                byte address = t;
+                byte alpha = EEPROM.read(address);
+                address++;
+                byte beta = EEPROM.read(address);
+                int package = ((alpha+beta)*10);
+                Serial.print("EMU.");
+                Serial.print(t);
+                Serial.print(".");
+                Serial.println(package);
+              }
+              delay(50);
+            }
           }
         }
         apple = "";
@@ -206,7 +234,7 @@ void pinUpdate() {
       value = HIGH;
     }
     for(byte checkmate = 0; checkmate < 8; checkmate++){
-      if (reciever == pinArray[checkmate]){
+      if (reciever == solenoidArray[checkmate]){
         state[checkmate] = !state[checkmate];
       }
     }
@@ -301,19 +329,20 @@ void reloadArray(){
 void SensorCheck(byte checkpin, byte relaypin){
   //boolean MainAir = HIGH;
   byte tempx;
-  boolean currentstate;
-  boolean nextstate;
+  //boolean nextstate;
   for(byte t=0; t<8; t++){
-    if(pinArray[t] == relaypin){
+    if(solenoidArray[t] == relaypin){
       tempx = t;
+      //assign tempx to value for next step
     }
   }
   boolean scair = HIGH;  //Remove this before final upload
   //boolean scair = digitalRead(MainAir);
   if (scair == HIGH){
+    boolean nextstate;
     boolean currentstate = state[tempx];
     digitalWrite(relaypin, !state[tempx]);
-    delay(1300);
+    delay(2000);
     //boolean nextstate = digitalRead(checkpin)
     digitalWrite(relaypin, state[tempx]);
     if(currentstate != nextstate){
