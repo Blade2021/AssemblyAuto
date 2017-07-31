@@ -35,7 +35,8 @@ const byte sensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
+//const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
+const byte solenoidArray[] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
 /*
    14 - [AL-0] Hanger Feed
    15 - [AL-1] Hook Stopper
@@ -126,6 +127,10 @@ byte secStart = 0; //Second Start
 
 
 void setup() {
+  for(byte k;k<8;k++){
+    digitalWrite(solenoidArray[k], LOW);
+    delay(10);
+  }
   //LEDs
   pinMode(panelLed1, OUTPUT);
   pinMode(panelLed2, OUTPUT);
@@ -341,6 +346,7 @@ void loop() {
     // active Mode start.  Machine will read sensors and run relays.
     if ((active == 1) && (runCheck == 1)) {
       digitalWrite(solenoidArray[7], HIGH);
+      digitalWrite(solenoidArray[9], LOW);
       manualFeed = digitalRead(manualButton);
       feedLoop = digitalRead(sensorArray[2]);
       feedCheck = digitalRead(sensorArray[1]);
@@ -653,6 +659,7 @@ void loop() {
 void inactive(int sysPosition) {
   //Trigger intital reset when exiting inactive mode
   sOverride = 0;
+  railCheckNext = 0;
   digitalWrite(errorLed, HIGH);
   digitalWrite(solenoidArray[0], LOW); //FeedTable
   digitalWrite(solenoidArray[1], LOW); //HookStopper
@@ -1017,6 +1024,3 @@ void TimeKeeper() {
   lcd.print(tempvarj);
   logicCount = 0;
 }
-
-
-
