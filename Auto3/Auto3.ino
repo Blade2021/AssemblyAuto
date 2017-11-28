@@ -150,7 +150,7 @@ void setup() {
   pinMode(errorLed, OUTPUT);
   //Buttons
   pinMode(manualButton, INPUT);
-  pinMode(nextButton, INPUT);
+  pinMode(nextButton, INPUT_PULLUP);
   pinMode(saveButton, INPUT);
   pinMode(upButton, INPUT);
   pinMode(downButton, INPUT);
@@ -192,6 +192,25 @@ void setup() {
   Serial.println(vector);
   delay(10);
   EEPROM_Read();
+
+  switch(vector){
+    case 0:
+      lcd.setCursor(17,0);
+      lcd.print("412");
+      break;
+    case 1:
+      lcd.setCursor(17,0);
+      lcd.print("414");
+      break;
+    case 2:
+      lcd.setCursor(17,0);
+      lcd.print("500");
+      break;
+    default:
+      lcd.setCursor(17,0);
+      lcd.print("   ");
+      break;
+  }
   
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
@@ -246,7 +265,7 @@ void loop() {
     }
     //Listen for Next Button (Goes through different values inside sysArray)
     bNextLogic = digitalRead(nextButton);
-    if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       sysPosition++;
       //Reset back to value 0 if you get to the end of the array.
@@ -1051,7 +1070,7 @@ void TimeKeeper() {
 void changetime(int sysPosition) {
   lcd.setCursor(5, 2);
   lcd.print(sysArray[sysPosition]);
-  lcd.print("       ");
+  lcd.print("      ");
   lcd.setCursor(pos, 2);
   char key;
   key = keypad.getKey();
@@ -1245,7 +1264,6 @@ void eepromUpdate() {
 void EEPROM_Read() {
   //Load EEPROM Memory
   int memAddress = ((vector * memVectorMultiple) * 2);
-  //byte memAddress = memVectorMultiple * sector;
   for (byte k = 0; k < sysLength; k++) {
     int memBlockOne = EEPROM.read(memAddress);
     Serial.print("X23 Address[ ");
@@ -1258,7 +1276,7 @@ void EEPROM_Read() {
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockOne);
-      lcd.setCursor(0, 0);
+      lcd.setCursor(0, 3);
       lcd.print("MEMCORE:");
       lcd.print(memAddress);
       break;
@@ -1275,7 +1293,7 @@ void EEPROM_Read() {
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockTwo);
-      lcd.setCursor(0, 0);
+      lcd.setCursor(0, 3);
       lcd.print("MEMCORE:");
       lcd.print(memAddress);
       break;
@@ -1292,7 +1310,7 @@ void EEPROM_Read() {
 
 void vectorChange() {
   lcd.setCursor(0,1);
-  lcd.print("Memory Vector");
+  lcd.print("Memory Vector:      ");
   lcd.setCursor(pos, 2);
   boolean complete = false;
   jindx = 0;
@@ -1301,8 +1319,6 @@ void vectorChange() {
     char key;
     key = keypad.getKey();
     if (key) {
-      Serial.println(key);
-      lcd.print(key);
       pos++;
       lcd.setCursor(pos, 2);
       keyArrayB[jindx++] = key;
@@ -1323,6 +1339,8 @@ void vectorChange() {
             vector = 0;
             Serial.println("Vector 0");
             EEPROM_Read();
+            lcd.setCursor(17,0);
+            lcd.print("412");
             break;
           case 207:
             lcd.setCursor(0,3);
@@ -1332,6 +1350,8 @@ void vectorChange() {
             vector = 1;
             EEPROM_Read();
             Serial.println("Vector 1");
+            lcd.setCursor(17,0);
+            lcd.print("414");
             break;
           case 250:
             lcd.setCursor(0,3);
@@ -1341,6 +1361,8 @@ void vectorChange() {
             vector = 2;
             Serial.println("Vector 2");
             EEPROM_Read();
+            lcd.setCursor(17,0);
+            lcd.print("500");
             break;
           default:
             lcd.setCursor(0,3);
