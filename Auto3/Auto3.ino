@@ -1,4 +1,3 @@
-
 /*  VERSION 1.2.9
     Last succcessful run: 1.2.8
     Last Upload SHA Token: 8de98c
@@ -18,6 +17,7 @@ const byte saveButton = 46;
 const byte upButton = 48;
 const byte downButton = 44;
 const byte toggleButton = 50;
+
 // Panel LEDs
 const byte panelLed1 = 51;
 const byte panelLed2 = 49;
@@ -38,9 +38,6 @@ const byte sensorArray[senArraySize] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-//AUTO 2
-//const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
-//AUTO 1 & SEMI 1
 const byte solenoidArray[solArraySize] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
 /*
     8 - [AL-0] Hanger Feed
@@ -62,7 +59,7 @@ char arraya [] = {0, 1, 2, 3, 0};
 const byte sysLength = 9;
 
 //Time Controls
-const int buttonWait = 400;
+const int buttonWait = 600;
 unsigned long preLCDClear = 0;
 unsigned long buttonPreviousTime = 0;
 unsigned long previousTimer1 = 0;
@@ -120,6 +117,7 @@ byte stateArray[10] = {0}; //Include extra 0 for the NULL END
 const int passcode = 7777;
 byte runCheck = 1;  //Initalize as 1 until machine error.
 byte mfcount;
+byte vector;
 
 //LOGIC CONTROLS
 byte logicCount = 0; //Counter of material flow
@@ -130,6 +128,13 @@ byte saveButtonLogic = 0; //Save Button Logic
 byte manualFeed = 0; //Manual Feed Logic
 byte secStart = 0; //Second Start
 
+//PC Control
+const byte numChars = 32;
+char receivedChars[numChars];
+boolean newData = false;
+String apple = "";
+byte initial = 1;
+byte orchard[senArraySize+1] = {0};
 
 void setup() {
   for (byte k; k < 8; k++) {
@@ -172,7 +177,7 @@ void setup() {
   pinMode(sensorArray[5], INPUT_PULLUP);
   // END OF PINMODE
 
-  Serial.begin(9600);
+  Serial.begin(19200);
   Serial.println("Starting...");
   Serial.println("Program Version 1.2.9");
   lcd.begin(20, 4);
@@ -182,8 +187,12 @@ void setup() {
   lcd.print("*** BOOTING ***");
 
   mpsEnable = EEPROM.read(110);
-  byte vector = EEPROM.read(100);
-  EEPROM_Read(vector);
+  vector = EEPROM.read(100);
+  Serial.print("Vector: ");
+  Serial.println(vector);
+  delay(10);
+  EEPROM_Read();
+  
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
@@ -699,7 +708,6 @@ void inactive(int sysPosition) {
       break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
-
 //Save trigger function.
 /* This function is for saving values from manual button changes.
    For Keypad function see: changetime
@@ -711,7 +719,7 @@ void savetrigger(int sysPosition) {
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  unsigned long address = sysPosition * 2;
+  unsigned long address = (((vector * memVectorMultiple) + sysPosition) * 2);
   int ytemp = ytemp = sysArray[sysPosition] / 10;
   if (ytemp > 255) {
     ytemp = ytemp - 255;
@@ -790,122 +798,6 @@ void Override_Trigger(int RTrigger) {
   Serial.println(lcdstate);
   preLCDClear = currentTime;
 }
-
-
-void changetime(int sysPosition) {
-  unsigned long currentTime = millis();
-  lcd.setCursor(5, 2);
-  lcd.print(sysArray[sysPosition]);
-  lcd.print("       ");
-  lcd.setCursor(pos, 2);
-  char key;
-  key = keypad.getKey();
-  if (key) {
-    if ((key == 'A') || (key == 'a')) {
-      mpsInput();
-      Serial.println("MPS Activated");
-      return;
-    }
-    if (key == 'B') {
-      mfcount = 0;
-      Serial.print(F("SYSTEM | Reset Malfunction count"));
-      lcd.setCursor(0, 3);
-      lcd.print("Reset MalFunc Count");
-      preLCDClear = currentTime;
-    }
-    if (key == 'C') {
-      vectorChange();
-    }
-    lcd.print(key);
-    pos++;
-    lcd.setCursor(pos, 2);
-    arraya[jindx++] = key;
-    arraya[jindx];
-    if (pos > 20) {
-      pos = 15;
-    }
-
-    if (key == '*') {
-      int tempa = atoi(arraya);
-      Serial.print("SYSTEM | Keypad Input: ");
-      Serial.println(tempa);
-      if ((tempa == passcode) && (active == 0)) {
-        //VERY IMPORTANT!  Check to see if active is 0, so that override isn't turned on while machine running.
-        sOverride = 2;
-        pos = 15;
-        lcd.setCursor(pos, 2);
-        lcd.print("       ");
-        jindx = 0;
-        return;
-      }
-      if (tempa > 5100) {
-        tempa = 5100;
-        Serial.println("WARNING: MAX VALUE HIT");
-        lcd.setCursor(0, 3);
-        lcd.print("ERROR: MAX VALUE HIT");
-        preLCDClear = currentTime;
-      }
-      if (tempa >= 2550) {
-        sysArray[sysPosition] = tempa;
-        int ytemp = 0;
-        unsigned long address = 0;
-        ytemp = sysArray[sysPosition] / 10;
-        address = sysPosition * 2;
-        ytemp = ytemp - 255;
-        EEPROM.update(address, 255);
-        address = address + 1;
-        if (address == EEPROM.length()) {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0001]");
-        }
-        EEPROM.update(address, ytemp);
-        if (address == EEPROM.length()) {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0002]");
-        }
-        Serial.print("SYSTEM | EEPROM | ");
-        Serial.print(ytemp + 255);
-        Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(sysPosition);
-      }
-      if (tempa < 2550) {
-        sysArray[sysPosition] = tempa;
-        int ytemp = 0;
-        unsigned long address = 0;
-        ytemp = sysArray[sysPosition] / 10;
-        address = sysPosition * 2;
-        EEPROM.update(address, ytemp);
-        address = address + 1;
-        if (address == EEPROM.length()) {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0003]");
-        }
-        EEPROM.update(address, 0);
-        if (address == EEPROM.length()) {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0004]");
-        }
-        Serial.print("EEPROM | ");
-        Serial.print(ytemp);
-        Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(sysPosition);
-      }
-      pos = 15;
-      lcd.setCursor(pos, 2);
-      lcd.print("      ");
-      jindx = 0;
-      return;
-    }
-    if (key == '#') {
-      pos = 15;
-      lcd.setCursor(pos, 2);
-      lcd.print("      ");
-      jindx = 0;
-      return;
-    }
-  } //End of If(Key)
-}
-//End of ChangeTime function
 
 //Clear last line of LCD every x(seconds)
 void lcdControl() {
@@ -1101,6 +993,175 @@ void pinUpdate() {
   Serial.println(value);
   digitalWrite(pTree, value);
 }
+void senCheck() {
+  byte indx = 0;
+  Serial.print("INL.");
+  Serial.print(senArraySize);
+  Serial.print(".");
+  for (byte k = 0; k < senArraySize; k++) {
+    indx++;
+    boolean senOutput = digitalRead(sensorArray[k]);
+    if (senOutput == HIGH) {
+      Serial.print("1");
+      orchard[k] = 1;
+    } else {
+      Serial.print("0");
+      orchard[k] = 0;
+    }
+  }
+  orchard[indx] = '\0';
+  Serial.println(); //Send the completed serial array
+}
+
+void sensorCheckActivator() {
+  boolean carrier;
+  if (initial == 1) {
+    senCheck();
+    initial = 0;
+  } else {
+    for (byte k = 0; k < senArraySize; k++) {
+      carrier = digitalRead(sensorArray[k]);
+      if (carrier == HIGH) {
+        if (orchard[k] != 1) {
+          senCheck();
+        }
+      }
+      if (carrier == LOW) {
+        if (orchard[k] != 0) {
+          senCheck();
+        }
+      }
+    }
+  }
+}
+
+//Write how long it took to run 100 parts & reset logicCount
+void TimeKeeper() {
+  unsigned long tempvarj = ((millis() - precountTime) / 1000);
+  Serial.print("CTN Run Time: ");
+  Serial.println(tempvarj);
+  lcd.setCursor(11, 1);
+  lcd.print("CTN:");
+  lcd.setCursor(15, 1);
+  lcd.print(tempvarj);
+  logicCount = 0;
+}
+
+
+void changetime(int sysPosition) {
+  lcd.setCursor(5, 2);
+  lcd.print(sysArray[sysPosition]);
+  lcd.print("       ");
+  lcd.setCursor(pos, 2);
+  char key;
+  key = keypad.getKey();
+  if (key) {
+    if ((key == 'A') || (key == 'a')) {
+      mpsInput();
+      Serial.println("MPS Activated");
+      return;
+    }
+    if (key == 'B') {
+      mfcount = 0;
+      Serial.print(F("SYSTEM | Reset Malfunction count"));
+      lcd.setCursor(0, 3);
+      lcd.print("Reset MalFunc Count");
+      preLCDClear = millis();
+    }
+    if (key == 'C') {
+      vectorChange();
+    }
+    lcd.print(key);
+    pos++;
+    lcd.setCursor(pos, 2);
+    arraya[jindx++] = key;
+    arraya[jindx];
+    if (pos > 20) {
+      pos = 15;
+    }
+    if (key == '*') {
+      int tempa = atoi(arraya);
+      Serial.print("SYSTEM | Keypad Input: ");
+      Serial.println(tempa);
+      if ((tempa == passcode) && (active == 0)) {
+        //VERY IMPORTANT!  Check to see if active is 0, so that override isn't turned on while machine running.
+        sOverride = 2;
+        pos = 15;
+        lcd.setCursor(pos, 2);
+        lcd.print("       ");
+        jindx = 0;
+        return;
+      }
+      if (tempa > 5100) {
+        tempa = 5100;
+        Serial.println("WARNING: MAX VALUE HIT");
+        lcd.setCursor(0, 3);
+        lcd.print("ERROR: MAX VALUE HIT");
+        preLCDClear = millis();
+      }
+      if (tempa >= 2550) {
+        sysArray[sysPosition] = tempa;
+        int ytemp = sysArray[sysPosition] / 10;
+        unsigned long address = (((vector * memVectorMultiple) + sysPosition) * 2);
+        //address = sysPosition * 2;
+        ytemp = ytemp - 255;
+        EEPROM.update(address, 255);
+        address = address + 1;
+        if (address == EEPROM.length()) {
+          address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0001]");
+        }
+        EEPROM.update(address, ytemp);
+        if (address == EEPROM.length()) {
+          address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0002]");
+        }
+        Serial.print("SYSTEM | EEPROM | ");
+        Serial.print(ytemp + 255);
+        Serial.print(" was wrote to EEPROM address: ");
+        Serial.println(sysPosition);
+      }
+      if (tempa < 2550) {
+        sysArray[sysPosition] = tempa;
+        int ytemp = sysArray[sysPosition] / 10;
+        unsigned long address = (((vector * memVectorMultiple) + sysPosition) * 2);
+        Serial.print("DEBUG Address 1: ");
+        Serial.println(address);
+        EEPROM.update(address, ytemp);
+        address = address + 1;
+        if (address == EEPROM.length()) {
+          address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0003]");
+        }
+        Serial.print("DEBUG Address 2: ");
+        Serial.println(address);
+        EEPROM.update(address, 0);
+        if (address == EEPROM.length()) {
+          address = 0;
+          Serial.println("*** SYSTEM ERROR [EE0004]");
+        }
+        Serial.print("EEPROM | ");
+        Serial.print(ytemp);
+        Serial.print(" was wrote to EEPROM address: ");
+        Serial.println(address);
+      }
+      pos = 15;
+      lcd.setCursor(pos, 2);
+      lcd.print("      ");
+      jindx = 0;
+      return;
+    }
+    if (key == '#') {
+      pos = 15;
+      lcd.setCursor(pos, 2);
+      lcd.print("      ");
+      jindx = 0;
+      return;
+    }
+  } //End of If(Key)
+}
+//End of ChangeTime function
+
 
 int timeValue(byte memAddress) {
   int memBlockOne = EEPROM.read(memAddress);
@@ -1181,65 +1242,16 @@ void eepromUpdate() {
   }
 }
 
-void senCheck() {
-  byte indx = 0;
-  Serial.print("INL.");
-  Serial.print(senArraySize);
-  Serial.print(".");
-  for (byte k = 0; k < senArraySize; k++) {
-    indx++;
-    boolean senOutput = digitalRead(sensorArray[k]);
-    if (senOutput == HIGH) {
-      Serial.print("1");
-      orchard[k] = 1;
-    } else {
-      Serial.print("0");
-      orchard[k] = 0;
-    }
-  }
-  orchard[indx] = '\0';
-  Serial.println(); //Send the completed serial array
-}
-
-void sensorCheckActivator() {
-  boolean carrier;
-  if (initial == 1) {
-    senCheck();
-    initial = 0;
-  } else {
-    for (byte k = 0; k < senArraySize; k++) {
-      carrier = digitalRead(sensorArray[k]);
-      if (carrier == HIGH) {
-        if (orchard[k] != 1) {
-          senCheck();
-        }
-      }
-      if (carrier == LOW) {
-        if (orchard[k] != 0) {
-          senCheck();
-        }
-      }
-    }
-  }
-}
-
-//Write how long it took to run 100 parts & reset logicCount
-void TimeKeeper() {
-  unsigned long tempvarj = ((millis() - precountTime) / 1000);
-  Serial.print("CTN Run Time: ");
-  Serial.println(tempvarj);
-  lcd.setCursor(11, 1);
-  lcd.print("CTN:");
-  lcd.setCursor(15, 1);
-  lcd.print(tempvarj);
-  logicCount = 0;
-}
-
-void EEPROM_Read(byte vector) {
+void EEPROM_Read() {
   //Load EEPROM Memory
-  byte memAddress = memVectorMultiple * vector;
+  int memAddress = ((vector * memVectorMultiple) * 2);
+  //byte memAddress = memVectorMultiple * sector;
   for (byte k = 0; k < sysLength; k++) {
     int memBlockOne = EEPROM.read(memAddress);
+    Serial.print("X23 Address[ ");
+    Serial.print(memAddress);
+    Serial.print(" ] Value: ");
+    Serial.println(memBlockOne);
     memBlockOne = memBlockOne * 10;
     if ((memBlockOne > 2550) || (memBlockOne < 0)) {
       Serial.print("ERROR | Corrupted memory LOC:");
@@ -1253,6 +1265,10 @@ void EEPROM_Read(byte vector) {
     }
     memAddress++;
     int memBlockTwo = EEPROM.read(memAddress);
+    Serial.print("X24: Address[ ");
+    Serial.print(memAddress);
+    Serial.print(" ] Value: ");
+    Serial.println(memBlockTwo);
     memBlockTwo = memBlockTwo * 10;
     if ((memBlockTwo > 2550) || (memBlockTwo < 0)) {
       Serial.print("ERROR | Corrupted memory LOC:");
@@ -1275,22 +1291,28 @@ void EEPROM_Read(byte vector) {
 }
 
 void vectorChange() {
+  lcd.setCursor(0,1);
+  lcd.print("Memory Vector");
+  lcd.setCursor(pos, 2);
   boolean complete = false;
+  jindx = 0;
+  char keyArrayB[] = {0};
   while (complete == false) {
     char key;
     key = keypad.getKey();
     if (key) {
+      Serial.println(key);
       lcd.print(key);
       pos++;
       lcd.setCursor(pos, 2);
-      arraya[jindx++] = key;
-      arraya[jindx];
+      keyArrayB[jindx++] = key;
+      keyArrayB[jindx];
       if (pos > 20) {
         pos = 15;
       }
 
       if (key == '*') {
-        int tempa = atoi(arraya);
+        int tempa = atoi(keyArrayB);
         tempa = tempa / 2;
         switch (tempa) {
           case 206:
@@ -1298,21 +1320,27 @@ void vectorChange() {
             lcd.print("Loaded 412 timing");
             Serial.println("Loaded 412 settings");
             EEPROM.update(100,0);
-            EEPROM_Read(0);
+            vector = 0;
+            Serial.println("Vector 0");
+            EEPROM_Read();
             break;
           case 207:
             lcd.setCursor(0,3);
             lcd.print("Loaded 414 timing");
             Serial.println("Loaded 414 settings");
-            EEPROM.update(100,2);
-            EEPROM_Read(2);
+            EEPROM.update(100,1);
+            vector = 1;
+            EEPROM_Read();
+            Serial.println("Vector 1");
             break;
           case 250:
             lcd.setCursor(0,3);
             lcd.print("Loaded 500 timing");
             Serial.println("Loaded 500 settings");
-            EEPROM.update(100,4);
-            EEPROM_Read(4);
+            EEPROM.update(100,2);
+            vector = 2;
+            Serial.println("Vector 2");
+            EEPROM_Read();
             break;
           default:
             lcd.setCursor(0,3);
@@ -1322,7 +1350,11 @@ void vectorChange() {
         }
         pos = 15;
         jindx = 0;
+        pos = 15;
+        lcd.setCursor(pos, 2);
+        lcd.print("      ");
         complete = true;
+        preLCDClear = millis();
       }
       if (key == '#') {
         pos = 15;
