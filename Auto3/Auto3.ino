@@ -9,6 +9,7 @@
 #define senArraySize 8
 #define solArraySize 9
 #define memVectorMultiple 11
+#define mpsMemLoc 110
 
 //Panel Buttons
 const byte manualButton = 6;
@@ -149,12 +150,12 @@ void setup() {
   pinMode(panelLed5, OUTPUT);
   pinMode(errorLed, OUTPUT);
   //Buttons
-  pinMode(manualButton, INPUT);
+  pinMode(manualButton, INPUT_PULLUP);
   pinMode(nextButton, INPUT_PULLUP);
-  pinMode(saveButton, INPUT);
-  pinMode(upButton, INPUT);
-  pinMode(downButton, INPUT);
-  pinMode(toggleButton, INPUT);
+  pinMode(saveButton, INPUT_PULLUP);
+  pinMode(upButton, INPUT_PULLUP);
+  pinMode(downButton, INPUT_PULLUP);
+  pinMode(toggleButton, INPUT_PULLUP);
   //Solenoids
   pinMode(solenoidArray[0], OUTPUT);
   pinMode(solenoidArray[2], OUTPUT);
@@ -186,7 +187,7 @@ void setup() {
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
 
-  mpsEnable = EEPROM.read(110);
+  mpsEnable = EEPROM.read(mpsMemLoc);
   vector = EEPROM.read(100);
   Serial.print("Vector: ");
   Serial.println(vector);
@@ -285,7 +286,7 @@ void loop() {
     }
     //Raise the value of the selected variable inside the sysArray (ADD Time)
     bUpLogic = digitalRead(upButton);
-    if ((bUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] + 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
@@ -295,7 +296,7 @@ void loop() {
     }
     //Lower the value of the selected variable inside the sysArray (Reduce Time)
     bDownLogic = digitalRead(downButton);
-    if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] - 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
@@ -305,7 +306,7 @@ void loop() {
     }
     //Save the new value to the memory for next reset.
     saveButtonLogic = digitalRead(saveButton);
-    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (sOverride == 0 || sOverride == 1) {
         Serial.print("TimeVar ");
@@ -316,7 +317,7 @@ void loop() {
     }
     if ((mpsEnable > 0) && (runCheck == 0)) {
       manualFeed = digitalRead(manualButton);
-      if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+      if ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime + 2000;
         runCheck = 1;
         digitalWrite(solenoidArray[8], LOW);
@@ -355,9 +356,9 @@ void loop() {
          feedCheck - Check Feed station for material.
          manualFeed - Ignore other variables and trigger on button press
       */
-      if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
+      if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == LOW)) {
         if (mpsEnable >= 1) {
-          if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
+          if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH)) {
             machStop(0);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
@@ -372,8 +373,8 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait))) {
-          if (manualFeed == HIGH) {
+        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait))) {
+          if (manualFeed == LOW) {
             buttonPreviousTime = currentTime;
           }
           // FEED ACTIVATED
@@ -618,7 +619,7 @@ void loop() {
     lcd.setCursor(0, 2);
     lcd.print("SYSTEM: Relay ");
     bNextLogic = digitalRead(nextButton);
-    if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       rswitch++;
       if (rswitch >= 8) {
@@ -626,12 +627,12 @@ void loop() {
       }
     }
     saveButtonLogic = digitalRead(saveButton);
-    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       Override_Trigger(rswitch + 1);
     }
     bDownLogic = digitalRead(downButton);
-    if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       lcd.setCursor(0, 3);
       lcd.print("Override Deactivated");
@@ -883,7 +884,7 @@ void mpsInput() {
       lcd.setCursor(0, 3);
       lcd.print("MPS set to: ");
       lcd.print(mpsEnable);
-      EEPROM.update(25, mpsEnable);
+      EEPROM.update(mpsMemLoc, mpsEnable);
       Serial.print("SYSTEM: Updated mpsEnable: ");
       Serial.println(mpsEnable);
       preLCDClear = millis();
@@ -1088,6 +1089,7 @@ void changetime(int sysPosition) {
       preLCDClear = millis();
     }
     if (key == 'C') {
+      jindx = 0;
       vectorChange();
     }
     lcd.print(key);
@@ -1173,7 +1175,7 @@ void changetime(int sysPosition) {
     if (key == '#') {
       pos = 15;
       lcd.setCursor(pos, 2);
-      lcd.print("      ");
+      lcd.print("     ");
       jindx = 0;
       return;
     }
@@ -1313,7 +1315,6 @@ void vectorChange() {
   lcd.print("Memory Vector:      ");
   lcd.setCursor(pos, 2);
   boolean complete = false;
-  jindx = 0;
   char keyArrayB[] = {0};
   while (complete == false) {
     char key;
