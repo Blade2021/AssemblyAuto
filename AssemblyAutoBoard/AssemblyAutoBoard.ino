@@ -6,7 +6,9 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
-#include <util/crc16.h>
+
+#define senArraySize 8
+#define solArraySize 9
 
 //Panel Buttons
 const byte manualButton = 6;
@@ -23,7 +25,7 @@ const byte panelLed4 = 45;
 const byte panelLed5 = 43;
 const byte errorLed = 13;
 //Sensors
-const byte sensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
+const byte sensorArray[senArraySize] = {A0, A1, A2, A3, A4, A5, A6, A7};
 /* SENSOR LIST
    A0 - HookRailEmpty
    A1 - HangerRackFull
@@ -35,17 +37,19 @@ const byte sensorArray[] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
+//AUTO 2
 //const byte solenoidArray[] = {14, 15, 19, 18, 17, 16, 8, 7, 9};
-const byte solenoidArray[] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
+//AUTO 1 & SEMI 1
+const byte solenoidArray[solArraySize] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
 /*
-   14 - [AL-0] Hanger Feed
-   15 - [AL-1] Hook Stopper
-   19 - [AL-2] Head/Tooling
-   18 - [AL-3] Strip Off
-   17 - [AL-4] Crimp Stopper
-   16 - [AL-5] Crimp
-   8  - [AL-6] Vibrator
-   7  - [AL-7] MainAir
+    8 - [AL-0] Hanger Feed
+    7 - [AL-1] Hook Stopper
+   16 - [AL-2] Head/Tooling
+   17 - [AL-3] Strip Off
+   18 - [AL-4] Crimp Stopper
+   19 - [AL-5] Crimp
+   15 - [AL-6] Vibrator
+   14 - [AL-7] MainAir
    9  - [AL-8] Motor Relay
 */
 //LCD Variables
@@ -127,7 +131,7 @@ byte secStart = 0; //Second Start
 
 
 void setup() {
-  for(byte k;k<8;k++){
+  for (byte k; k < 8; k++) {
     digitalWrite(solenoidArray[k], LOW);
     delay(10);
   }
@@ -139,12 +143,12 @@ void setup() {
   pinMode(panelLed5, OUTPUT);
   pinMode(errorLed, OUTPUT);
   //Buttons
-  pinMode(manualButton, INPUT);
-  pinMode(nextButton, INPUT);
-  pinMode(saveButton, INPUT);
-  pinMode(upButton, INPUT);
-  pinMode(downButton, INPUT);
-  pinMode(toggleButton, INPUT);
+  pinMode(manualButton, INPUT_PULLUP);
+  pinMode(nextButton, INPUT_PULLUP);
+  pinMode(saveButton, INPUT_PULLUP);
+  pinMode(upButton, INPUT_PULLUP);
+  pinMode(downButton, INPUT_PULLUP);
+  pinMode(toggleButton, INPUT_PULLUP);
   //Solenoids
   pinMode(solenoidArray[0], OUTPUT);
   pinMode(solenoidArray[2], OUTPUT);
@@ -167,9 +171,9 @@ void setup() {
   pinMode(sensorArray[5], INPUT_PULLUP);
   // END OF PINMODE
 
-  Serial.begin(9600);
+  Serial.begin(19200);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.9");
+  Serial.println("Program Version 1.3.0");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -234,6 +238,13 @@ void setup() {
 }
 
 void loop() {
+  /*
+  if (Serial.available() > 0) {
+    recvWithEndMarker();
+  }
+  if (newData == true) {
+    checkData();
+  }*/
   //Main Timer to keep track of entire machine!
   unsigned long currentTime = millis();
   //Call LCD Clear function to clear 4th line of LCD
@@ -266,7 +277,7 @@ void loop() {
     }
     //Listen for Next Button (Goes through different values inside sysArray)
     bNextLogic = digitalRead(nextButton);
-    if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       sysPosition++;
       //Reset back to value 0 if you get to the end of the array.
@@ -286,7 +297,7 @@ void loop() {
     }
     //Raise the value of the selected variable inside the sysArray (ADD Time)
     bUpLogic = digitalRead(upButton);
-    if ((bUpLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] + 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
@@ -296,7 +307,7 @@ void loop() {
     }
     //Lower the value of the selected variable inside the sysArray (Reduce Time)
     bDownLogic = digitalRead(downButton);
-    if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       sysArray[sysPosition] = sysArray[sysPosition] - 100;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
@@ -306,7 +317,7 @@ void loop() {
     }
     //Save the new value to the memory for next reset.
     saveButtonLogic = digitalRead(saveButton);
-    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       if (sOverride == 0 || sOverride == 1) {
         Serial.print("TimeVar ");
@@ -317,7 +328,7 @@ void loop() {
     }
     if ((mpsEnable > 0) && (runCheck == 0)) {
       manualFeed = digitalRead(manualButton);
-      if ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+      if ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
         buttonPreviousTime = currentTime + 2000;
         runCheck = 1;
         digitalWrite(solenoidArray[8], LOW);
@@ -356,9 +367,9 @@ void loop() {
          feedCheck - Check Feed station for material.
          manualFeed - Ignore other variables and trigger on button press
       */
-      if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == HIGH)) {
+      if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == LOW)) {
         if (mpsEnable >= 1) {
-          if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == LOW)) {
+          if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH)) {
             machStop(0);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
@@ -373,8 +384,8 @@ void loop() {
             previousTimer1 = currentTime;
           }
         }
-        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == HIGH) && (currentTime - buttonPreviousTime >= buttonWait))) {
-          if(manualFeed == HIGH){
+        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait))) {
+          if (manualFeed == LOW) {
             buttonPreviousTime = currentTime;
           }
           // FEED ACTIVATED
@@ -488,7 +499,7 @@ void loop() {
       // Hook Cycle
       hookLoop = digitalRead(sensorArray[2]);
       if ((hookLoop == LOW) && (hookNext == 0)) {
-        if ((mpsEnable < 2) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7]))) {
+        if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7]))) {
           Serial.println("Hook Cycle Activated");
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
@@ -527,12 +538,14 @@ void loop() {
       //Send StripOff Out
       if (hookNext == 2) {
         int HeadCheckDown = digitalRead(sensorArray[6]);
-        if ((HeadCheckDown == LOW) && (currentTime - previousTimer3 < sysArray[8])) {
+        //MPS Disabled
+        if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 < sysArray[8]))) {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
           Serial.println("Hook Cycle | Strip Off OUT");
         }
-        if((mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
+        //MPS Setting 5 - Shut down on timer
+        if ((mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])) {
           machStop(1);
           Serial.println("Motor stopped due to ERROR[0036]");
           runCheck = 0;
@@ -541,7 +554,7 @@ void loop() {
         if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8])) {
           mfcount++;
           hookNext = 3;
-          if (mpsEnable >= 4){
+          if (mpsEnable == 4) {
             machStop(1);
             runCheck = 0;
             hookNext = 0;
@@ -617,7 +630,7 @@ void loop() {
     lcd.setCursor(0, 2);
     lcd.print("SYSTEM: Relay ");
     bNextLogic = digitalRead(nextButton);
-    if ((bNextLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       rswitch++;
       if (rswitch >= 8) {
@@ -625,12 +638,12 @@ void loop() {
       }
     }
     saveButtonLogic = digitalRead(saveButton);
-    if ((saveButtonLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       Override_Trigger(rswitch + 1);
     }
     bDownLogic = digitalRead(downButton);
-    if ((bDownLogic == HIGH) && (currentTime - buttonPreviousTime >= buttonWait)) {
+    if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait)) {
       buttonPreviousTime = currentTime;
       lcd.setCursor(0, 3);
       lcd.print("Override Deactivated");
@@ -1004,15 +1017,44 @@ void mpsInput() {
   }
 }
 
-uint16_t make_crc()
-{
-  uint16_t crc = 0;
-  for (int i = 0; i < 200; i++)
-  {
-    crc = _crc16_update(crc, EEPROM.read(i));
+int timeValue(byte memAddress) {
+  int memBlockOne = EEPROM.read(memAddress);
+  //times the value from the EEPROM * 10 to get desired result for this sketch.
+  memBlockOne = memBlockOne * 10;
+  //See if the value falls within the limits of the variable.
+  if ((memBlockOne > 2550) || (memBlockOne < 0)) {
+    Serial.print("ERROR | Corrupted memory LOC:");
+    Serial.print(memAddress);
+    Serial.print(" Result:");
+    Serial.println(memBlockOne);
+    lcd.setCursor(0, 0);
+    lcd.print("MEMCORE:");
+    lcd.print(memAddress);
+    return;
   }
-  return crc;
+  //Increment the address by one to get second value.
+  memAddress++;
+  int memBlockTwo = EEPROM.read(memAddress);
+  //Do the same as memBlockOne
+  memBlockTwo = memBlockTwo * 10;
+  if ((memBlockOne > 2550) || (memBlockOne < 0)) {
+    Serial.print("ERROR | Corrupted memory LOC:");
+    Serial.print(memAddress);
+    Serial.print(" Result:");
+    Serial.println(memBlockOne);
+    lcd.setCursor(0, 0);
+    lcd.print("MEMCORE:");
+    lcd.print(memAddress);
+    return;
+  }
+  //Load the value into the system array for use by the sketch.
+  int timeTotal = memBlockTwo + memBlockOne;
+  memAddress--;
+  //Small delay to keep from overprocessing
+  delay(10);
+  return timeTotal;
 }
+
 //Write how long it took to run 100 parts & reset logicCount
 void TimeKeeper() {
   unsigned long tempvarj = ((millis() - precountTime) / 1000);
@@ -1024,3 +1066,13 @@ void TimeKeeper() {
   lcd.print(tempvarj);
   logicCount = 0;
 }
+/*
+void senDisplay() {
+  byte senIndx;
+  for (senIndx; senIndx < senArraySize; senIndx++) {
+    boolean value = digitalRead(sensorArray[senIndx]);
+    lcd.setCursor(3, senIndx + 1);
+    lcd.print(value)
+  }
+}
+*/
