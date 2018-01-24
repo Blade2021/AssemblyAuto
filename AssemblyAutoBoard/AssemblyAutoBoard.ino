@@ -19,6 +19,8 @@ const byte downButton = 44;
 const byte toggleButton = 50;
 // Panel LEDs
 const byte panelLed1 = 51;
+
+//This is just a test.
 const byte panelLed2 = 49;
 const byte panelLed3 = 47;
 const byte panelLed4 = 45;
