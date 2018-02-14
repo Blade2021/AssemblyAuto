@@ -11,6 +11,7 @@
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
 #define POSDEFAULT 15
+#define ARRAYINDX 7
 
 //Panel Buttons
 const byte manualButton = 6;
@@ -88,10 +89,11 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const byte ROWS = 4;
 const byte COLS = 4;
 char keys[ROWS][COLS] = {
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'},
-    {'*', '0', '#', 'D'}};
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
 byte rowPins[ROWS] = {25, 27, 29, 31}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {33, 35, 37, 39};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -132,6 +134,9 @@ byte secStart = 0;        //Second Start
 //PC Control
 const byte numChars = 32;
 char receivedChars[numChars];
+unsigned long preSerialCheck;
+int senWait = 100;
+boolean senBool = false;
 boolean newData = false;
 String apple = "";
 byte initial = 1;
@@ -194,27 +199,27 @@ void setup()
   Serial.print("Vector: ");
   Serial.println(vector);
   delay(10);
-  EEPROM_Read();
+  memoryLoad();
 
   // Display time setting:
   switch (vector)
   {
-  case 0:
-    lcd.setCursor(17, 0);
-    lcd.print("412");
-    break;
-  case 1:
-    lcd.setCursor(17, 0);
-    lcd.print("414");
-    break;
-  case 2:
-    lcd.setCursor(17, 0);
-    lcd.print("500");
-    break;
-  default:
-    lcd.setCursor(17, 0);
-    lcd.print("   ");
-    break;
+    case 0:
+      lcd.setCursor(17, 0);
+      lcd.print("412");
+      break;
+    case 1:
+      lcd.setCursor(17, 0);
+      lcd.print("414");
+      break;
+    case 2:
+      lcd.setCursor(17, 0);
+      lcd.print("500");
+      break;
+    default:
+      lcd.setCursor(17, 0);
+      lcd.print("   ");
+      break;
   }
 
   Serial.println(F("*** System Variables ***"));
@@ -227,12 +232,14 @@ void setup()
   Serial.print("Override Passcode: ");
   Serial.println(passcode);
   Serial.println();
+  Serial.println("<Controller Ready>");
   lcd.setCursor(0, 1);
   lcd.print("                    ");
 }
 
 void loop()
 {
+  unsigned long currentTime = millis();
   // PC Controls
   if (Serial.available() > 0)
   {
@@ -242,9 +249,11 @@ void loop()
   {
     checkData();
   }
+  if ((senBool == true) && (currentTime - preSerialCheck > senWait)) {
+    sensorCheckActivator();
+    preSerialCheck = currentTime;
+  }
   // End of PC Controls
-  //Main Timer to keep track of entire machine!
-  unsigned long currentTime = millis();
   //Call LCD Clear function to clear 4th line of LCD
   lcdControl();
   // Check sOverride  If 0 or 1, It is considered "off"
@@ -253,7 +262,7 @@ void loop()
     //Run initial reset of all LED's and reset Relay status
     if (sOverride == 0 && active != 0)
     {
-      overrideReset();    
+      overrideReset();
     }
     //Listen for Next Button (Goes through different values inside sysArray)
     bNextLogic = digitalRead(nextButton);
@@ -719,60 +728,60 @@ void inactive(int sysPosition)
   digitalWrite(solenoidArray[7], LOW); //MainAir
   switch (sysPosition)
   {
-  case 0:
-    setLEDS(panelLed1);
-    lcd.setCursor(0, 1);
-    lcd.print("Feed Wait Time:     ");
-    changetime(sysPosition);
-    break;
-  case 1:
-    setLEDS(panelLed2);
-    lcd.setCursor(0, 1);
-    lcd.print("Feed Open Time      ");
-    changetime(sysPosition);
-    break;
-  case 2:
-    setLEDS(panelLed3);
-    lcd.setCursor(0, 1);
-    lcd.print("Hook Cycle Wait     ");
-    changetime(sysPosition);
-    break;
-  case 3:
-    setLEDS(panelLed4);
-    lcd.setCursor(0, 1);
-    lcd.print("Crimp Cycle Wait    ");
-    changetime(sysPosition);
-    break;
-  case 4:
-    setLEDS(panelLed5);
-    lcd.setCursor(0, 1);
-    lcd.print("Crimp Time          ");
-    changetime(sysPosition);
-    break;
-  case 5:
-    setLEDS(panelLed1);
-    lcd.setCursor(0, 1);
-    lcd.print("Vibrator Time     ");
-    changetime(sysPosition);
-    break;
-  case 6:
-    setLEDS(panelLed2);
-    lcd.setCursor(0, 1);
-    lcd.print("Sensor Ignore [MPS] ");
-    changetime(sysPosition);
-    break;
-  case 7:
-    setLEDS(panelLed3);
-    lcd.setCursor(0, 1);
-    lcd.print("Main Cycle [MPS]   ");
-    changetime(sysPosition);
-    break;
-  case 8:
-    setLEDS(panelLed4);
-    lcd.setCursor(0, 1);
-    lcd.print("Head LOC [MPS]     ");
-    changetime(sysPosition);
-    break;
+    case 0:
+      setLEDS(panelLed1);
+      lcd.setCursor(0, 1);
+      lcd.print("Feed Wait Time:     ");
+      changetime(sysPosition);
+      break;
+    case 1:
+      setLEDS(panelLed2);
+      lcd.setCursor(0, 1);
+      lcd.print("Feed Open Time      ");
+      changetime(sysPosition);
+      break;
+    case 2:
+      setLEDS(panelLed3);
+      lcd.setCursor(0, 1);
+      lcd.print("Hook Cycle Wait     ");
+      changetime(sysPosition);
+      break;
+    case 3:
+      setLEDS(panelLed4);
+      lcd.setCursor(0, 1);
+      lcd.print("Crimp Cycle Wait    ");
+      changetime(sysPosition);
+      break;
+    case 4:
+      setLEDS(panelLed5);
+      lcd.setCursor(0, 1);
+      lcd.print("Crimp Time          ");
+      changetime(sysPosition);
+      break;
+    case 5:
+      setLEDS(panelLed1);
+      lcd.setCursor(0, 1);
+      lcd.print("Vibrator Time     ");
+      changetime(sysPosition);
+      break;
+    case 6:
+      setLEDS(panelLed2);
+      lcd.setCursor(0, 1);
+      lcd.print("Sensor Ignore [MPS] ");
+      changetime(sysPosition);
+      break;
+    case 7:
+      setLEDS(panelLed3);
+      lcd.setCursor(0, 1);
+      lcd.print("Main Cycle [MPS]   ");
+      changetime(sysPosition);
+      break;
+    case 8:
+      setLEDS(panelLed4);
+      lcd.setCursor(0, 1);
+      lcd.print("Head LOC [MPS]     ");
+      changetime(sysPosition);
+      break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
 //Save trigger function.
@@ -997,6 +1006,10 @@ void checkData()
       {
         pinUpdate();
       }
+      if (apple.substring(0, 7) == "SENWAIT")
+      {
+        senWaitFunction();
+      }
       if (apple.substring(0, 8) == "OVERRIDE")
       {
         if ((sOverride == 0) || (sOverride == 1))
@@ -1010,7 +1023,9 @@ void checkData()
       }
       if (apple.substring(0, 8) == "SENCHECK")
       {
-        sensorCheckActivator();
+        senBool = !senBool;
+        Serial.print("Sensor Auto Updated: ");
+        Serial.println(senBool);
       }
       if (apple.substring(0, 6) == "SITREP")
       {
@@ -1052,6 +1067,21 @@ void checkData()
   }
 }
 
+void senWaitFunction() {
+  byte masterIndex = 8;
+  byte slaveIndex = 0;
+  char grape[numChars] = {0};
+  //Serial.println("Processing EEPROM Update...");
+  for (byte k = masterIndex; k <= apple.length(); k++)
+  {
+    grape[slaveIndex] = receivedChars[k];
+    slaveIndex++;
+  }
+  grape[slaveIndex] = '\0';
+  senWait = atoi(grape);
+  Serial.print("Sensor Wait Peroid Updated: ");
+  Serial.println(senWait);
+}
 void pinUpdate()
 {
   boolean value = LOW;
@@ -1396,8 +1426,7 @@ void eepromUpdate()
   }
 }
 
-void EEPROM_Read()
-{
+void memoryLoad() {
   //Load EEPROM Memory
   int memAddress = ((vector * MEMVECTORMULTIPLE) * 2);
   for (byte k = 0; k < sysLength; k++)
@@ -1460,60 +1489,60 @@ void vectorChange()
   {
     char key;
     key = keypad.getKey();
-    lcd.setCursor(pos,2);
+    lcd.setCursor(pos, 2);
     lcd.print(key);
     switch (key)
     {
-    case '0':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded 412 timing");
-      Serial.println("Loaded 412 settings");
-      EEPROM.update(100, 0);
-      vector = 0;
-      Serial.println("Vector 0");
-      EEPROM_Read();
-      lcd.setCursor(17, 0);
-      lcd.print("412");
-      complete = true;
-      break;
+      case '0':
+        lcd.setCursor(0, 3);
+        lcd.print("Loaded 412 timing");
+        Serial.println("Loaded 412 settings");
+        EEPROM.update(100, 0);
+        vector = 0;
+        Serial.println("Vector 0");
+        memoryLoad();
+        lcd.setCursor(17, 0);
+        lcd.print("412");
+        complete = true;
+        break;
 
-    case '1':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded 414 timing");
-      Serial.println("Loaded 414 settings");
-      EEPROM.update(100, 1);
-      vector = 1;
-      EEPROM_Read();
-      Serial.println("Vector 1");
-      lcd.setCursor(17, 0);
-      lcd.print("414");
-      complete = true;
-      break;
+      case '1':
+        lcd.setCursor(0, 3);
+        lcd.print("Loaded 414 timing");
+        Serial.println("Loaded 414 settings");
+        EEPROM.update(100, 1);
+        vector = 1;
+        memoryLoad();
+        Serial.println("Vector 1");
+        lcd.setCursor(17, 0);
+        lcd.print("414");
+        complete = true;
+        break;
 
-    case '2':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded 500 timing");
-      Serial.println("Loaded 500 settings");
-      EEPROM.update(100, 2);
-      vector = 2;
-      Serial.println("Vector 2");
-      EEPROM_Read();
-      lcd.setCursor(17, 0);
-      lcd.print("500");
-      complete = true;
-      break;
-  
-  case '#':
-    complete = true;
-    return;
+      case '2':
+        lcd.setCursor(0, 3);
+        lcd.print("Loaded 500 timing");
+        Serial.println("Loaded 500 settings");
+        EEPROM.update(100, 2);
+        vector = 2;
+        Serial.println("Vector 2");
+        memoryLoad();
+        lcd.setCursor(17, 0);
+        lcd.print("500");
+        complete = true;
+        break;
 
-    default:
-      lcd.setCursor(0, 3);
-      lcd.print("INVALID INPUT");
-      preLCDClear = millis();
-      pos = POSDEFAULT;
-      lcd.print("     ");
-      break;
+      case '#':
+        complete = true;
+        return;
+
+      default:
+        lcd.setCursor(0, 3);
+        lcd.print("INVALID INPUT");
+        preLCDClear = millis();
+        pos = POSDEFAULT;
+        lcd.print("     ");
+        break;
     }
   }
 }
@@ -1544,3 +1573,4 @@ void overrideReset()
   railCheckNext = 0;
   sOverride = 1; //Exit initial reset
 }
+

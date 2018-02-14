@@ -13,7 +13,7 @@ boolean relayToggle;
 Textarea consoletext;
 Println console;
 //Variables
-int solArraySize = 1;
+int lastSenWait = 100;
 boolean firstContact = false;
 int connected = 0;
 boolean globalState [] = {false, false, false, false, false, false, false, false};
@@ -22,7 +22,7 @@ int pin [] = {22, 24, 26, 28, 30, 32, 34, 36};
 int relayArray[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int sensorPin [] = {10, 20, 30, 40, 50, 60, 70, 80};
 int tabID = 111;
-byte timerLength = 7;
+byte timerLength = 8;
 boolean varLoad = false;
 boolean sensorEcho;
 boolean toggleValue = false;
@@ -46,6 +46,7 @@ void setup()
   lastTime = millis();
   surface.setTitle("National Hanger - Machine Serial");
   noStroke();
+  frameRate(30);
   cp5 = new ControlP5(this);
   cp5.enableShortcuts();
 
@@ -128,6 +129,15 @@ void setup()
     .setFont(createFont("arial", 16))
     .setAutoClear(false)
     .setCaptionLabel("EEPROM: timer 8")
+    .hide()
+    ;
+ cp5.addTextfield("timer8")
+    .setId(8)
+    .setPosition(20, 550)
+    .setSize(200, 35)
+    .setFont(createFont("arial", 16))
+    .setAutoClear(false)
+    .setCaptionLabel("EEPROM: timer 9")
     .hide()
     ;
   cp5.addButton("button1")
@@ -413,7 +423,7 @@ void setup()
     .setColorValue(color(200, 17, 0, 255))
     .setFont(createFont("Arial", 24))
     ;
-
+/*
   cp5.addTextlabel("connectedLabel")
     .setText("Disconnected")
     .setPosition(25, 560)
@@ -426,6 +436,7 @@ void setup()
     .setFont(createFont("Arial", 22))
     .setColor(color(255, 255, 250, 255))
     ;
+    */
   cp5.addTextlabel("subtitle")
     .setText("Control Panel BETA")
     .setPosition(30, 35)
@@ -500,7 +511,7 @@ void setup()
     .setPosition(720, 460)
     .setSize(30, 120)
     .setRange(100, 1900)
-    .setValue(700)
+    .setValue(100)
     .setNumberOfTickMarks(7)
     .setCaptionLabel("Wait Time")
     .hide()
@@ -543,18 +554,17 @@ void setup()
 }
 
 void draw() {
-
-  if ((millis() - lastTime > waitTime) && (sensorEcho == true)) {
-    myPort.write("SENCHECK" +endchar);
+  background(0);
+  fill(255);
+  if (sensorEcho == true) {
     cp5.get(Slider.class,"waitSlider").show();
-    lastTime = millis();
   }
   if(sensorEcho == false){
     cp5.get(Slider.class,"waitSlider").hide();
   }
-  background(0);
-  fill(255);
+  
   if (tabID == 111) {
+    /*
     for (int i=0; i<globalState.length; i++) {
       if (globalState[i] == false) {
         fill(color(200, 20, 0, 255));
@@ -564,19 +574,21 @@ void draw() {
         rect(385, 50+i*45, 30, 30);
       }
     }
+    */
     for (int k = 0; k<sensorState.length; k++) {
       fill(color(0, sensorState[k], 0, 255));
       rect(735, 50+k*45, 30, 30);
     }
+    /*
     if (connected == 0) {
       fill(color(200, 20, 0, 255));
       rect(20, 560, 150, 30);
     } else if (connected == 1) {
       fill(color(123, 255, 0, 255));
       rect(20, 560, 150, 30);
-    }
+    } */
   }
-  delay(1);
+  delay(10);
 }
 void controlEvent(ControlEvent test) {
   if (test.getId() == 79){
@@ -674,7 +686,11 @@ public void button2() {
 }
 
 void waitSlider(int value) {
-  waitTime = value;
+  //waitTime = value;
+  if(lastSenWait != value){
+    myPort.write("SENWAIT." +value +endchar);
+    lastSenWait = value;
+  }
 }
 public void button3() {
   println("SYSTEM: Relays On");
@@ -697,7 +713,7 @@ public void button4() {
 public void soft_exit() {
   myPort.clear();
   myPort.stop();
-  cp5.getController("drop1").show();
+  //cp5.getController("drop1").show();
   exit();
 }
 
@@ -810,7 +826,7 @@ void serialEvent(Serial myPort) {
   inByte = myPort.readStringUntil('\n');
   if (inByte != null) {
     inByte = trim(inByte);
-    println("Recieved: " +inByte);
+    println("RX: " +inByte);
     if (inByte.contains("SUPD")) {
       int fBarrier = (inByte.indexOf('[')+1); //Add one to go to the next position
       int lBarrier = inByte.indexOf(']');
@@ -913,6 +929,7 @@ void serialEvent(Serial myPort) {
     }
     if (inByte.contains("RUPD.")) {
     }
+    /*
     if (inByte.contains("ECHO.")) {
       if (toggleValue == true) {
         cp5.get(Textlabel.class, "connectedLabel").setText("Connected");
@@ -926,6 +943,7 @@ void serialEvent(Serial myPort) {
         cp5.get(Textlabel.class, "connectedLabel").setText("Disconnected");
       }
     }
+    */
     if (inByte.contains("SITREP COMPLETE")) {
       cp5.get("sitrepbutton").setColorBackground(color(0, 255, 0, 255));
       cp5.get("sitrepbutton").setColorForeground(color(0, 255, 0, 180));
@@ -940,14 +958,15 @@ void serialEvent(Serial myPort) {
       cp5.get(Textlabel.class, "pingStat").setText("Ping: " +ping);
     }
     if (firstContact == false) {
-      if (inByte.equals("<Controller is ready>")) {
+      if (inByte.equals("<Controller Ready>")) {
         myPort.clear();
         firstContact = true;
-        //myPort.write("A");
         println("SYSTEM: Contact Made");
         delay(100);
         println("Control ready!");
-        //myPort.write("SITREP" +endchar);
+        cp5.get("portOpen").setColorBackground(color(0, 255, 0, 255));
+        cp5.get("portOpen").setColorForeground(color(0, 255, 0, 255));
+        cp5.get("portOpen").setColorActive(color(0, 255, 0, 255));
       }
     }
   }
