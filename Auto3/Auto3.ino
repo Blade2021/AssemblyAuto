@@ -1002,8 +1002,9 @@ void checkData()
       {
         eepromUpdate();
       }
-      if (apple.substring(0, 3) == "PIN")
+      if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
       {
+        Serial.println("debug");
         pinUpdate();
       }
       if (apple.substring(0, 7) == "SENWAIT")
@@ -1015,10 +1016,12 @@ void checkData()
         if ((sOverride == 0) || (sOverride == 1))
         {
           sOverride = 2;
+          Serial.println("Override:On");
         }
         else
         {
           sOverride = 0;
+          Serial.println("Override:Off");
         }
       }
       if (apple.substring(0, 8) == "SENCHECK")

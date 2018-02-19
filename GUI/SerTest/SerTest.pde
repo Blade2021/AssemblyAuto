@@ -13,6 +13,7 @@ boolean relayToggle;
 Textarea consoletext;
 Println console;
 //Variables
+
 int lastSenWait = 100;
 boolean firstContact = false;
 int connected = 0;
@@ -29,9 +30,9 @@ boolean toggleValue = false;
 boolean sensorInitial = true;
 boolean serialToggle = false;
 String port;
-
+boolean override = false;
 long lastTime = 0;
-int waitTime = 300;
+int waitTime = 100;
 
 void keyValue(int value) {
   if ((relayToggle == true) && (varLoad == true)) {
@@ -594,6 +595,20 @@ void controlEvent(ControlEvent test) {
   if (test.getId() == 79){
     port = Serial.list()[int(test.getController().getValue())];
   }
+  /*if (test.isAssignableFrom(Slider.class)){
+    int sliderValueFinal = Math.round(test.getValue());
+  if(sliderValueFinal > 0){
+  //waitTime = sliderValue;
+  if(lastSenWait != sliderValueFinal){
+    myPort.write("SENWAIT." +sliderValueFinal +endchar);
+    lastSenWait = sliderValueFinal;
+  }
+  } else if (lastSenWait <= 0){
+   myPort.write("SENWAIT." +"0" +endchar);
+   lastSenWait = 0;
+  }
+}
+  */
   if (test.isAssignableFrom(Textfield.class)) {
     if ("console".equals(test.getName())) {
       temp = test.getStringValue();
@@ -685,11 +700,17 @@ public void button2() {
   myPort.write("PIN.10.0" +endchar);
 }
 
-void waitSlider(int value) {
-  //waitTime = value;
-  if(lastSenWait != value){
-    myPort.write("SENWAIT." +value +endchar);
-    lastSenWait = value;
+void waitSlider(int sliderValue) {
+  //println(sliderValue);
+  if(sliderValue > 0){
+  //waitTime = sliderValue;
+  if(lastSenWait != sliderValue){
+    myPort.write("SENWAIT." +sliderValue +endchar);
+    lastSenWait = sliderValue;
+  }
+  } else if (lastSenWait <= 0){
+   myPort.write("SENWAIT." +"0" +endchar);
+   lastSenWait = 0;
   }
 }
 public void button3() {
@@ -739,49 +760,49 @@ public void sitrepbutton() {
   varLoad = true;
 }
 public void Relay1() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[0], !globalState[0]);
   }
 }
 public void Relay2() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[1], !globalState[1]);
   }
 }
 public void Relay3() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[2], !globalState[2]);
   }
 }
 public void Relay4() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[3], !globalState[3]);
   }
 }
 public void Relay5() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[4], !globalState[4]);
   }
 }
 public void Relay6() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[5], !globalState[5]);
   }
 }
 public void Relay7() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[6], !globalState[6]);
   } else {
     println("ERROR: Controller not loaded");
   }
 }
 public void Relay8() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[7], !globalState[7]);
   }
 }
 public void Relay9() {
-  if (varLoad != false) {
+  if ((varLoad != false) && (override == true)) {
     RelayControl(relayArray[8], !globalState[8]);
   }
 }
@@ -792,6 +813,7 @@ public void RelayControl(int Id, boolean Flag) {
   } else {
     status = 0;
   }
+  //cp5.get("Relay"+Id).setColorBackground(color(0,255,255,0));
   myPort.write("PIN." +Id +'.' +status +endchar);
 }
 
@@ -956,6 +978,14 @@ void serialEvent(Serial myPort) {
       String ping = inByte.substring(pLoc+5, msLoc);
       cp5.get(Textlabel.class, "connectedLabel").setText("Connected");
       cp5.get(Textlabel.class, "pingStat").setText("Ping: " +ping);
+    }
+    if (inByte.contains("Override")) {
+      char firstvalue = inByte.charAt(9);
+      if (firstvalue == 'f'){
+        override = false;
+      }else{
+        override = true;
+      }
     }
     if (firstContact == false) {
       if (inByte.equals("<Controller Ready>")) {
