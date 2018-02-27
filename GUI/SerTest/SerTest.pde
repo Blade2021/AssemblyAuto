@@ -1,17 +1,20 @@
 import processing.serial.*;
 import controlP5.*;
 
-Serial myPort;  // Create object from Serial class
-String inByte;
+Serial myPort;  //Create serial port
+String inByte; //String for incoming data from serial port
 String s;
-ControlP5 cp5;
+ControlP5 cp5;  //Control P5 Structure
 String temp;
-String endchar = "\n";
+String endchar = "\n";  //End char attached to each message
 Button sbutton;
 DropdownList d1;
 boolean relayToggle;
 Textarea consoletext;
 Println console;
+
+ControlTimer ech;
+
 //Variables
 
 int lastSenWait = 100;
@@ -30,7 +33,7 @@ boolean toggleValue = false;
 boolean sensorInitial = true;
 boolean serialToggle = false;
 String port;
-boolean override = false;
+boolean override = false; // Override Variable (Check System)
 long lastTime = 0;
 int waitTime = 100;
 
@@ -47,7 +50,9 @@ void setup()
   lastTime = millis();
   surface.setTitle("National Hanger - Machine Serial");
   noStroke();
-  frameRate(30);
+  frameRate(60);
+  ech = new ControlTimer();
+  ech.setSpeedOfTime(1);
   cp5 = new ControlP5(this);
   cp5.enableShortcuts();
 
@@ -563,7 +568,9 @@ void draw() {
   if(sensorEcho == false){
     cp5.get(Slider.class,"waitSlider").hide();
   }
-  
+  if (ech.millis() >= 1000){
+    myPort.write("Test Ran" +endchar);
+  }
   if (tabID == 111) {
     /*
     for (int i=0; i<globalState.length; i++) {
@@ -589,7 +596,7 @@ void draw() {
       rect(20, 560, 150, 30);
     } */
   }
-  delay(10);
+  //delay(10);
 }
 void controlEvent(ControlEvent test) {
   if (test.getId() == 79){
@@ -949,8 +956,6 @@ void serialEvent(Serial myPort) {
       }
       sensorInitial = false;
     }
-    if (inByte.contains("RUPD.")) {
-    }
     /*
     if (inByte.contains("ECHO.")) {
       if (toggleValue == true) {
@@ -966,6 +971,8 @@ void serialEvent(Serial myPort) {
       }
     }
     */
+    
+    
     if (inByte.contains("SITREP COMPLETE")) {
       cp5.get("sitrepbutton").setColorBackground(color(0, 255, 0, 255));
       cp5.get("sitrepbutton").setColorForeground(color(0, 255, 0, 180));
@@ -981,10 +988,10 @@ void serialEvent(Serial myPort) {
     }
     if (inByte.contains("Override")) {
       char firstvalue = inByte.charAt(9);
-      if (firstvalue == 'f'){
-        override = false;
-      }else{
+      if (firstvalue == 'n'){
         override = true;
+      }else{
+        override = false;
       }
     }
     if (firstContact == false) {

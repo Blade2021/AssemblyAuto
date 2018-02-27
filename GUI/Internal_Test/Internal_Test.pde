@@ -3,6 +3,7 @@ import processing.serial.*;
 Serial myPort;
 String endchar = "\n";
 String inByte;
+boolean override = false;
 
 void setup() {
   myPort = new Serial(this, "COM9", 19200);
@@ -23,6 +24,16 @@ void serialEvent(Serial myPort) {
     if (inByte.contains("SITREP")){
       sitrep();
     }
+    if (inByte.contains("OVERRIDE")){
+      override = !override;
+      String temp;
+      if (override == true){
+        temp = "ON";
+      } else {
+        temp = "OFF";
+      }
+      myPort.write("Override " +temp +endchar);
+    }
   }
 }
 
@@ -31,17 +42,17 @@ void sitrep(){
 for(byte k = 0; k<9; k++){
     String data = ("EMU." +k + ".200" +endchar);
     myPort.write(data);
-    delay(100);
+    delay(40);
   }
   for(byte k = 0; k<8; k++){
     String data = ("SEN." +k +"." +(k+20) +endchar);
     myPort.write(data);
-    delay(100);
+    delay(40);
   }
   for(byte k = 0; k<8; k++){
     String data = ("SOL." +k +"." +(k+30) +endchar);
     myPort.write(data);
-    delay(100);
+    delay(60);
   }
   myPort.write("SITREP COMPLETE" +endchar);
 }

@@ -1004,7 +1004,6 @@ void checkData()
       }
       if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
       {
-        Serial.println("debug");
         pinUpdate();
       }
       if (apple.substring(0, 7) == "SENWAIT")
