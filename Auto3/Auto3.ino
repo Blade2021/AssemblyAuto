@@ -43,8 +43,8 @@ const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
 //Solenoids
 const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
 /*
-    8 - [AL-0] Hanger Feed
-    7 - [AL-1] Hook Stopper
+    7 - [AL-0] Hanger Feed
+    8 - [AL-1] Hook Stopper
    16 - [AL-2] Head/Tooling
    17 - [AL-3] Strip Off
    18 - [AL-4] Crimp Stopper
@@ -118,7 +118,8 @@ byte sOverride = 1;
 byte stateArray[10] = {0}; //Include extra 0 for the NULL END
 const int passcode = 7777;
 byte runCheck = 1; //Initalize as 1 until machine error.
-byte mfcount;
+int mfcount;
+int lastMFcount;
 byte vector;
 //String lcdClearString = "                    ";
 
@@ -221,7 +222,7 @@ void setup()
       lcd.print("   ");
       break;
   }
-
+ 
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
@@ -377,12 +378,12 @@ void loop()
             machStop(0);
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
-            Serial.print("preTime: ");
-            Serial.print(previousTimer1);
-            Serial.print(" - ");
             Serial.print("currentTime: ");
             Serial.print(currentTime);
-            Serial.print(" > ");
+            Serial.print(" - ");
+            Serial.print("preTime: ");
+            Serial.print(previousTimer1);
+            Serial.print(" < ");
             Serial.print("varTime: ");
             Serial.println(sysArray[7]);
             previousTimer1 = currentTime;
@@ -492,13 +493,28 @@ void loop()
       // END OF VIBRATOR CYCLE
       // Crimp Cycle
       crimpLoop = digitalRead(sensorArray[3]);
-      if ((crimpLoop == LOW) && (crimpNext == 0))
+      if(
+        //Trigger All
+        ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (currentTime - previousTimer4 >= sysArray[4])) ||
+        //Protection - Only crimp if malfunction was not detected
+        ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4]))
+      )
       {
         Serial.println("Crimp Cycle Activated");
         digitalWrite(panelLed4, HIGH);
         digitalWrite(solenoidArray[4], HIGH);
         previousTimer4 = currentTime;
         crimpNext = 1;
+      }
+      //Crimp Protection Reset
+      if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount)){
+        //Reset lastMFcount to continue cycles after one pass.
+        lastMFcount = mfcount;
+        Serial.println("Skipping crimp cycle [ERROR 4455]");
+        lcd.setCursor(0,3);
+        lcd.print("ERROR [4455]");
+        preLCDClear = currentTime;
+        previousTimer4 = currentTime;
       }
       if ((crimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3]))
       {
