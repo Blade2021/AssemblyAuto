@@ -1,4 +1,4 @@
-/*  VERSION 1.2.9
+/*  VERSION 1.3.1
     Last succcessful run: 1.2.8
     Last Upload SHA Token: 8de98c
 */
@@ -14,12 +14,12 @@
 #define ARRAYINDX 7
 
 //Panel Buttons
-const byte manualButton = 6;
-const byte nextButton = 42;
-const byte saveButton = 46;
-const byte upButton = 48;
-const byte downButton = 44;
-const byte toggleButton = 50;
+const byte manualButton = 6; //Manual feed button
+const byte nextButton = 42; // Next Button
+const byte saveButton = 46; // Savel/Select Button
+const byte upButton = 48; // Up Button
+const byte downButton = 44; // Down Button
+const byte toggleButton = 50; // toggle Button
 
 // Panel LEDs
 const byte panelLed1 = 51;
@@ -54,15 +54,15 @@ const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
    9  - [AL-8] Motor Relay
 */
 //LCD Variables
-byte sysPosition = 0;
-const int lcdClearTime = 7000;
-byte pos = POSDEFAULT;
-byte jindx = 0;
-char arraya[] = {0, 1, 2, 3, 0};
-const byte sysLength = 9;
+byte sysPosition = 0; // Position of sysArray
+const int lcdClearTime = 7000; 
+byte pos = POSDEFAULT; //LCD position for key input
+byte jindx = 0; //Key Input Position (Array)
+char arraya[] = {0, 1, 2, 3, 0}; //Key input array
+const byte sysLength = 9; // System timer array length
 
 //Time Controls
-const int buttonWait = 600; // Button Debounce Time
+const int buttonWait = 400; // Button Debounce Time
 unsigned long preLCDClear = 0; // LCD Clear Timer
 unsigned long buttonPreviousTime = 0; // Button Debounce Timer
 unsigned long previousTimer1 = 0; // Feed Timer
@@ -86,41 +86,41 @@ int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200};
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 //Keypad
-const byte ROWS = 4;
-const byte COLS = 4;
+const byte ROWS = 4; // # of rows for keypad
+const byte COLS = 4; // # of columns for keypad
 char keys[ROWS][COLS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
-byte rowPins[ROWS] = {25, 27, 29, 31}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {33, 35, 37, 39};
+byte rowPins[ROWS] = {25, 27, 29, 31}; //row pins
+byte colPins[COLS] = {33, 35, 37, 39}; //column pins
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 //System Variables
-boolean active = LOW;
-byte partError = 0;
-byte mpsEnable = 0;
-byte toggleLogic = 0;
-byte feedLoop = 0; //Feed Loop
-byte feedCheck = 0;
-byte feedNext = 0;
-byte hookNext = 0;
-byte hookLoop = 0;
-byte hookCheck = 0;
-byte crimpLoop = 0;
-byte crimpNext = 0;
-byte railCheck = 0; // Was set to LOW
-byte railCheckNext = 0;
-byte rswitch = 0;
-byte sOverride = 1;
-byte stateArray[10] = {0}; //Include extra 0 for the NULL END
-const int passcode = 7777;
-byte runCheck = 1; //Initalize as 1 until machine error.
-int mfcount;
-int lastMFcount;
-byte vector;
+boolean active = LOW; // System active variable
+byte partError = 0; // Hook status
+byte mpsEnable = 0; // Machine Protection Enabler
+byte toggleLogic = 0; // Value of toggle button
+byte feedLoop = 0; //Feed loop postion
+byte feedCheck = 0; // Feed check variable
+byte feedNext = 0; // Feed loop position
+byte hookNext = 0; // Hook loop position
+byte hookLoop = 0; // Main cycle sensor
+byte hookCheck = 0; // 
+byte crimpLoop = 0; // Crimp cycle sensor
+byte crimpNext = 0; // Crimp cycle position
+byte railCheck = 0; // Rail sensor
+byte railCheckNext = 0; // Vibrator cycle position
+byte rswitch = 0; // System override, solenoid position variable
+byte sOverride = 1; // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
+byte stateArray[10] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
+const int passcode = 7777; //System override passcode
+byte runCheck = 1; //Machine protection variable, Initalize as 1 until machine error.
+int mfcount; // Malfunction counter
+int lastMFcount; // Previous malfunction count, Used for MPS 3+
+byte vector; // Memory vector postion
 //String lcdClearString = "                    ";
 
 //LOGIC CONTROLS
@@ -133,15 +133,15 @@ byte manualFeed = 0;      //Manual Feed Logic
 byte secStart = 0;        //Second Start
 
 //PC Control
-const byte numChars = 32;
-char receivedChars[numChars];
-unsigned long preSerialCheck;
-int senWait = 100;
-boolean senBool = false;
-boolean newData = false;
-String apple = "";
-byte initial = 1;
-byte orchard[SENARRAYSIZE + 1] = {0};
+const byte numChars = 32; // Array character limit
+char receivedChars[numChars]; // Recieved bytes from serial input
+unsigned long preSerialCheck; // Previous sensor check variable
+int senWait = 100; // Sensor data wait time
+boolean senBool = false; // Sensor data output toggle
+boolean newData = false; // New serial data toggle
+String apple = ""; // Incoming serial data string
+byte initial = 1; //Initial contact toggle
+byte orchard[SENARRAYSIZE + 1] = {0}; // Sensor output toggle
 
 void setup()
 {
@@ -188,7 +188,7 @@ void setup()
 
   Serial.begin(19200);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.2.9");
+  Serial.println("Program Version 1.3.1");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -577,7 +577,7 @@ void loop()
         digitalWrite(solenoidArray[2], HIGH);
         hookNext = 2;
       }
-      //Send StripOff Out
+      //Send Strip Off Out / Check Head location
       if (hookNext == 2)
       {
         int HeadCheckDown = digitalRead(sensorArray[6]);
@@ -589,7 +589,7 @@ void loop()
           Serial.println("Hook Cycle | Strip Off OUT");
         }
         //MPS Setting 5 - Shut down on timer
-        if ((mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8]))
+        if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
         {
           machStop(1);
           Serial.println("Motor stopped due to ERROR[0036]");
@@ -634,7 +634,8 @@ void loop()
           hookNext = 4;
         }
       }
-      if (hookNext == 4)
+      // Reset Strip Off / Reset Stopper
+      if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 < sysArray[8])))
       {
         int HeadUpCheck = digitalRead(sensorArray[7]);
         if (HeadUpCheck == LOW)
@@ -645,7 +646,12 @@ void loop()
           digitalWrite(panelLed3, LOW);
           hookNext = 0;
         }
-      } // END OF HOOK CYCLE
+      } else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
+        machStop(1);
+        runCheck = 0;
+        hookNext = 0;
+      }
+       // END OF HOOK CYCLE
       /* When logicCount Variable reaches 100,
           Trigger TimeKeeper to run
           TimeKeeper will reset logicCount back to 0.
@@ -964,9 +970,9 @@ void mpsInput()
       }
       int keyValue = key - '0';
       Serial.println(keyValue);
-      if (keyValue > 5)
+      if (keyValue > 6)
       {
-        keyValue = 5;
+        keyValue = 6;
       }
       mpsEnable = keyValue;
       lcd.setCursor(0, 3);
@@ -1591,4 +1597,3 @@ void overrideReset()
   railCheckNext = 0;
   sOverride = 1; //Exit initial reset
 }
-
