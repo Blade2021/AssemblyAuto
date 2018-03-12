@@ -12,6 +12,7 @@
 #define MPSMEMLOC 110
 #define POSDEFAULT 15
 #define ARRAYINDX 7
+#define DATASPEED 19200
 
 //Panel Buttons
 const byte manualButton = 6; //Manual feed button
@@ -108,10 +109,10 @@ byte feedCheck = 0; // Feed check variable
 byte feedNext = 0; // Feed loop position
 byte hookNext = 0; // Hook loop position
 byte hookLoop = 0; // Main cycle sensor
-byte hookCheck = 0; // 
+byte hookCheck = 0; // Lower Rail Sensor
 byte crimpLoop = 0; // Crimp cycle sensor
 byte crimpNext = 0; // Crimp cycle position
-byte railCheck = 0; // Rail sensor
+byte railCheck = 0; // Upper Rail sensor
 byte railCheckNext = 0; // Vibrator cycle position
 byte rswitch = 0; // System override, solenoid position variable
 byte sOverride = 1; // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
@@ -142,6 +143,7 @@ boolean newData = false; // New serial data toggle
 String apple = ""; // Incoming serial data string
 byte initial = 1; //Initial contact toggle
 byte orchard[SENARRAYSIZE + 1] = {0}; // Sensor output toggle
+byte debug = 0;
 
 void setup()
 {
@@ -186,7 +188,7 @@ void setup()
   pinMode(sensorArray[5], INPUT_PULLUP);
   // END OF PINMODE
 
-  Serial.begin(19200);
+  Serial.begin(DATASPEED);
   Serial.println("Starting...");
   Serial.println("Program Version 1.3.1");
   lcd.begin(20, 4);
@@ -389,11 +391,17 @@ void loop()
             previousTimer1 = currentTime;
           }
         }
-        if (((feedNext == 0) && (mpsEnable <= 0)) || ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
+        if (
+            // Machine Protection disabled
+            ((feedNext == 0) && (mpsEnable <= 0)) || 
+            // Machine protection enabled MPS 1+
+            ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || 
+            // Manual feed button activated && debounce button 
+            ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
         {
           if (manualFeed == LOW)
           {
-            buttonPreviousTime = currentTime;
+            buttonPreviousTime = currentTime + 600;
           }
           // FEED ACTIVATED
           Serial.println("Feed Cycle Activated");
@@ -442,13 +450,13 @@ void loop()
       {
         previousTimer1 = currentTime;
         digitalWrite(solenoidArray[0], HIGH);
-        Serial.println("Feed Cycle | FEED OPEN");
+        if(debug >= 3){Serial.println("Feed Cycle | FEED OPEN");}
         feedNext = 2;
       }
       //FEED CLOSE
       if ((feedNext == 2) && (currentTime - previousTimer1 >= sysArray[1]))
       {
-        Serial.println("Feed Cycle | FEED CLOSE");
+        if(debug >= 3){Serial.println("Feed Cycle | FEED CLOSE");}
         previousTimer1 = currentTime;
         digitalWrite(solenoidArray[0], LOW);
         digitalWrite(panelLed1, LOW);
@@ -500,7 +508,7 @@ void loop()
         ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4]))
       )
       {
-        Serial.println("Crimp Cycle Activated");
+        if(debug >= 3){Serial.println("Crimp Cycle Activated");}
         digitalWrite(panelLed4, HIGH);
         digitalWrite(solenoidArray[4], HIGH);
         previousTimer4 = currentTime;
@@ -520,12 +528,12 @@ void loop()
       {
         previousTimer4 = currentTime;
         digitalWrite(solenoidArray[5], HIGH);
-        Serial.println("Crimp Cycle | Crimp");
+        if(debug >= 3){Serial.println("Crimp Cycle | Crimp");}
         crimpNext = 2;
       }
       if ((crimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4]))
       {
-        Serial.println("Crimp Cycle | Reset");
+        if(debug >= 3){Serial.println("Crimp Cycle | Reset");}
         previousTimer4 = currentTime;
         digitalWrite(solenoidArray[5], LOW);
         digitalWrite(solenoidArray[4], LOW);
@@ -538,7 +546,7 @@ void loop()
       {
         if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
         {
-          Serial.println("Hook Cycle Activated");
+          if(debug >= 3){Serial.println("Hook Cycle Activated");}
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
           hookCheck = digitalRead(sensorArray[0]);
@@ -573,7 +581,7 @@ void loop()
       if ((hookNext == 1) && (currentTime - previousTimer3 >= sysArray[2]))
       {
         previousTimer3 = currentTime;
-        Serial.println("Hook Cycle | Tool/Head OUT");
+        if(debug >= 3){Serial.println("Hook Cycle | Tool/Head OUT");}
         digitalWrite(solenoidArray[2], HIGH);
         hookNext = 2;
       }
@@ -586,7 +594,7 @@ void loop()
         {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
-          Serial.println("Hook Cycle | Strip Off OUT");
+          if(debug >= 3){Serial.println("Hook Cycle | Strip Off OUT");}
         }
         //MPS Setting 5 - Shut down on timer
         if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
@@ -618,7 +626,7 @@ void loop()
             //Turn off machine
           }
           digitalWrite(solenoidArray[3], HIGH);
-          Serial.println("Hook Cycle | Strip Off OUT");
+          if(debug >= 3){Serial.println("Hook Cycle | Strip Off OUT");}
           Serial.println("Malfunction detected");
         }
       }
@@ -640,7 +648,7 @@ void loop()
         int HeadUpCheck = digitalRead(sensorArray[7]);
         if (HeadUpCheck == LOW)
         {
-          Serial.println("Hook Cycle | Reset");
+          if(debug >= 3){Serial.println("Hook Cycle | Reset");}
           digitalWrite(solenoidArray[1], LOW);
           digitalWrite(solenoidArray[3], LOW);
           digitalWrite(panelLed3, LOW);
@@ -1373,7 +1381,7 @@ int timeValue(byte memAddress)
     Serial.print(memAddress);
     Serial.print(" Result:");
     Serial.println(memBlockOne);
-    lcd.setCursor(0, 0);
+    lcd.setCursor(0, 3);
     lcd.print("MEMCORE:");
     lcd.print(memAddress);
     return;
@@ -1383,13 +1391,13 @@ int timeValue(byte memAddress)
   int memBlockTwo = EEPROM.read(memAddress);
   //Do the same as memBlockOne
   memBlockTwo = memBlockTwo * 10;
-  if ((memBlockOne > 2550) || (memBlockOne < 0))
+  if ((memBlockTwo > 2550) || (memBlockTwo < 0))
   {
     Serial.print("ERROR | Corrupted memory LOC:");
     Serial.print(memAddress);
     Serial.print(" Result:");
-    Serial.println(memBlockOne);
-    lcd.setCursor(0, 0);
+    Serial.println(memBlockTwo);
+    lcd.setCursor(0, 3);
     lcd.print("MEMCORE:");
     lcd.print(memAddress);
     return;
