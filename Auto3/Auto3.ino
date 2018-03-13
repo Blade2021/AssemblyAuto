@@ -197,19 +197,20 @@ void setup()
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
-  byte versionControl[4] = {0}
-  int vcAddress = 770;
-  for(byte k, k < 3, k++){
+  byte versionControl[4] = {0};
+  int vcAddress = VERSIONMEM;
+  for(byte k; k < 3; k++){
     versionControl[k] = EEPROM.read(vcAddress);
-    if((versionControl[k]) < 0 || > 256){
-      Serial.print("Version control memory location[ ")
+    if((versionControl[k]) < 0){
+      Serial.print("Version control memory location[ ");
       Serial.print(vcAddress);
-      Serial.println(" ] is corrupted.")
+      Serial.println(" ] is corrupted.");
     }
     vcAddress++;
   }
   if (Serial){
-    for(byte k, k < 3, k++){
+    Serial.print("Memory Version: ");
+    for(byte k; k < 3; k++){
       Serial.print(versionControl[k]);
       Serial.print(".");
     }
@@ -228,7 +229,7 @@ void setup()
     case 0:
       lcd.setCursor(17, 0);
       // lcd.print("412");
-      lcd.print("VCT0")
+      lcd.print("VCT0");
       break;
     case 1:
       lcd.setCursor(17, 0);
@@ -1055,6 +1056,9 @@ void checkData()
       {
         pinUpdate();
       }
+      if (apple.substring(0,5) == "VARCH"){
+        getVariable();
+      }
       if (apple.substring(0, 7) == "SENWAIT")
       {
         senWaitFunction();
@@ -1132,6 +1136,41 @@ void senWaitFunction() {
   senWait = atoi(grape);
   Serial.print("Sensor Wait Peroid Updated: ");
   Serial.println(senWait);
+}
+void getVariable(){
+  byte lastPos = 0;
+  char pear[32] = {0};
+  for (byte k = 5; k <= apple.length(); k++){
+    int charIndx = k - 5;
+    if (receivedChars[k] != '.'){
+      pear[charIndx] = receivedChars[k];
+      delay(1);
+    }
+    else {
+      pear[charIndx] = '\0';
+      delay(1);
+      lastPos = k;
+      break;
+    }
+  }
+  char variable(pear);
+  lastPos++;
+  int variableValue = 0;
+  for(byte k = lastPos; k <= apple.length(); k++){
+    int charIndx = k - lastPos;
+    if (receivedChars[k] != '\0'){
+      pear[charIndx] = receivedChars[k];
+      delay(1);
+    }
+    else {
+      pear[charIndx] = '\0';
+      delay(1);
+      lastPos = k;
+      variableValue = atoi(pear);
+      break;
+    }
+  }
+  variableChange(&variable,variableValue);
 }
 void pinUpdate()
 {
@@ -1387,6 +1426,10 @@ void changetime(int sysPosition)
   } //End of If(Key)
 }
 //End of ChangeTime function
+
+void variableChange(char *variable, int data){
+  variable = data;
+}
 
 int timeValue(byte memAddress)
 {
