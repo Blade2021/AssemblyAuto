@@ -11,6 +11,7 @@
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
 #define POSDEFAULT 15
+#define VERSIONMEM 770
 #define ARRAYINDX 7
 #define DATASPEED 19200
 
@@ -196,7 +197,24 @@ void setup()
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
-
+  byte versionControl[4] = {0}
+  int vcAddress = 770;
+  for(byte k, k < 3, k++){
+    versionControl[k] = EEPROM.read(vcAddress);
+    if((versionControl[k]) < 0 || > 256){
+      Serial.print("Version control memory location[ ")
+      Serial.print(vcAddress);
+      Serial.println(" ] is corrupted.")
+    }
+    vcAddress++;
+  }
+  if (Serial){
+    for(byte k, k < 3, k++){
+      Serial.print(versionControl[k]);
+      Serial.print(".");
+    }
+    Serial.println("");
+  }
   mpsEnable = EEPROM.read(MPSMEMLOC);
   vector = EEPROM.read(100);
   Serial.print("Vector: ");
@@ -209,7 +227,8 @@ void setup()
   {
     case 0:
       lcd.setCursor(17, 0);
-      lcd.print("412");
+      // lcd.print("412");
+      lcd.print("VCT0")
       break;
     case 1:
       lcd.setCursor(17, 0);
