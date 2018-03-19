@@ -1339,6 +1339,7 @@ void changetime(int sysPosition)
     lcd.print(key);
     pos++;
     lcd.setCursor(pos, 2);
+
     arraya[jindx++] = key;
     arraya[jindx];
     if (pos > 20)
@@ -1545,30 +1546,20 @@ void ext_timeChange() {
     slaveIndex++;
   }
   grape[slaveIndex] = '\0';
-  int sysArrayLoc = atoi(grape);
+  byte sysArrayLoc = atoi(grape);
   slaveIndex = 0;
   grape[] = {0};
-
+  if((sysArrayLoc < 0) || (sysArrayLoc > sysLength)){
+    Serial.println("Array length exceeded. [REF 8973]");
+    return;
+  }
   for(byte k = value_end+1; k < apple.length(); k++){
     grape[slaveIndex] = recievedChars[k];
     slaveIndex++;
   }
   grape[slaveIndex] = '\0';
   int timeChangeValue = atoi(grape);
-  if((timeChangeValue >= 0) && (timeChangeValue <= 5100)){
-    if(timeChangeValue > 2550){
-      int memAddress = (((vector * MEMVECTORMULTIPLE) + sysArrayLoc) * 2);
-      EEPROM.update(memAddress, 255);
-      tempValue = tempValue - 255;
-      memAddress++;
-      EEPROM.update(memAddress, tempValue);
-    }
-    if(timeChangeValue <= 2550){
-      int memAddress = (((vector * MEMVECTORMULTIPLE) + sysArrayLoc) * 2);
-      EEPROM.update(memAddress, 0);
-      memAddress++;
-      EEPROM.update(memAddress, tempValue);
-    }
+  eepromFunction(sysArrayLoc,timeChangeValue);
     //Change the time for the appropiate timer
     sysArray[sysArrayLoc] = timeChangeValue;
   }
@@ -1762,4 +1753,25 @@ void overrideReset()
   crimpNext = 0;
   railCheckNext = 0;
   sOverride = 1; //Exit initial reset
+}
+
+void eepromFunction(byte arrayLoc, int value){
+
+  int memAddress = (((vector * MEMVECTORMULTIPLE) + arrayLoc) * 2);
+  if ((value <= 5100) || (value >= 0)){
+    //error
+    return;
+  }
+  int tempValue = value/10;
+  if ((value <= 2550)){
+    EEPROM.update(memAddress, tempValue);
+    memAddress++;
+    EEPROM.update(memAddress, 0);
+  }
+  if (value > 2550){
+    tempValue = tempValue - 255;
+    EEPROM.update(memAddress, tempValue);
+    memAddress++;
+    EEPROM.update(memAddress, 255);
+  }
 }
