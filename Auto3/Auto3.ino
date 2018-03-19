@@ -401,6 +401,7 @@ void loop()
           if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
           {
             machStop(0);
+            hookNext = 0;
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
             Serial.print("currentTime: ");
@@ -595,9 +596,9 @@ void loop()
         if ((mpsEnable >= 2) && (currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6]))
         {
           //Check if MPS is enabled.  If so, check value of time sensor triggered.
+          machStop(0);
           runCheck = 0;
           previousTimer3 = currentTime;
-          machStop(0);
         }
       }
       //Send Head Down
@@ -624,8 +625,8 @@ void loop()
         {
           machStop(1);
           Serial.println("Motor stopped due to ERROR[0036]");
-          runCheck = 0;
           hookNext = 0;
+          runCheck = 0;
         }
         if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8]))
         {
@@ -634,8 +635,8 @@ void loop()
           if (mpsEnable == 4)
           {
             machStop(1);
+            hookNext - 0;
             runCheck = 0;
-            hookNext = 0;
             Serial.println(F("Motor stopped due to ERROR[0034]"));
             Serial.print("preTime: ");
             Serial.print(previousTimer3);
@@ -679,8 +680,8 @@ void loop()
         }
       } else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
         machStop(1);
-        runCheck = 0;
         hookNext = 0;
+        runCheck = 0;
       }
        // END OF HOOK CYCLE
       /* When logicCount Variable reaches 100,
@@ -969,6 +970,7 @@ void machStop(byte airoff)
   for (byte k; k < 7; k++)
   {
     digitalWrite(solenoidArray[k], LOW);
+    delay(1);
   }
   if (airoff >= 1)
   {
