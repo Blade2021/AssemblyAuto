@@ -10,6 +10,7 @@
 #define SOLARRAYSIZE 9
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
+#define DEBUGMEMLOC 112
 #define POSDEFAULT 15
 #define VERSIONMEM 770
 #define ARRAYINDX 7
@@ -197,6 +198,9 @@ void setup()
   lcd.print("Run Time: ");
   lcd.setCursor(2, 1);
   lcd.print("*** BOOTING ***");
+
+  debug = EEPROM.read(DEBUGMEMLOC);
+
   byte versionControl[4] = {0};
   int vcAddress = VERSIONMEM;
   for(byte k; k < 3; k++){
@@ -227,21 +231,21 @@ void setup()
   switch (vector)
   {
     case 0:
-      lcd.setCursor(17, 0);
+      lcd.setCursor(16, 0);
       // lcd.print("412");
       lcd.print("VCT0");
       break;
     case 1:
-      lcd.setCursor(17, 0);
-      lcd.print("414");
+      lcd.setCursor(16, 0);
+      lcd.print("VCT1");
       break;
     case 2:
-      lcd.setCursor(17, 0);
-      lcd.print("500");
+      lcd.setCursor(16, 0);
+      lcd.print("VCT2");
       break;
     default:
-      lcd.setCursor(17, 0);
-      lcd.print("   ");
+      lcd.setCursor(16, 0);
+      lcd.print("    ");
       break;
   }
  
@@ -428,7 +432,11 @@ void loop()
             buttonPreviousTime = currentTime + 600;
           }
           // FEED ACTIVATED
-          Serial.println("Feed Cycle Activated");
+          if(debug >= 1){
+          Serial.print("Feed Cycle Activated [");
+          Serial.print(currentTime/1000);
+          Serial.println(" ]");
+          }
           lcd.setCursor(0, 2);
           lcd.print("Feed Reset:");
           //Start counting time for TimeKeepr function
@@ -491,7 +499,11 @@ void loop()
       railCheck = digitalRead(sensorArray[4]);
       if ((railCheck == HIGH) && (railCheckNext == 0))
       {
-        Serial.println("Rail Check Activated");
+        if(debug >= 1){
+          Serial.print("Rail Check Activated [");
+          Serial.print(currentTime/1000);
+          Serial.println("]");
+        }
         previousTimer2 = currentTime;
         digitalWrite(panelLed5, HIGH);
         digitalWrite(solenoidArray[6], HIGH);
@@ -532,7 +544,11 @@ void loop()
         ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4]))
       )
       {
-        if(debug >= 3){Serial.println("Crimp Cycle Activated");}
+        if(debug >= 1){
+          Serial.print("Crimp Cycle Activated [");
+          Serial.print(currentTime/1000);
+          Serial.println("]");
+          }
         digitalWrite(panelLed4, HIGH);
         digitalWrite(solenoidArray[4], HIGH);
         previousTimer4 = currentTime;
@@ -570,7 +586,11 @@ void loop()
       {
         if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
         {
-          if(debug >= 3){Serial.println("Hook Cycle Activated");}
+          if(debug >= 1){
+            Serial.print("Hook Cycle Activated [");
+            Serial.print(currentTime/1000);
+            Serial.println("]");
+            }
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
           hookCheck = digitalRead(sensorArray[0]);
@@ -651,7 +671,9 @@ void loop()
           }
           digitalWrite(solenoidArray[3], HIGH);
           if(debug >= 3){Serial.println("Hook Cycle | Strip Off OUT");}
-          Serial.println("Malfunction detected");
+          Serial.print("Malfunction detected CT[");
+          Serial.print(mfcount);
+          Serial.println("]");
         }
       }
       //Send Head Up
@@ -1059,13 +1081,14 @@ void checkData()
       }
       if (apple.substring(0,5) == "DEBUG")
       {
-        char voucher = apple.charAt(7);
+        char voucher = apple.charAt(6);
         byte endingVoucher = voucher - '0';
         if((endingVoucher >= 0) && (endingVoucher <= 9))
         {
           debug = endingVoucher;
-          Serial.print("Debug updated to: ")
+          Serial.print("Debug updated to: ");
           Serial.println(debug);
+          EEPROM.Update(DEBUGMEMLOC, debug);
         } else {
           Serial.println("Debug value not accepted");
         }
@@ -1305,6 +1328,11 @@ void changetime(int sysPosition)
     {
       jindx = 0;
       vectorChange();
+    }
+    if (key == 'D')
+    {
+      jindx = 0;
+      debugChange();
     }
     lcd.print(key);
     pos++;
@@ -1617,6 +1645,48 @@ void vectorChange()
         break;
     }
   }
+}
+
+void debugChange()
+{
+  lcd.setCursor(0, 1);
+  lcd.print("Debug:            ");
+  lcd.setCursor(0,2);
+  lcd.print("Current: ");
+  lcd.setCursor(9,2);
+  lcd.print(debug);
+  pos = POSDEFAULT;
+  lcd.setCursor(pos, 2);
+  boolean complete = false;
+  while(complete == false){
+    char key = keypad.getKey();
+    switch (key)
+    {
+      case '#':
+        complete = true;
+        break;
+      case '0':
+        debug = 0;
+        complete = true;
+        break;
+      case '1':
+        debug = 1;
+        complete = true;
+        break;
+      case '2':
+        debug = 2;
+        complete = true;
+        break;
+      case '3':
+        debug = 3;
+        complete = true;
+        break;
+      default:
+        debug = 0;
+        break;
+    }
+  }
+  EEPROM.update(DEBUGMEMLOC, debug);
 }
 
 void overrideReset()
