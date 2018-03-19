@@ -274,7 +274,7 @@ void loop()
   }
   if (newData == true)
   {
-    if(debug > 2){
+    if(debug >= 1){
       Serial.println("DEBUG: newData function ran [REF:0234]");
     }
     checkData();
@@ -432,7 +432,7 @@ void loop()
             buttonPreviousTime = currentTime + 600;
           }
           // FEED ACTIVATED
-          if(debug >= 1){
+          if(debug >= 2){
           Serial.print("Feed Cycle Activated [");
           Serial.print(currentTime/1000);
           Serial.println(" ]");
@@ -499,7 +499,7 @@ void loop()
       railCheck = digitalRead(sensorArray[4]);
       if ((railCheck == HIGH) && (railCheckNext == 0))
       {
-        if(debug >= 1){
+        if(debug >= 2){
           Serial.print("Rail Check Activated [");
           Serial.print(currentTime/1000);
           Serial.println("]");
@@ -530,7 +530,9 @@ void loop()
           digitalWrite(solenoidArray[6], LOW);
           digitalWrite(panelLed5, LOW);
           previousTimer2 = currentTime;
-          Serial.println("Rail Check Finished");
+          if(debug >= 3){
+            Serial.println("Rail Check Finished");
+            }
           railCheckNext = 0;
         }
       }
@@ -544,7 +546,7 @@ void loop()
         ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4]))
       )
       {
-        if(debug >= 1){
+        if(debug >= 2){
           Serial.print("Crimp Cycle Activated [");
           Serial.print(currentTime/1000);
           Serial.println("]");
@@ -586,7 +588,7 @@ void loop()
       {
         if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
         {
-          if(debug >= 1){
+          if(debug >= 2){
             Serial.print("Hook Cycle Activated [");
             Serial.print(currentTime/1000);
             Serial.println("]");
@@ -1436,7 +1438,7 @@ void changetime(int sysPosition)
 }
 //End of ChangeTime function
 
-
+/*
 int timeValue(byte memAddress)
 {
   int memBlockOne = EEPROM.read(memAddress);
@@ -1476,7 +1478,7 @@ int timeValue(byte memAddress)
   //Small delay to keep from overprocessing
   delay(10);
   return timeTotal;
-}
+}*/
 
 void eepromUpdate()
 {
@@ -1520,9 +1522,55 @@ void eepromUpdate()
   Serial.print(eepromValue);
   Serial.println(")");
   EEPROM.update(updateAddress, eepromValue);
+  memoryLoad();
+  // Replace this function call with memory load to conserve memory.
+  /*
   for (byte k; k < sysLength; k++)
   {
     sysArray[k] = timeValue(k * 2);
+  }
+  */
+}
+
+void ext_timeChange() {
+  //timeChange.0.
+  char grape[numChars] = {0};
+  byte slaveIndex = 0;
+
+  //Grab the first array location for the timer.
+  byte value_start = apple.indexOf('.');
+  byte value_end = apple.lastIndexOf('.');
+  for(byte k = value_start; k < value_end; k++){
+    grape[slaveIndex] = recievedChars[k];
+    slaveIndex++;
+  }
+  grape[slaveIndex] = '\0';
+  int sysArrayLoc = atoi(grape);
+  slaveIndex = 0;
+  grape[] = {0};
+
+  for(byte k = value_end+1; k < apple.length(); k++){
+    grape[slaveIndex] = recievedChars[k];
+    slaveIndex++;
+  }
+  grape[slaveIndex] = '\0';
+  int timeChangeValue = atoi(grape);
+  if((timeChangeValue >= 0) && (timeChangeValue <= 5100)){
+    if(timeChangeValue > 2550){
+      int memAddress = (((vector * MEMVECTORMULTIPLE) + sysArrayLoc) * 2);
+      EEPROM.update(memAddress, 255);
+      tempValue = tempValue - 255;
+      memAddress++;
+      EEPROM.update(memAddress, tempValue);
+    }
+    if(timeChangeValue <= 2550){
+      int memAddress = (((vector * MEMVECTORMULTIPLE) + sysArrayLoc) * 2);
+      EEPROM.update(memAddress, 0);
+      memAddress++;
+      EEPROM.update(memAddress, tempValue);
+    }
+    //Change the time for the appropiate timer
+    sysArray[sysArrayLoc] = timeChangeValue;
   }
 }
 
