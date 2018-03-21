@@ -11,9 +11,9 @@
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
 #define DEBUGMEMLOC 112
-#define POSDEFAULT 15
 #define VERSIONMEM 770
-#define ARRAYINDX 7
+#define VECTORMEMLOC 100
+#define POSDEFAULT 15
 #define DATASPEED 19200
 
 //Panel Buttons
@@ -118,7 +118,7 @@ byte railCheck = 0; // Upper Rail sensor
 byte railCheckNext = 0; // Vibrator cycle position
 byte rswitch = 0; // System override, solenoid position variable
 byte sOverride = 1; // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
-byte stateArray[10] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
+byte stateArray[SOLARRAYSIZE+1] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
 const int passcode = 7777; //System override passcode
 byte runCheck = 1; //Machine protection variable, Initalize as 1 until machine error.
 int mfcount; // Malfunction counter
@@ -149,11 +149,6 @@ byte debug = 0;
 
 void setup()
 {
-  for (byte k; k < 8; k++)
-  {
-    digitalWrite(solenoidArray[k], LOW);
-    delay(10);
-  }
   //LEDs
   pinMode(panelLed1, OUTPUT);
   pinMode(panelLed2, OUTPUT);
@@ -220,8 +215,16 @@ void setup()
     }
     Serial.println("");
   }
+
+  //Reset all solenoids to LOW
+  for (byte k; k < SOLARRAYSIZE; k++)
+  {
+    digitalWrite(solenoidArray[k], LOW);
+    delay(1);
+  }
+
   mpsEnable = EEPROM.read(MPSMEMLOC);
-  vector = EEPROM.read(100);
+  vector = EEPROM.read(VECTORMEMLOC);
   Serial.print("Vector: ");
   Serial.println(vector);
   delay(10);
@@ -891,7 +894,7 @@ void savetrigger(byte sysPosition)
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  eepromWrite(sysPostion, sysArray[sysPosition])
+  eepromWrite(sysPosition, sysArray[sysPosition]);
   lcd.setCursor(0, 3);
   lcd.print("EE.Update VAR[");
   lcd.print(sysPosition + 1);
@@ -1406,13 +1409,6 @@ void eepromUpdate()
   Serial.println(")");
   EEPROM.update(address, eepromValue);
   memoryLoad();
-  // Replace this function call with memory load to conserve memory.
-  /*
-    for (byte k; k < sysLength; k++)
-    {
-    sysArray[k] = timeValue(k * 2);
-    }
-  */
 }
 
 void ext_timeChange() {
@@ -1500,10 +1496,7 @@ void vectorChange()
   lcd.setCursor(0, 1);
   lcd.print("Memory Vector:      ");
   pos = POSDEFAULT;
-  lcd.setCursor(pos, 2);
   boolean complete = false;
-  lcd.setCursor(0, 2);
-  lcd.print("0:412  1:414  2:500 ");
   while (complete == false)
   {
     char key;
@@ -1514,40 +1507,40 @@ void vectorChange()
     {
       case '0':
         lcd.setCursor(0, 3);
-        lcd.print("Loaded 412 timing");
-        Serial.println("Loaded 412 settings");
+        lcd.print("Loaded VCT0 timing");
+        Serial.println("Loaded VCT0 settings");
         EEPROM.update(100, 0);
         vector = 0;
         Serial.println("Vector 0");
         memoryLoad();
-        lcd.setCursor(17, 0);
-        lcd.print("412");
+        lcd.setCursor(16, 0);
+        lcd.print("VCT0");
         complete = true;
         break;
 
       case '1':
         lcd.setCursor(0, 3);
-        lcd.print("Loaded 414 timing");
-        Serial.println("Loaded 414 settings");
+        lcd.print("Loaded VCT1 timing");
+        Serial.println("Loaded VCT1 settings");
         EEPROM.update(100, 1);
         vector = 1;
         memoryLoad();
         Serial.println("Vector 1");
-        lcd.setCursor(17, 0);
-        lcd.print("414");
+        lcd.setCursor(16, 0);
+        lcd.print("VCT1");
         complete = true;
         break;
 
       case '2':
         lcd.setCursor(0, 3);
-        lcd.print("Loaded 500 timing");
-        Serial.println("Loaded 500 settings");
+        lcd.print("Loaded VCT2 timing");
+        Serial.println("Loaded VCT2 settings");
         EEPROM.update(100, 2);
         vector = 2;
         Serial.println("Vector 2");
         memoryLoad();
-        lcd.setCursor(17, 0);
-        lcd.print("500");
+        lcd.setCursor(16, 0);
+        lcd.print("VCT2");
         complete = true;
         break;
 
