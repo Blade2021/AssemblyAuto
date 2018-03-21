@@ -192,7 +192,7 @@ void setup()
 
   Serial.begin(DATASPEED);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.3.1");
+  Serial.println("Program Version 1.3.2");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -1329,7 +1329,8 @@ void changetime(int sysPosition)
       Serial.println(value);
       if ((value == passcode) && (active == 0))
       {
-        //VERY IMPORTANT!  Check to see if active is 0, so that override isn't turned on while machine running.
+        /* VERY IMPORTANT!  Check to see if active is 0 
+        so that override isn't turned on while machine running.  */
         sOverride = 2;
         pos = POSDEFAULT;
         lcd.setCursor(pos, 2);
@@ -1388,7 +1389,6 @@ void eepromUpdate()
     delay(10);
   }
   int address = atoi(grape);
-  //Serial.println(updateAddress);
   if (memCheck(address, 10) == false) {
     return;
   }
@@ -1448,9 +1448,9 @@ void ext_timeChange() {
 
 void memoryLoad() {
   //Load EEPROM Memory
-  int memAddress = ((vector * MEMVECTORMULTIPLE) * 2);
   for (byte k = 0; k < sysLength; k++)
   {
+    int memAddress = (((vector * MEMVECTORMULTIPLE) + k) * 2);
     int memBlockOne = EEPROM.read(memAddress);
     Serial.print("X23 Address[ ");
     Serial.print(memAddress);
@@ -1487,7 +1487,6 @@ void memoryLoad() {
       break;
     }
     sysArray[k] = memBlockOne + memBlockTwo;
-    memAddress++; //Increase for next address read
     Serial.print("EEPROM[");
     Serial.print(k);
     Serial.print("]: ");
