@@ -58,7 +58,7 @@ const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
 */
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
-const int lcdClearTime = 7000; 
+const int lcdClearTime = 7000;
 byte pos = POSDEFAULT; //LCD position for key input
 byte jindx = 0; //Key Input Position (Array)
 char arraya[] = {0, 1, 2, 3, 0}; //Key input array
@@ -203,18 +203,18 @@ void setup()
 
   byte versionControl[4] = {0};
   int vcAddress = VERSIONMEM;
-  for(byte k; k < 3; k++){
+  for (byte k; k < 3; k++) {
     versionControl[k] = EEPROM.read(vcAddress);
-    if((versionControl[k]) < 0){
+    if ((versionControl[k]) < 0) {
       Serial.print("Version control memory location[ ");
       Serial.print(vcAddress);
       Serial.println(" ] is corrupted.");
     }
     vcAddress++;
   }
-  if (Serial){
+  if (Serial) {
     Serial.print("Memory Version: ");
-    for(byte k; k < 3; k++){
+    for (byte k; k < 3; k++) {
       Serial.print(versionControl[k]);
       Serial.print(".");
     }
@@ -248,7 +248,7 @@ void setup()
       lcd.print("    ");
       break;
   }
- 
+
   Serial.println(F("*** System Variables ***"));
   Serial.print("Button Wait Time: ");
   Serial.println(buttonWait);
@@ -274,7 +274,7 @@ void loop()
   }
   if (newData == true)
   {
-    if(debug >= 1){
+    if (debug >= 1) {
       Serial.println("DEBUG: newData function ran [REF:0234]");
     }
     checkData();
@@ -404,7 +404,6 @@ void loop()
         {
           if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
           {
-            machStop(0);
             hookNext = 0;
             runCheck = 0;
             Serial.println(F("Motor stopped due to ERROR[0032]"));
@@ -417,25 +416,26 @@ void loop()
             Serial.print("varTime: ");
             Serial.println(sysArray[7]);
             previousTimer1 = currentTime;
+            machStop(0);
           }
         }
         if (
-            // Machine Protection disabled
-            ((feedNext == 0) && (mpsEnable <= 0)) || 
-            // Machine protection enabled MPS 1+
-            ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) || 
-            // Manual feed button activated && debounce button 
-            ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
+          // Machine Protection disabled
+          ((feedNext == 0) && (mpsEnable <= 0)) ||
+          // Machine protection enabled MPS 1+
+          ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
+          // Manual feed button activated && debounce button
+          ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
         {
           if (manualFeed == LOW)
           {
             buttonPreviousTime = currentTime + 600;
           }
           // FEED ACTIVATED
-          if(debug >= 2){
-          Serial.print("Feed Cycle Activated [");
-          Serial.print(currentTime/1000);
-          Serial.println(" ]");
+          if (debug >= 2) {
+            Serial.print("Feed Cycle Activated [");
+            Serial.print(currentTime / 1000);
+            Serial.println(" ]");
           }
           lcd.setCursor(0, 2);
           lcd.print("Feed Reset:");
@@ -482,13 +482,17 @@ void loop()
       {
         previousTimer1 = currentTime;
         digitalWrite(solenoidArray[0], HIGH);
-        if(debug >= 3){Serial.println("Feed Cycle | FEED OPEN");}
+        if (debug >= 3) {
+          Serial.println("Feed Cycle | FEED OPEN");
+        }
         feedNext = 2;
       }
       //FEED CLOSE
       if ((feedNext == 2) && (currentTime - previousTimer1 >= sysArray[1]))
       {
-        if(debug >= 3){Serial.println("Feed Cycle | FEED CLOSE");}
+        if (debug >= 3) {
+          Serial.println("Feed Cycle | FEED CLOSE");
+        }
         previousTimer1 = currentTime;
         digitalWrite(solenoidArray[0], LOW);
         digitalWrite(panelLed1, LOW);
@@ -499,9 +503,9 @@ void loop()
       railCheck = digitalRead(sensorArray[4]);
       if ((railCheck == HIGH) && (railCheckNext == 0))
       {
-        if(debug >= 2){
+        if (debug >= 2) {
           Serial.print("Rail Check Activated [");
-          Serial.print(currentTime/1000);
+          Serial.print(currentTime / 1000);
           Serial.println("]");
         }
         previousTimer2 = currentTime;
@@ -530,38 +534,38 @@ void loop()
           digitalWrite(solenoidArray[6], LOW);
           digitalWrite(panelLed5, LOW);
           previousTimer2 = currentTime;
-          if(debug >= 3){
+          if (debug >= 3) {
             Serial.println("Rail Check Finished");
-            }
+          }
           railCheckNext = 0;
         }
       }
       // END OF VIBRATOR CYCLE
       // Crimp Cycle
       crimpLoop = digitalRead(sensorArray[3]);
-      if(
+      if (
         //Trigger All
         ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (currentTime - previousTimer4 >= sysArray[4])) ||
         //Protection - Only crimp if malfunction was not detected
         ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4]))
       )
       {
-        if(debug >= 2){
+        if (debug >= 2) {
           Serial.print("Crimp Cycle Activated [");
-          Serial.print(currentTime/1000);
+          Serial.print(currentTime / 1000);
           Serial.println("]");
-          }
+        }
         digitalWrite(panelLed4, HIGH);
         digitalWrite(solenoidArray[4], HIGH);
         previousTimer4 = currentTime;
         crimpNext = 1;
       }
       //Crimp Protection Reset
-      if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount)){
+      if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount)) {
         //Reset lastMFcount to continue cycles after one pass.
         lastMFcount = mfcount;
         Serial.println("Skipping crimp cycle [ERROR 4455]");
-        lcd.setCursor(0,3);
+        lcd.setCursor(0, 3);
         lcd.print("ERROR [4455]");
         preLCDClear = currentTime;
         previousTimer4 = currentTime;
@@ -570,12 +574,16 @@ void loop()
       {
         previousTimer4 = currentTime;
         digitalWrite(solenoidArray[5], HIGH);
-        if(debug >= 3){Serial.println("Crimp Cycle | Crimp");}
+        if (debug >= 3) {
+          Serial.println("Crimp Cycle | Crimp");
+        }
         crimpNext = 2;
       }
       if ((crimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4]))
       {
-        if(debug >= 3){Serial.println("Crimp Cycle | Reset");}
+        if (debug >= 3) {
+          Serial.println("Crimp Cycle | Reset");
+        }
         previousTimer4 = currentTime;
         digitalWrite(solenoidArray[5], LOW);
         digitalWrite(solenoidArray[4], LOW);
@@ -588,11 +596,11 @@ void loop()
       {
         if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
         {
-          if(debug >= 2){
+          if (debug >= 2) {
             Serial.print("Hook Cycle Activated [");
-            Serial.print(currentTime/1000);
+            Serial.print(currentTime / 1000);
             Serial.println("]");
-            }
+          }
           digitalWrite(panelLed2, HIGH);
           boolean hookCheck;
           hookCheck = digitalRead(sensorArray[0]);
@@ -627,7 +635,9 @@ void loop()
       if ((hookNext == 1) && (currentTime - previousTimer3 >= sysArray[2]))
       {
         previousTimer3 = currentTime;
-        if(debug >= 3){Serial.println("Hook Cycle | Tool/Head OUT");}
+        if (debug >= 3) {
+          Serial.println("Hook Cycle | Tool/Head OUT");
+        }
         digitalWrite(solenoidArray[2], HIGH);
         hookNext = 2;
       }
@@ -640,7 +650,9 @@ void loop()
         {
           digitalWrite(solenoidArray[3], HIGH);
           hookNext = 3;
-          if(debug >= 3){Serial.println("Hook Cycle | Strip Off OUT");}
+          if (debug >= 3) {
+            Serial.println("Hook Cycle | Strip Off OUT");
+          }
         }
         //MPS Setting 5 - Shut down on timer
         if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
@@ -672,7 +684,9 @@ void loop()
             //Turn off machine
           }
           digitalWrite(solenoidArray[3], HIGH);
-          if(debug >= 3){Serial.println("Hook Cycle | Strip Off OUT");}
+          if (debug >= 3) {
+            Serial.println("Hook Cycle | Strip Off OUT");
+          }
           Serial.print("Malfunction detected CT[");
           Serial.print(mfcount);
           Serial.println("]");
@@ -696,18 +710,20 @@ void loop()
         int HeadUpCheck = digitalRead(sensorArray[7]);
         if (HeadUpCheck == LOW)
         {
-          if(debug >= 3){Serial.println("Hook Cycle | Reset");}
+          if (debug >= 3) {
+            Serial.println("Hook Cycle | Reset");
+          }
           digitalWrite(solenoidArray[1], LOW);
           digitalWrite(solenoidArray[3], LOW);
           digitalWrite(panelLed3, LOW);
           hookNext = 0;
         }
-      } else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])){
+      } else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8])) {
         machStop(1);
         hookNext = 0;
         runCheck = 0;
       }
-       // END OF HOOK CYCLE
+      // END OF HOOK CYCLE
       /* When logicCount Variable reaches 100,
           Trigger TimeKeeper to run
           TimeKeeper will reset logicCount back to 0.
@@ -866,7 +882,7 @@ void inactive(int sysPosition)
 /* This function is for saving values from manual button changes.
    For Keypad function see: changetime
 */
-void savetrigger(int sysPosition)
+void savetrigger(byte sysPosition)
 {
   if (sysArray[sysPosition] >= 5101)
   {
@@ -875,51 +891,13 @@ void savetrigger(int sysPosition)
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  unsigned long address = (((vector * MEMVECTORMULTIPLE) + sysPosition) * 2);
-  int ytemp = ytemp = sysArray[sysPosition] / 10;
-  if (ytemp > 255)
-  {
-    ytemp = ytemp - 255;
-    EEPROM.update(address, ytemp);
-    address = address + 1;
-    if (address == EEPROM.length())
-    {
-      address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0005]");
-    }
-    EEPROM.update(address, 255);
-    address = address + 1;
-    if (address == EEPROM.length())
-    {
-      address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0006]");
-    }
-  }
-  if (ytemp < 255)
-  {
-    EEPROM.update(address, ytemp);
-    address = address + 1;
-    if (address == EEPROM.length())
-    {
-      address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0007]");
-    }
-    EEPROM.update(address, 0);
-    address = address + 1;
-    if (address == EEPROM.length())
-    {
-      address = 0;
-      Serial.println("*** SYSTEM ERROR [EE0008]");
-    }
-  }
-  ytemp = sysPosition + 1;
+  eepromWrite(sysPostion, sysArray[sysPosition])
   lcd.setCursor(0, 3);
   lcd.print("EE.Update VAR[");
-  lcd.print(ytemp);
+  lcd.print(sysPosition + 1);
   lcd.print("]    ");
   unsigned long currentTime = millis();
   preLCDClear = currentTime;
-  int state = digitalRead(errorLed);
   digitalWrite(errorLed, HIGH);
   delay(200);
   digitalWrite(errorLed, LOW);
@@ -927,8 +905,6 @@ void savetrigger(int sysPosition)
   digitalWrite(errorLed, HIGH);
   delay(200);
   digitalWrite(errorLed, LOW);
-  delay(200);
-  digitalWrite(errorLed, state);
 }
 
 void Override_Trigger(int RTrigger)
@@ -1081,16 +1057,16 @@ void checkData()
       {
         eepromUpdate();
       }
-      if (apple.substring(0,5) == "DEBUG")
+      if (apple.substring(0, 5) == "DEBUG")
       {
         char voucher = apple.charAt(6);
         byte endingVoucher = voucher - '0';
-        if((endingVoucher >= 0) && (endingVoucher <= 9))
+        if ((endingVoucher >= 0) && (endingVoucher <= 9))
         {
           debug = endingVoucher;
           Serial.print("Debug updated to: ");
           Serial.println(debug);
-          EEPROM.Update(DEBUGMEMLOC, debug);
+          EEPROM.update(DEBUGMEMLOC, debug);
         } else {
           Serial.println("Debug value not accepted");
         }
@@ -1348,10 +1324,10 @@ void changetime(int sysPosition)
     }
     if (key == '*')
     {
-      int tempa = atoi(arraya);
+      int value = atoi(arraya);
       Serial.print("SYSTEM | Keypad Input: ");
-      Serial.println(tempa);
-      if ((tempa == passcode) && (active == 0))
+      Serial.println(value);
+      if ((value == passcode) && (active == 0))
       {
         //VERY IMPORTANT!  Check to see if active is 0, so that override isn't turned on while machine running.
         sOverride = 2;
@@ -1361,66 +1337,16 @@ void changetime(int sysPosition)
         jindx = 0;
         return;
       }
-      if (tempa > 5100)
+      if (value > 5100)
       {
-        tempa = 5100;
+        value = 5100;
         Serial.println("WARNING: MAX VALUE HIT");
         lcd.setCursor(0, 3);
         lcd.print("ERROR: MAX VALUE HIT");
         preLCDClear = millis();
       }
-      if (tempa >= 2550)
-      {
-        sysArray[sysPosition] = tempa;
-        int ytemp = sysArray[sysPosition] / 10;
-        unsigned long address = (((vector * MEMVECTORMULTIPLE) + sysPosition) * 2);
-        //address = sysPosition * 2;
-        ytemp = ytemp - 255;
-        EEPROM.update(address, 255);
-        address = address + 1;
-        if (address == EEPROM.length())
-        {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0001]");
-        }
-        EEPROM.update(address, ytemp);
-        if (address == EEPROM.length())
-        {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0002]");
-        }
-        Serial.print("SYSTEM | EEPROM | ");
-        Serial.print(ytemp + 255);
-        Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(sysPosition);
-      }
-      if (tempa < 2550)
-      {
-        sysArray[sysPosition] = tempa;
-        int ytemp = sysArray[sysPosition] / 10;
-        unsigned long address = (((vector * MEMVECTORMULTIPLE) + sysPosition) * 2);
-        Serial.print("DEBUG Address 1: ");
-        Serial.println(address);
-        EEPROM.update(address, ytemp);
-        address = address + 1;
-        if (address == EEPROM.length())
-        {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0003]");
-        }
-        Serial.print("DEBUG Address 2: ");
-        Serial.println(address);
-        EEPROM.update(address, 0);
-        if (address == EEPROM.length())
-        {
-          address = 0;
-          Serial.println("*** SYSTEM ERROR [EE0004]");
-        }
-        Serial.print("EEPROM | ");
-        Serial.print(ytemp);
-        Serial.print(" was wrote to EEPROM address: ");
-        Serial.println(address);
-      }
+      eepromWrite(sysPosition, value);
+      sysArray[sysPosition] = value;
       pos = POSDEFAULT;
       lcd.setCursor(pos, 2);
       lcd.print("      ");
@@ -1438,48 +1364,6 @@ void changetime(int sysPosition)
   } //End of If(Key)
 }
 //End of ChangeTime function
-
-/*
-int timeValue(byte memAddress)
-{
-  int memBlockOne = EEPROM.read(memAddress);
-  //times the value from the EEPROM * 10 to get desired result for this sketch.
-  memBlockOne = memBlockOne * 10;
-  //See if the value falls within the limits of the variable.
-  if ((memBlockOne > 2550) || (memBlockOne < 0))
-  {
-    Serial.print("ERROR | Corrupted memory LOC:");
-    Serial.print(memAddress);
-    Serial.print(" Result:");
-    Serial.println(memBlockOne);
-    lcd.setCursor(0, 3);
-    lcd.print("MEMCORE:");
-    lcd.print(memAddress);
-    return 0;
-  }
-  //Increment the address by one to get second value.
-  memAddress++;
-  int memBlockTwo = EEPROM.read(memAddress);
-  //Do the same as memBlockOne
-  memBlockTwo = memBlockTwo * 10;
-  if ((memBlockTwo > 2550) || (memBlockTwo < 0))
-  {
-    Serial.print("ERROR | Corrupted memory LOC:");
-    Serial.print(memAddress);
-    Serial.print(" Result:");
-    Serial.println(memBlockTwo);
-    lcd.setCursor(0, 3);
-    lcd.print("MEMCORE:");
-    lcd.print(memAddress);
-    return 0;
-  }
-  //Load the value into the system array for use by the sketch.
-  int timeTotal = memBlockTwo + memBlockOne;
-  memAddress--;
-  //Small delay to keep from overprocessing
-  delay(10);
-  return timeTotal;
-}*/
 
 void eepromUpdate()
 {
@@ -1503,12 +1387,10 @@ void eepromUpdate()
     }
     delay(10);
   }
-  int updateAddress = atoi(grape);
+  int address = atoi(grape);
   //Serial.println(updateAddress);
-  if (updateAddress >= EEPROM.length())
-  {
-    Serial.println("EEPROM LIMIT HIT");
-    updateAddress = 0;
+  if (memCheck(address, 10) == false) {
+    return;
   }
   for (byte k = masterIndex; k <= apple.length(); k++)
   {
@@ -1518,18 +1400,18 @@ void eepromUpdate()
   grape[slaveIndex] = '\0';
   int eepromValue = atoi(grape);
   Serial.print("EEPROM.update(");
-  Serial.print(updateAddress);
+  Serial.print(address);
   Serial.print(", ");
   Serial.print(eepromValue);
   Serial.println(")");
-  EEPROM.update(updateAddress, eepromValue);
+  EEPROM.update(address, eepromValue);
   memoryLoad();
   // Replace this function call with memory load to conserve memory.
   /*
-  for (byte k; k < sysLength; k++)
-  {
+    for (byte k; k < sysLength; k++)
+    {
     sysArray[k] = timeValue(k * 2);
-  }
+    }
   */
 }
 
@@ -1541,28 +1423,27 @@ void ext_timeChange() {
   //Grab the first array location for the timer.
   byte value_start = apple.indexOf('.');
   byte value_end = apple.lastIndexOf('.');
-  for(byte k = value_start; k < value_end; k++){
-    grape[slaveIndex] = recievedChars[k];
+  for (byte k = value_start; k < value_end; k++) {
+    grape[slaveIndex] = receivedChars[k];
     slaveIndex++;
   }
   grape[slaveIndex] = '\0';
   byte sysArrayLoc = atoi(grape);
   slaveIndex = 0;
-  grape[] = {0};
-  if((sysArrayLoc < 0) || (sysArrayLoc > sysLength)){
+  if ((sysArrayLoc < 0) || (sysArrayLoc > sysLength)) {
     Serial.println("Array length exceeded. [REF 8973]");
     return;
   }
-  for(byte k = value_end+1; k < apple.length(); k++){
-    grape[slaveIndex] = recievedChars[k];
+  for (byte k = value_end + 1; k < apple.length(); k++) {
+    grape[slaveIndex] = receivedChars[k];
     slaveIndex++;
   }
   grape[slaveIndex] = '\0';
   int timeChangeValue = atoi(grape);
-  eepromFunction(sysArrayLoc,timeChangeValue);
-    //Change the time for the appropiate timer
-    sysArray[sysArrayLoc] = timeChangeValue;
-  }
+  //Write data to EEPROM memeory
+  eepromWrite(sysArrayLoc, timeChangeValue);
+  //Change the time for the appropiate timer
+  sysArray[sysArrayLoc] = timeChangeValue;
 }
 
 void memoryLoad() {
@@ -1690,14 +1571,14 @@ void debugChange()
 {
   lcd.setCursor(0, 1);
   lcd.print("Debug:            ");
-  lcd.setCursor(0,2);
+  lcd.setCursor(0, 2);
   lcd.print("Current: ");
-  lcd.setCursor(9,2);
+  lcd.setCursor(9, 2);
   lcd.print(debug);
   pos = POSDEFAULT;
   lcd.setCursor(pos, 2);
   boolean complete = false;
-  while(complete == false){
+  while (complete == false) {
     char key = keypad.getKey();
     switch (key)
     {
@@ -1755,23 +1636,63 @@ void overrideReset()
   sOverride = 1; //Exit initial reset
 }
 
-void eepromFunction(byte arrayLoc, int value){
-
+// ***** !!!  IMPORTANT FUNCTION  !!!  *****
+/* All calls to update eeprom memory, call to this function */
+void eepromWrite(byte arrayLoc, int value) {
   int memAddress = (((vector * MEMVECTORMULTIPLE) + arrayLoc) * 2);
-  if ((value <= 5100) || (value >= 0)){
-    //error
-    return;
+  if (memCheck(memAddress, 12) == true) {
+    if ((value <= 5100) || (value >= 0)) {
+      Serial.println("EEPROM Function Aborted [REF:3692]");
+      return;
+    }
+    int tempValue = value / 10;
+    if ((value <= 2550)) {
+      EEPROM.update(memAddress, tempValue);
+      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(memAddress);
+      Serial.print(" ) with value [ ");
+      Serial.print(tempValue);
+      Serial.println(" ]");
+      memAddress++;
+      if (memCheck(memAddress, 13) == false) {
+        return;
+      }
+      EEPROM.update(memAddress, 0);
+      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(memAddress);
+      Serial.print(" ) with value [ ");
+      Serial.print(tempValue);
+      Serial.println(" ]");
+    }
+    if (value > 2550) {
+      tempValue = tempValue - 255;
+      EEPROM.update(memAddress, tempValue);
+      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(memAddress);
+      Serial.print(" ) with value [ ");
+      Serial.print(tempValue);
+      Serial.println(" ]");
+      memAddress++;
+      if (memCheck(memAddress, 14) == false) {
+        return;
+      }
+      EEPROM.update(memAddress, 255);
+      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(memAddress);
+      Serial.print(" ) with value [ ");
+      Serial.print(tempValue);
+      Serial.println(" ]");
+    }
   }
-  int tempValue = value/10;
-  if ((value <= 2550)){
-    EEPROM.update(memAddress, tempValue);
-    memAddress++;
-    EEPROM.update(memAddress, 0);
-  }
-  if (value > 2550){
-    tempValue = tempValue - 255;
-    EEPROM.update(memAddress, tempValue);
-    memAddress++;
-    EEPROM.update(memAddress, 255);
+}
+
+boolean memCheck(unsigned int address, byte refID) {
+  if (address > EEPROM.length()) {
+    Serial.print("Memory limit reached. ID( ");
+    Serial.print(refID);
+    Serial.println(" ) [REF: 4320]");
+    return false;
+  } else {
+    return true;
   }
 }
