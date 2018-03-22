@@ -1161,6 +1161,7 @@ void senWaitFunction() {
 void pinUpdate()
 {
   boolean value = LOW;
+  /*
   byte lastPos = 0;
   char pear[] = {0};
   for (byte k = 4; k <= apple.length(); k++)
@@ -1182,6 +1183,8 @@ void pinUpdate()
     }
   }
   int pTree = atoi(pear);
+  */
+  pTree = firstValue();
   if (pTree >= 64)
   {
     pTree = 64;
@@ -1272,13 +1275,13 @@ void sensorCheckActivator()
 //Write how long it took to run 100 parts & reset logicCount
 void TimeKeeper()
 {
-  unsigned long tempvarj = ((millis() - precountTime) / 1000);
+  unsigned long tempvar = ((millis() - precountTime) / 1000);
   Serial.print("CTN Run Time: ");
-  Serial.println(tempvarj);
+  Serial.println(tempvar);
   lcd.setCursor(11, 1);
   lcd.print("CTN:");
   lcd.setCursor(15, 1);
-  lcd.print(tempvarj);
+  lcd.print(tempvar);
   logicCount = 0;
 }
 
@@ -1407,31 +1410,40 @@ void eepromUpdate()
   memoryLoad();
 }
 
-void ext_timeChange() {
-  //timeChange.0.
-  char grape[numChars] = {0};
+int firstValue(){
+  char masterArray[numChars] = {0};
   byte slaveIndex = 0;
-
-  //Grab the first array location for the timer.
   byte value_start = apple.indexOf('.');
-  byte value_end = apple.lastIndexOf('.');
-  for (byte k = value_start; k < value_end; k++) {
-    grape[slaveIndex] = receivedChars[k];
+  byte value_end = apple.lastIndexOf('.', value_start+1);
+  for (byte k = value_start; k < value_end; k++){
+    masterArray[slaveIndex] = recievedChars[k];
     slaveIndex++;
   }
-  grape[slaveIndex] = '\0';
-  byte sysArrayLoc = atoi(grape);
-  slaveIndex = 0;
+  masterArray[slaveIndex] = '\0';
+  int value = atoi(masterArray);
+  return value;
+}
+
+int lastValue(){
+  char masterArray[numChars] = {0};
+  byte slaveIndex = 0;
+  byte value_end = apple.lastIndexOf('.');
+  for (byte k = value_end; k < apple.length(); k++){
+    masterArray[slaveIndex] = recievedChars[k];
+    slaveIndex++
+  }
+  masterArray[slaveIndex] = "\0";
+  int value = atoi(masterArray);
+  return value;
+}
+
+void ext_timeChange() {
+  int sysArrayLoc = firstValue();
   if ((sysArrayLoc < 0) || (sysArrayLoc > sysLength)) {
     Serial.println("Array length exceeded. [REF 8973]");
     return;
   }
-  for (byte k = value_end + 1; k < apple.length(); k++) {
-    grape[slaveIndex] = receivedChars[k];
-    slaveIndex++;
-  }
-  grape[slaveIndex] = '\0';
-  int timeChangeValue = atoi(grape);
+  int timeChangeValue = lastValue();
   //Write data to EEPROM memeory
   eepromWrite(sysArrayLoc, timeChangeValue);
   //Change the time for the appropiate timer
@@ -1629,7 +1641,7 @@ void overrideReset()
 void eepromWrite(byte arrayLoc, int value) {
   int memAddress = (((vector * MEMVECTORMULTIPLE) + arrayLoc) * 2);
   if (memCheck(memAddress, 12) == true) {
-    if ((value <= 5100) || (value >= 0)) {
+    if ((value >= 5100) || (value <= 0)) {
       Serial.println("EEPROM Function Aborted [REF:3692]");
       return;
     }
