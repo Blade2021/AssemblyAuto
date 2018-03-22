@@ -565,8 +565,10 @@ void loop()
       //Crimp Protection Reset
       if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount)) {
         //Reset lastMFcount to continue cycles after one pass.
+        Serial.print("Skipping crimp cycle [ERROR 4455] [REFID: ");
+        Serial.print(mfcount);
+        Serial.println(" ]");
         lastMFcount = mfcount;
-        Serial.println("Skipping crimp cycle [ERROR 4455]");
         lcd.setCursor(0, 3);
         lcd.print("ERROR [4455]");
         preLCDClear = currentTime;
