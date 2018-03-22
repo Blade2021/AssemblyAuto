@@ -235,7 +235,6 @@ void setup()
   {
     case 0:
       lcd.setCursor(16, 0);
-      // lcd.print("412");
       lcd.print("VCT0");
       break;
     case 1:
@@ -258,7 +257,7 @@ void setup()
   Serial.print("LCD Clear Time: ");
   Serial.println(lcdClearTime);
   Serial.print("LCD Default POS: ");
-  Serial.println(pos);
+  Serial.println(POSDEFAULT);
   Serial.print("Override Passcode: ");
   Serial.println(passcode);
   Serial.println();
@@ -324,7 +323,7 @@ void loop()
     bUpLogic = digitalRead(upButton);
     if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
     {
-      sysArray[sysPosition] = sysArray[sysPosition] + 100;
+      sysArray[sysPosition] = sysArray[sysPosition] + 20;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
       Serial.print(sysPosition + 1);
@@ -335,7 +334,7 @@ void loop()
     bDownLogic = digitalRead(downButton);
     if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
     {
-      sysArray[sysPosition] = sysArray[sysPosition] - 100;
+      sysArray[sysPosition] = sysArray[sysPosition] - 20;
       buttonPreviousTime = currentTime;
       Serial.print("TimeVar ");
       Serial.print(sysPosition + 1);
@@ -1287,8 +1286,7 @@ void changetime(int sysPosition)
   lcd.print(sysArray[sysPosition]);
   lcd.print("      ");
   lcd.setCursor(pos, 2);
-  char key;
-  key = keypad.getKey();
+  char key = keypad.getKey();
   if (key)
   {
     if ((key == 'A') || (key == 'a'))
@@ -1299,11 +1297,7 @@ void changetime(int sysPosition)
     }
     if (key == 'B')
     {
-      mfcount = 0;
-      Serial.print(F("SYSTEM | Reset Malfunction count"));
-      lcd.setCursor(0, 3);
-      lcd.print("Reset MalFunc Count");
-      preLCDClear = millis();
+      quickChange();
     }
     if (key == 'C')
     {
@@ -1686,5 +1680,22 @@ boolean memCheck(unsigned int address, byte refID) {
     return false;
   } else {
     return true;
+  }
+}
+
+void quickChange(){
+  boolean complete = true;
+  while(complete == false){
+    char key = keypad.getKey();
+    if((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D')){
+      complete = true;
+    } else {
+      byte value = key - '0';
+      sysPosition = value;
+      lcd.setCursor(POSDEFAULT, 2);
+      lcd.print("      ");
+      jindx = 0;
+      complete = true;
+    }
   }
 }
