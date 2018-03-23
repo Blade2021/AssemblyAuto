@@ -1142,17 +1142,7 @@ void checkData()
 }
 
 void senWaitFunction() {
-  byte masterIndex = 8;
-  byte slaveIndex = 0;
-  char grape[numChars] = {0};
-  //Serial.println("Processing EEPROM Update...");
-  for (byte k = masterIndex; k <= apple.length(); k++)
-  {
-    grape[slaveIndex] = receivedChars[k];
-    slaveIndex++;
-  }
-  grape[slaveIndex] = '\0';
-  senWait = atoi(grape);
+  senWait = lastValue()
   Serial.print("Sensor Wait Peroid Updated: ");
   Serial.println(senWait);
 }
@@ -1160,33 +1150,10 @@ void senWaitFunction() {
 void pinUpdate()
 {
   boolean value = LOW;
-  /*
-  byte lastPos = 0;
-  char pear[] = {0};
-  for (byte k = 4; k <= apple.length(); k++)
+  int pinAddress = firstValue();
+  if (pinAddress >= 64)
   {
-    int charIndx = k - 4;
-    //Add numbers to array(pear) till it finds a '.'
-    if (receivedChars[k] != '.')
-    {
-      pear[charIndx] = receivedChars[k];
-      delay(1);
-    }
-    else
-    {
-      //Terminate the array with a null
-      pear[charIndx] = '\0';
-      delay(10);
-      lastPos = k;
-      break;
-    }
-  }
-  int pTree = atoi(pear);
-  */
-  pTree = firstValue();
-  if (pTree >= 64)
-  {
-    pTree = 64;
+    pinAddress = 64;
   }
   lastPos++;
   if (receivedChars[lastPos] == '\0')
@@ -1204,16 +1171,16 @@ void pinUpdate()
   }
   for (byte pinCheck = 0; pinCheck < 10; pinCheck++)
   {
-    if (pTree == solenoidArray[pinCheck])
+    if (pinAddress == solenoidArray[pinCheck])
     {
       stateArray[pinCheck] = value;
     }
   }
   Serial.print("SUPD [");
-  Serial.print(pTree);
+  Serial.print(pinAddress);
   Serial.print("] Value: ");
   Serial.println(value);
-  digitalWrite(pTree, value);
+  digitalWrite(pinAddress, value);
 }
 void senCheck()
 {
@@ -1369,44 +1336,19 @@ void changetime(int sysPos)
 
 void eepromUpdate()
 {
-  byte masterIndex = 7;
-  byte slaveIndex = 0;
-  char grape[numChars] = {0};
-  Serial.println("Processing EEPROM Update...");
-  for (byte k = masterIndex; k <= apple.length(); k++)
-  {
-    if (receivedChars[k] != '.')
-    {
-      grape[slaveIndex] = receivedChars[k];
-      slaveIndex++;
-    }
-    else
-    {
-      grape[slaveIndex] = '\0';
-      masterIndex = k + 1;
-      slaveIndex = 0;
-      break;
-    }
-    delay(10);
-  }
-  int address = atoi(grape);
+  int address = firstValue();
   if (memCheck(address, 10) == false) {
     return;
+  } else {
+    int eepromValue = lastValue();
+    Serial.print("EEPROM.update(");
+    Serial.print(address);
+    Serial.print(", ");
+    Serial.print(eepromValue);
+    Serial.println(")");
+    EEPROM.update(address, eepromValue);
+    memoryLoad();
   }
-  for (byte k = masterIndex; k <= apple.length(); k++)
-  {
-    grape[slaveIndex] = receivedChars[k];
-    slaveIndex++;
-  }
-  grape[slaveIndex] = '\0';
-  int eepromValue = atoi(grape);
-  Serial.print("EEPROM.update(");
-  Serial.print(address);
-  Serial.print(", ");
-  Serial.print(eepromValue);
-  Serial.println(")");
-  EEPROM.update(address, eepromValue);
-  memoryLoad();
 }
 
 int firstValue(){
