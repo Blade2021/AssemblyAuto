@@ -124,7 +124,6 @@ byte runCheck = 1; //Machine protection variable, Initalize as 1 until machine e
 int mfcount; // Malfunction counter
 int lastMFcount; // Previous malfunction count, Used for MPS 3+
 byte vector; // Memory vector postion
-//String lcdClearString = "                    ";
 
 //LOGIC CONTROLS
 byte logicCount = 0;      //Counter of material flow
@@ -810,7 +809,7 @@ void loop()
   }   // End of sOverride2
 } //End of LOOP Void
 
-void inactive(int sysPosition)
+void inactive(int sysPos)
 {
   //Trigger intital reset when exiting inactive mode
   sOverride = 0;
@@ -824,61 +823,61 @@ void inactive(int sysPosition)
   digitalWrite(solenoidArray[5], LOW); //Crimp
   digitalWrite(solenoidArray[6], LOW); //Vibrator
   digitalWrite(solenoidArray[7], LOW); //MainAir
-  switch (sysPosition)
+  switch (sysPos)
   {
     case 0:
       setLEDS(panelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Feed Wait Time:     ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 1:
       setLEDS(panelLed2);
       lcd.setCursor(0, 1);
       lcd.print("Feed Open Time      ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 2:
       setLEDS(panelLed3);
       lcd.setCursor(0, 1);
       lcd.print("Hook Cycle Wait     ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 3:
       setLEDS(panelLed4);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Cycle Wait    ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 4:
       setLEDS(panelLed5);
       lcd.setCursor(0, 1);
       lcd.print("Crimp Time          ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 5:
       setLEDS(panelLed1);
       lcd.setCursor(0, 1);
       lcd.print("Vibrator Time     ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 6:
       setLEDS(panelLed2);
       lcd.setCursor(0, 1);
       lcd.print("Sensor Ignore [MPS] ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 7:
       setLEDS(panelLed3);
       lcd.setCursor(0, 1);
       lcd.print("Main Cycle [MPS]   ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
     case 8:
       setLEDS(panelLed4);
       lcd.setCursor(0, 1);
       lcd.print("Head LOC [MPS]     ");
-      changetime(sysPosition);
+      changetime(sysPos);
       break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
@@ -886,19 +885,19 @@ void inactive(int sysPosition)
 /* This function is for saving values from manual button changes.
    For Keypad function see: changetime
 */
-void savetrigger(byte sysPosition)
+void savetrigger(byte sysPos)
 {
-  if (sysArray[sysPosition] >= 5101)
+  if (sysArray[sysPos] >= 5101)
   {
-    sysArray[sysPosition] = 5100;
+    sysArray[sysPos] = 5100;
     lcd.setCursor(0, 3);
     lcd.print("Max Value hit!");
     Serial.println("SYSTEM: Max value hit when trying to save.");
   }
-  eepromWrite(sysPosition, sysArray[sysPosition]);
+  eepromWrite(sysPos, sysArray[sysPos]);
   lcd.setCursor(0, 3);
   lcd.print("EE.Update VAR[");
-  lcd.print(sysPosition + 1);
+  lcd.print(sysPos + 1);
   lcd.print("]    ");
   unsigned long currentTime = millis();
   preLCDClear = currentTime;
@@ -1285,10 +1284,10 @@ void TimeKeeper()
   logicCount = 0;
 }
 
-void changetime(int sysPosition)
+void changetime(int sysPos)
 {
   lcd.setCursor(5, 2);
-  lcd.print(sysArray[sysPosition]);
+  lcd.print(sysArray[sysPos]);
   lcd.print("      ");
   lcd.setCursor(pos, 2);
   char key = keypad.getKey();
@@ -1348,8 +1347,8 @@ void changetime(int sysPosition)
         lcd.print("ERROR: MAX VALUE HIT");
         preLCDClear = millis();
       }
-      eepromWrite(sysPosition, value);
-      sysArray[sysPosition] = value;
+      eepromWrite(sysPos, value);
+      sysArray[sysPos] = value;
       pos = POSDEFAULT;
       lcd.setCursor(pos, 2);
       lcd.print("      ");
