@@ -1352,30 +1352,51 @@ void eepromUpdate()
 }
 
 int firstValue(){
-  char masterArray[numChars] = {0};
-  byte slaveIndex = 0;
+  char masterArray[numChars];
+  byte slaveindx;
   byte value_start = apple.indexOf('.');
-  byte value_end = apple.lastIndexOf('.', value_start+1);
-  for (byte k = value_start; k < value_end; k++){
-    masterArray[slaveIndex] = recievedChars[k];
-    slaveIndex++;
+  if(debug >= 2){
+  Serial.print("V Start: ");
+  Serial.println(value_start);
   }
-  masterArray[slaveIndex] = '\0';
+  byte value_end = apple.indexOf('.', value_start+1);
+  if(debug >= 2){
+  Serial.print("V End: ");
+  Serial.println(value_end);
+  }
+  for (byte k = value_start+1; k < value_end; k++){
+    masterArray[slaveindx] = receivedChars[k];
+    slaveindx++;
+  }
+  masterArray[slaveindx] = '\0';
+  Serial.println(masterArray);
   int value = atoi(masterArray);
+  if(debug >= 2){
+  Serial.print("fvF firstValue: ");
+  Serial.println(value);
+  }
   return value;
 }
 
 int lastValue(){
-  char masterArray[numChars] = {0};
-  byte slaveIndex = 0;
+  char masterArray[numChars];
+  byte slaveindx = 0;
   byte value_end = apple.lastIndexOf('.');
-  for (byte k = value_end; k < apple.length(); k++){
-    masterArray[slaveIndex] = recievedChars[k];
-    slaveIndex++
+  if(debug >= 2){
+  Serial.print("V End (2): ");
+  Serial.println(value_end);
   }
-  masterArray[slaveIndex] = "\0";
-  int value = atoi(masterArray);
-  return value;
+  for (byte k = value_end+1; k < apple.length(); k++){
+    masterArray[slaveindx] = receivedChars[k];
+    slaveindx++;
+  }
+  masterArray[slaveindx] = '\0';
+  int lastvalue = atoi(masterArray);
+  if(debug >= 2){
+    Serial.print("lvF lastValue: ");
+    Serial.println(lastvalue);
+  }
+  return lastvalue;
 }
 
 void ext_timeChange() {
