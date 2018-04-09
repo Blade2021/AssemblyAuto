@@ -1142,7 +1142,7 @@ void checkData()
 }
 
 void senWaitFunction() {
-  senWait = lastValue()
+  senWait = lastValue();
   Serial.print("Sensor Wait Peroid Updated: ");
   Serial.println(senWait);
 }
@@ -1155,7 +1155,7 @@ void pinUpdate()
   {
     pinAddress = 64;
   }
-  lastPos++;
+  byte lastPos = apple.lastIndexOf('.')+1;
   if (receivedChars[lastPos] == '\0')
   {
     Serial.println("ERROR FOUND");
