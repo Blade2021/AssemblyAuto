@@ -124,7 +124,7 @@ byte runCheck = 1; //Machine protection variable, Initalize as 1 until machine e
 int mfcount; // Malfunction counter
 int lastMFcount; // Previous malfunction count, Used for MPS 3+
 byte vector; // Memory vector postion
-byte displayOverride = 0;
+boolean displayOverride = false;
 
 //LOGIC CONTROLS
 byte logicCount = 0;      //Counter of material flow
@@ -439,7 +439,7 @@ void loop()
             Serial.print(currentTime / 1000);
             Serial.println(" ]");
           }
-          if (displayOverride == 0) {
+          if (displayOverride == false) {
             lcd.setCursor(0, 2);
             lcd.print("Feed Reset:");
           }
@@ -458,7 +458,7 @@ void loop()
             preLCDClear = currentTime;
             partError = 1;
             secStart = 1;
-            if (displayOverride == 0) {
+            if (displayOverride == false) {
               lcd.setCursor(11, 2);
               lcd.print("ON ");
             }
@@ -469,7 +469,7 @@ void loop()
             logicCount++;
             secStart = 0;
             partError = 0;
-            if (displayOverride == 0) {
+            if (displayOverride == false) {
               lcd.setCursor(11, 2);
               lcd.print("OFF");
               lcd.setCursor(0, 1);
@@ -749,11 +749,15 @@ void loop()
        - Listen for keypad input
           - Go into Override Mode (on correct key input)
     */
-    if ((active == 0) || ((active == 1) && (displayOverride == 1)))
+    if ((active == 0) || ((active == 1) && (displayOverride == true)))
     {
+      if(active == 0){
+        displayOverride = false;
+        inactive();
+      }
       lcd.setCursor(0, 2);
       lcd.print("Time:");
-      inactive(sysPosition);
+      displaySwitch(sysPosition);
     } // End of active 0 (containing switch)
   }   // End of Override Statement (sOverride = 0 or 1)
   /* Start System Override
@@ -816,7 +820,7 @@ void loop()
   }   // End of sOverride2
 } //End of LOOP Void
 
-void inactive(int sysPos)
+void inactive()
 {
   //Trigger intital reset when exiting inactive mode
   sOverride = 0;
@@ -830,6 +834,10 @@ void inactive(int sysPos)
   digitalWrite(solenoidArray[5], LOW); //Crimp
   digitalWrite(solenoidArray[6], LOW); //Vibrator
   digitalWrite(solenoidArray[7], LOW); //MainAir
+
+}
+void displaySwitch(int sysPos)
+{
   switch (sysPos)
   {
     case 0:
@@ -1288,7 +1296,7 @@ void changetime(int sysPos)
     if (key == 'D')
     {
       displayOverride = !displayOverride;
-      if(displayOverride == 0){
+      if(displayOverride == false){
         lcd.clear();
         lcd.print("Run Time: ");
         Serial.println("LCD Cleared");
