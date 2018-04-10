@@ -118,12 +118,13 @@ byte railCheck = 0; // Upper Rail sensor
 byte railCheckNext = 0; // Vibrator cycle position
 byte rswitch = 0; // System override, solenoid position variable
 byte sOverride = 1; // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
-byte stateArray[SOLARRAYSIZE+1] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
+byte stateArray[SOLARRAYSIZE + 1] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
 const int passcode = 7777; //System override passcode
 byte runCheck = 1; //Machine protection variable, Initalize as 1 until machine error.
 int mfcount; // Malfunction counter
 int lastMFcount; // Previous malfunction count, Used for MPS 3+
 byte vector; // Memory vector postion
+byte displayOverride = 0;
 
 //LOGIC CONTROLS
 byte logicCount = 0;      //Counter of material flow
@@ -438,8 +439,10 @@ void loop()
             Serial.print(currentTime / 1000);
             Serial.println(" ]");
           }
-          lcd.setCursor(0, 2);
-          lcd.print("Feed Reset:");
+          if (displayOverride == 0) {
+            lcd.setCursor(0, 2);
+            lcd.print("Feed Reset:");
+          }
           //Start counting time for TimeKeepr function
           if (logicCount == 0)
           {
@@ -455,22 +458,26 @@ void loop()
             preLCDClear = currentTime;
             partError = 1;
             secStart = 1;
-            lcd.setCursor(11, 2);
-            lcd.print("ON ");
+            if (displayOverride == 0) {
+              lcd.setCursor(11, 2);
+              lcd.print("ON ");
+            }
           }
           else
           {
             //Add one to logic count
             logicCount++;
             secStart = 0;
-            lcd.setCursor(11, 2);
-            lcd.print("OFF");
             partError = 0;
-            lcd.setCursor(0, 1);
-            lcd.print("SC: ");
-            lcd.setCursor(4, 1);
-            lcd.print(logicCount);
-            lcd.print("  ");
+            if (displayOverride == 0) {
+              lcd.setCursor(11, 2);
+              lcd.print("OFF");
+              lcd.setCursor(0, 1);
+              lcd.print("SC: ");
+              lcd.setCursor(4, 1);
+              lcd.print(logicCount);
+              lcd.print("  ");
+            }
             digitalWrite(panelLed1, HIGH);
             digitalWrite(errorLed, LOW);
             feedNext = 1;
@@ -742,7 +749,7 @@ void loop()
        - Listen for keypad input
           - Go into Override Mode (on correct key input)
     */
-    if (active == 0)
+    if ((active == 0) || ((active == 1) && (displayOverride == 1)))
     {
       lcd.setCursor(0, 2);
       lcd.print("Time:");
@@ -1155,7 +1162,7 @@ void pinUpdate()
   {
     pinAddress = 64;
   }
-  byte lastPos = apple.lastIndexOf('.')+1;
+  byte lastPos = apple.lastIndexOf('.') + 1;
   if (receivedChars[lastPos] == '\0')
   {
     Serial.println("ERROR FOUND");
@@ -1268,17 +1275,34 @@ void changetime(int sysPos)
     }
     if (key == 'B')
     {
+      jindx = 0;
       quickChange();
+      return;
     }
     if (key == 'C')
     {
       jindx = 0;
       vectorChange();
+      return;
     }
     if (key == 'D')
     {
+      displayOverride = !displayOverride;
+      if(displayOverride == 0){
+        lcd.clear();
+        lcd.print("Run Time: ");
+        Serial.println("LCD Cleared");
+        digitalWrite(panelLed1, LOW);
+        digitalWrite(panelLed2, LOW);
+        digitalWrite(panelLed3, LOW);
+        digitalWrite(panelLed4, LOW);
+        digitalWrite(panelLed5, LOW);
+      }
+      pos = POSDEFAULT;
+      lcd.setCursor(pos, 2);
+      lcd.print("     ");
       jindx = 0;
-      debugChange();
+      return;
     }
     lcd.print(key);
     pos++;
@@ -1297,8 +1321,8 @@ void changetime(int sysPos)
       Serial.println(value);
       if ((value == passcode) && (active == 0))
       {
-        /* VERY IMPORTANT!  Check to see if active is 0 
-        so that override isn't turned on while machine running.  */
+        /* VERY IMPORTANT!  Check to see if active is 0
+          so that override isn't turned on while machine running.  */
         sOverride = 2;
         pos = POSDEFAULT;
         lcd.setCursor(pos, 2);
@@ -1351,48 +1375,48 @@ void eepromUpdate()
   }
 }
 
-int firstValue(){
+int firstValue() {
   char masterArray[numChars];
   byte slaveindx;
   byte value_start = apple.indexOf('.');
-  if(debug >= 2){
-  Serial.print("V Start: ");
-  Serial.println(value_start);
+  if (debug >= 2) {
+    Serial.print("V Start: ");
+    Serial.println(value_start);
   }
-  byte value_end = apple.indexOf('.', value_start+1);
-  if(debug >= 2){
-  Serial.print("V End: ");
-  Serial.println(value_end);
+  byte value_end = apple.indexOf('.', value_start + 1);
+  if (debug >= 2) {
+    Serial.print("V End: ");
+    Serial.println(value_end);
   }
-  for (byte k = value_start+1; k < value_end; k++){
+  for (byte k = value_start + 1; k < value_end; k++) {
     masterArray[slaveindx] = receivedChars[k];
     slaveindx++;
   }
   masterArray[slaveindx] = '\0';
   Serial.println(masterArray);
   int value = atoi(masterArray);
-  if(debug >= 2){
-  Serial.print("fvF firstValue: ");
-  Serial.println(value);
+  if (debug >= 2) {
+    Serial.print("fvF firstValue: ");
+    Serial.println(value);
   }
   return value;
 }
 
-int lastValue(){
+int lastValue() {
   char masterArray[numChars];
   byte slaveindx = 0;
   byte value_end = apple.lastIndexOf('.');
-  if(debug >= 2){
-  Serial.print("V End (2): ");
-  Serial.println(value_end);
+  if (debug >= 2) {
+    Serial.print("V End (2): ");
+    Serial.println(value_end);
   }
-  for (byte k = value_end+1; k < apple.length(); k++){
+  for (byte k = value_end + 1; k < apple.length(); k++) {
     masterArray[slaveindx] = receivedChars[k];
     slaveindx++;
   }
   masterArray[slaveindx] = '\0';
   int lastvalue = atoi(masterArray);
-  if(debug >= 2){
+  if (debug >= 2) {
     Serial.print("lvF lastValue: ");
     Serial.println(lastvalue);
   }
@@ -1529,48 +1553,6 @@ void vectorChange()
   }
 }
 
-void debugChange()
-{
-  lcd.setCursor(0, 1);
-  lcd.print("Debug:            ");
-  lcd.setCursor(0, 2);
-  lcd.print("Current: ");
-  lcd.setCursor(9, 2);
-  lcd.print(debug);
-  pos = POSDEFAULT;
-  lcd.setCursor(pos, 2);
-  boolean complete = false;
-  while (complete == false) {
-    char key = keypad.getKey();
-    switch (key)
-    {
-      case '#':
-        complete = true;
-        break;
-      case '0':
-        debug = 0;
-        complete = true;
-        break;
-      case '1':
-        debug = 1;
-        complete = true;
-        break;
-      case '2':
-        debug = 2;
-        complete = true;
-        break;
-      case '3':
-        debug = 3;
-        complete = true;
-        break;
-      default:
-        debug = 0;
-        break;
-    }
-  }
-  EEPROM.update(DEBUGMEMLOC, debug);
-}
-
 void overrideReset()
 {
   for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
@@ -1659,11 +1641,11 @@ boolean memCheck(unsigned int address, byte refID) {
   }
 }
 
-void quickChange(){
+void quickChange() {
   boolean complete = true;
-  while(complete == false){
+  while (complete == false) {
     char key = keypad.getKey();
-    if((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D')){
+    if ((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D')) {
       complete = true;
     } else {
       byte value = key - '0';
