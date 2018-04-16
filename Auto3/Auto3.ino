@@ -824,6 +824,11 @@ void loop()
           case 'C':
           case 'D':
           return;
+          case '#':
+          case '*':
+          case '0':
+          sOverride = 0;
+          return;
           default:
           break;
         }
