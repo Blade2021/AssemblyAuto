@@ -324,8 +324,8 @@ void loop()
       }
       if ((active == 1) && (sOverride == 1))
       {
-        bNextLogic = digitalRead(nextButton);
-        if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+        bUpLogic = digitalRead(upButton);
+        if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
         {
           if (dispOverride == 1)
           {
@@ -817,6 +817,16 @@ void loop()
       key = keypad.getKey();
       if (key)
       {
+        switch(key)
+        {
+          case 'A':
+          case 'B':
+          case 'C':
+          case 'D':
+          return;
+          default:
+          break;
+        }
         int tempb = key - '0';
         //Send keypad input to Override_Trigger function
         Override_Trigger(tempb);
