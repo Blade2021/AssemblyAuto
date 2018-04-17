@@ -92,10 +92,11 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const byte ROWS = 4; // # of rows for keypad
 const byte COLS = 4; // # of columns for keypad
 char keys[ROWS][COLS] = {
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'},
-    {'*', '0', '#', 'D'}};
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
 byte rowPins[ROWS] = {25, 27, 29, 31}; //row pins
 byte colPins[COLS] = {33, 35, 37, 39}; //column pins
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -202,7 +203,7 @@ void setup()
     versionControl[k] = EEPROM.read(vcAddress);
     if ((versionControl[k]) < 0)
     {
-      errorReport(003,vcAddress);
+      errorReport(3, vcAddress);
     }
     vcAddress++;
   }
@@ -234,22 +235,22 @@ void setup()
   // Display time setting:
   switch (vector)
   {
-  case 0:
-    lcd.setCursor(16, 0);
-    lcd.print("VCT0");
-    break;
-  case 1:
-    lcd.setCursor(16, 0);
-    lcd.print("VCT1");
-    break;
-  case 2:
-    lcd.setCursor(16, 0);
-    lcd.print("VCT2");
-    break;
-  default:
-    lcd.setCursor(16, 0);
-    lcd.print("    ");
-    break;
+    case 0:
+      lcd.setCursor(16, 0);
+      lcd.print("VCT0");
+      break;
+    case 1:
+      lcd.setCursor(16, 0);
+      lcd.print("VCT1");
+      break;
+    case 2:
+      lcd.setCursor(16, 0);
+      lcd.print("VCT2");
+      break;
+    default:
+      lcd.setCursor(16, 0);
+      lcd.print("    ");
+      break;
   }
 
   Serial.println(F("*** System Variables ***"));
@@ -291,467 +292,467 @@ void loop()
   // End of PC Controls
   lcdControl(); //Call LCD Clear function
   if ((sOverride == 0) || (sOverride == 1))
+  {
+    if ((sOverride == 0) && (active == 1))
     {
-      if ((sOverride == 0) && (active == 1))
+      dispOverride = 0;
+      overrideReset();
+    }
+    if ((mpsEnable > 0) && (runCheck == 0))
+    {
+      manualFeed = digitalRead(manualButton);
+      if ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
       {
-        dispOverride = 0;
-        overrideReset();
+        buttonPreviousTime = currentTime + 2000;
+        runCheck = 1;
+        digitalWrite(solenoidArray[8], LOW);
+        errorReport(4, 0);
       }
-      if ((mpsEnable > 0) && (runCheck == 0))
+    }
+    toggleLogic = digitalRead(toggleButton);
+    if (toggleLogic == LOW)
+    {
+      active = 0;
+      inactive();
+    }
+    else
+    {
+      active = 1;
+    }
+    if ((active == 1) && (sOverride == 1))
+    {
+      bUpLogic = digitalRead(upButton);
+      if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
       {
+        if (dispOverride == 1)
+        {
+          sysArray[sysPosition] = sysArray[sysPosition] + 20;
+          buttonPreviousTime = currentTime;
+          // Serial print function
+        }
+        // Reserved
+      }
+      bDownLogic = digitalRead(downButton);
+      if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+      {
+        if (dispOverride == 1)
+        {
+          sysArray[sysPosition] = sysArray[sysPosition] - 20;
+          buttonPreviousTime = currentTime;
+          // Serial print function
+        }
+        // Reserved
+      }
+      saveButtonLogic = digitalRead(saveButton);
+      if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+      {
+        if (dispOverride == 1)
+        {
+          buttonPreviousTime = currentTime;
+          saveTrigger(sysPosition);
+          // Serial print function
+        }
+        // Reserved
+      }
+      bNextLogic = digitalRead(nextButton);
+      if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+      {
+        if (dispOverride == 1)
+        {
+          buttonPreviousTime = currentTime;
+          sysPosition++;
+          if (sysPosition >= sysLength)
+          {
+            sysPosition = 0;
+          }
+          // Serial print function
+        }
+        // Reserved
+      }
+      // Activate display Override
+      char key = keypad.getKey();
+      if (key == 'D')
+      {
+        dispOverride = 1;
+      }
+      // Call functions for display override
+      if (dispOverride >= 1)
+      {
+        displaySwitch(sysPosition);
+      }
+
+      // Main code
+      digitalWrite(errorLed, LOW);
+      digitalWrite(panelLed1, LOW);
+      digitalWrite(panelLed2, LOW);
+      digitalWrite(panelLed3, LOW);
+      digitalWrite(panelLed4, LOW);
+      digitalWrite(panelLed5, LOW);
+
+      if (runCheck == 1)
+      {
+        lcd.setCursor(0, 0);
+        lcd.print("Run Time: ");
+        digitalWrite(solenoidArray[7], HIGH); // Turn air on
+        digitalWrite(solenoidArray[9], LOW);  // Turn motor on
         manualFeed = digitalRead(manualButton);
-        if ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+        feedLoop = digitalRead(sensorArray[2]);
+        feedCheck = digitalRead(sensorArray[1]);
+        /* feedLoop - Check your main cycle sensor
+          error - Check to see if the machine went into error Mode
+          secStart - Restart machine after feedCheck activates again
+          feedCheck - Check Feed station for material.
+          manualFeed - Ignore other variables and trigger on button press
+        */
+        if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == LOW))
         {
-          buttonPreviousTime = currentTime + 2000;
-          runCheck = 1;
-          digitalWrite(solenoidArray[8], LOW);
-          errorReport(004,null);
-        }
-      }
-      toggleLogic = digitalRead(toggleButton);
-      if (toggleLogic == LOW)
-      {
-        active = 0;
-        inactive();
-      }
-      else
-      {
-        active = 1;
-      }
-      if ((active == 1) && (sOverride == 1))
-      {
-        bUpLogic = digitalRead(upButton);
-        if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-        {
-          if (dispOverride == 1)
+          if (mpsEnable >= 1)
           {
-            sysArray[sysPosition] = sysArray[sysPosition] + 20;
-            buttonPreviousTime = currentTime;
-            // Serial print function
-          }
-          // Reserved
-        }
-        bDownLogic = digitalRead(downButton);
-        if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-        {
-          if (dispOverride == 1)
-          {
-            sysArray[sysPosition] = sysArray[sysPosition] - 20;
-            buttonPreviousTime = currentTime;
-            // Serial print function
-          }
-          // Reserved
-        }
-        saveButtonLogic = digitalRead(saveButton);
-        if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-        {
-          if (dispOverride == 1)
-          {
-            buttonPreviousTime = currentTime;
-            saveTrigger(sysPosition);
-            // Serial print function
-          }
-          // Reserved
-        }
-        bNextLogic = digitalRead(nextButton);
-        if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-        {
-          if (dispOverride == 1)
-          {
-            buttonPreviousTime = currentTime;
-            sysPosition++;
-            if (sysPosition >= sysLength)
+            if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
             {
-              sysPosition = 0;
+              hookNext = 0;
+              runCheck = 0;
+              Serial.println(F("Motor stopped due to ERROR[0032]"));
+              Serial.print("currentTime: ");
+              Serial.print(currentTime);
+              Serial.print(" - ");
+              Serial.print("preTime: ");
+              Serial.print(previousTimer1);
+              Serial.print(" < ");
+              Serial.print("varTime: ");
+              Serial.println(sysArray[7]);
+              previousTimer1 = currentTime;
+              machStop(0);
             }
-            // Serial print function
           }
-          // Reserved
-        }
-        // Activate display Override
-        char key = keypad.getKey();
-        if (key == 'D')
-        {
-          dispOverride = 1;
-        }
-        // Call functions for display override
-        if (dispOverride >= 1)
-        {
-          displaySwitch(sysPosition);
-        }
-
-        // Main code
-        digitalWrite(errorLed, LOW);
-        digitalWrite(panelLed1, LOW);
-        digitalWrite(panelLed2, LOW);
-        digitalWrite(panelLed3, LOW);
-        digitalWrite(panelLed4, LOW);
-        digitalWrite(panelLed5, LOW);
-
-        if (runCheck == 1)
-        {
-          lcd.setCursor(0,0);
-          lcd.print("Run Time: ");
-          digitalWrite(solenoidArray[7], HIGH); // Turn air on
-          digitalWrite(solenoidArray[9], LOW);  // Turn motor on
-          manualFeed = digitalRead(manualButton);
-          feedLoop = digitalRead(sensorArray[2]);
-          feedCheck = digitalRead(sensorArray[1]);
-          /* feedLoop - Check your main cycle sensor
-         error - Check to see if the machine went into error Mode
-         secStart - Restart machine after feedCheck activates again
-         feedCheck - Check Feed station for material.
-         manualFeed - Ignore other variables and trigger on button press
-      */
-          if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == LOW))
+          if (
+            // Machine Protection disabled
+            ((feedNext == 0) && (mpsEnable <= 0)) ||
+            // Machine protection enabled MPS 1+
+            ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
+            // Manual feed button activated && debounce button
+            ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
           {
-            if (mpsEnable >= 1)
+            if (manualFeed == LOW)
             {
-              if ((feedNext == 0) && (currentTime - previousTimer1 <= sysArray[7]) && (currentTime - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
-              {
-                hookNext = 0;
-                runCheck = 0;
-                Serial.println(F("Motor stopped due to ERROR[0032]"));
-                Serial.print("currentTime: ");
-                Serial.print(currentTime);
-                Serial.print(" - ");
-                Serial.print("preTime: ");
-                Serial.print(previousTimer1);
-                Serial.print(" < ");
-                Serial.print("varTime: ");
-                Serial.println(sysArray[7]);
-                previousTimer1 = currentTime;
-                machStop(0);
-              }
+              buttonPreviousTime = currentTime + 600;
             }
-            if (
-                // Machine Protection disabled
-                ((feedNext == 0) && (mpsEnable <= 0)) ||
-                // Machine protection enabled MPS 1+
-                ((currentTime - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
-                // Manual feed button activated && debounce button
-                ((manualFeed == LOW) && (currentTime - buttonPreviousTime >= buttonWait)))
+            // FEED ACTIVATED
+            if (debug >= 2)
             {
-              if (manualFeed == LOW)
-              {
-                buttonPreviousTime = currentTime + 600;
-              }
-              // FEED ACTIVATED
-              if (debug >= 2)
-              {
-                Serial.print("Feed Cycle Activated [");
-                Serial.print(currentTime / 1000);
-                Serial.println(" ]");
-              }
+              Serial.print("Feed Cycle Activated [");
+              Serial.print(currentTime / 1000);
+              Serial.println(" ]");
+            }
+            if (dispOverride == 0)
+            {
+              lcd.setCursor(0, 2);
+              lcd.print("Feed Reset:");
+            }
+            //Start counting time for TimeKeepr function
+            if (logicCount == 0)
+            {
+              precountTime = currentTime;
+            }
+            //Check Feed station for material.
+            feedCheck = digitalRead(sensorArray[1]);
+            if ((feedCheck == HIGH) && (secStart != 1))
+            {
+              errorReport(5, 0);
+              partError = 1;
+              secStart = 1;
               if (dispOverride == 0)
               {
-                lcd.setCursor(0, 2);
-                lcd.print("Feed Reset:");
-              }
-              //Start counting time for TimeKeepr function
-              if (logicCount == 0)
-              {
-                precountTime = currentTime;
-              }
-              //Check Feed station for material.
-              feedCheck = digitalRead(sensorArray[1]);
-              if ((feedCheck == HIGH) && (secStart != 1))
-              {
-                errorReport(005,null);
-                partError = 1;
-                secStart = 1;
-                if (dispOverride == 0)
-                {
-                  lcd.setCursor(11, 2);
-                  lcd.print("ON ");
-                }
-              }
-              else
-              {
-                //Add one to logic count
-                logicCount++;
-                secStart = 0;
-                partError = 0;
-                if (dispOverride == 0)
-                {
-                  lcd.setCursor(11, 2);
-                  lcd.print("OFF");
-                  lcd.setCursor(0, 1);
-                  lcd.print("SC: ");
-                  lcd.setCursor(4, 1);
-                  lcd.print(logicCount);
-                  lcd.print("  ");
-                }
-                digitalWrite(panelLed1, HIGH);
-                digitalWrite(errorLed, LOW);
-                feedNext = 1;
-                previousTimer1 = currentTime;
+                lcd.setCursor(11, 2);
+                lcd.print("ON ");
               }
             }
-          } // end of feed function
-          // FEED OPEN
-          if ((feedNext == 1) && (currentTime - previousTimer1 >= sysArray[0]))
-          {
-            previousTimer1 = currentTime;
-            digitalWrite(solenoidArray[0], HIGH);
-            if (debug >= 3)
+            else
             {
-              Serial.println("Feed Cycle | FEED OPEN");
+              //Add one to logic count
+              logicCount++;
+              secStart = 0;
+              partError = 0;
+              if (dispOverride == 0)
+              {
+                lcd.setCursor(11, 2);
+                lcd.print("OFF");
+                lcd.setCursor(0, 1);
+                lcd.print("SC: ");
+                lcd.setCursor(4, 1);
+                lcd.print(logicCount);
+                lcd.print("  ");
+              }
+              digitalWrite(panelLed1, HIGH);
+              digitalWrite(errorLed, LOW);
+              feedNext = 1;
+              previousTimer1 = currentTime;
             }
-            feedNext = 2;
           }
-          //FEED CLOSE
-          if ((feedNext == 2) && (currentTime - previousTimer1 >= sysArray[1]))
+        } // end of feed function
+        // FEED OPEN
+        if ((feedNext == 1) && (currentTime - previousTimer1 >= sysArray[0]))
+        {
+          previousTimer1 = currentTime;
+          digitalWrite(solenoidArray[0], HIGH);
+          if (debug >= 3)
           {
-            if (debug >= 3)
-            {
-              Serial.println("Feed Cycle | FEED CLOSE");
-            }
-            previousTimer1 = currentTime;
-            digitalWrite(solenoidArray[0], LOW);
-            digitalWrite(panelLed1, LOW);
-            feedNext = 0;
+            Serial.println("Feed Cycle | FEED OPEN");
           }
-          // END OF FEED CYCLE
-          // Vibrator Cycle
+          feedNext = 2;
+        }
+        //FEED CLOSE
+        if ((feedNext == 2) && (currentTime - previousTimer1 >= sysArray[1]))
+        {
+          if (debug >= 3)
+          {
+            Serial.println("Feed Cycle | FEED CLOSE");
+          }
+          previousTimer1 = currentTime;
+          digitalWrite(solenoidArray[0], LOW);
+          digitalWrite(panelLed1, LOW);
+          feedNext = 0;
+        }
+        // END OF FEED CYCLE
+        // Vibrator Cycle
+        railCheck = digitalRead(sensorArray[4]);
+        if ((railCheck == HIGH) && (railCheckNext == 0))
+        {
+          if (debug >= 2)
+          {
+            Serial.print("Rail Check Activated [");
+            Serial.print(currentTime / 1000);
+            Serial.println("]");
+          }
+          previousTimer2 = currentTime;
+          digitalWrite(panelLed5, HIGH);
+          digitalWrite(solenoidArray[6], HIGH);
+          railCheckNext = 1;
+        }
+        if (railCheckNext == 1)
+        {
           railCheck = digitalRead(sensorArray[4]);
-          if ((railCheck == HIGH) && (railCheckNext == 0))
+          if (railCheck == LOW)
           {
-            if (debug >= 2)
-            {
-              Serial.print("Rail Check Activated [");
-              Serial.print(currentTime / 1000);
-              Serial.println("]");
-            }
             previousTimer2 = currentTime;
-            digitalWrite(panelLed5, HIGH);
-            digitalWrite(solenoidArray[6], HIGH);
+            railCheckNext = 2;
+          }
+        }
+        if (railCheckNext == 2)
+        {
+          railCheck = digitalRead(sensorArray[4]);
+          if (railCheck == HIGH)
+          {
             railCheckNext = 1;
           }
-          if (railCheckNext == 1)
+          if ((railCheck == LOW) && (currentTime - previousTimer2 >= sysArray[5]))
           {
-            railCheck = digitalRead(sensorArray[4]);
-            if (railCheck == LOW)
+            digitalWrite(solenoidArray[6], LOW);
+            digitalWrite(panelLed5, LOW);
+            previousTimer2 = currentTime;
+            if (debug >= 3)
             {
-              previousTimer2 = currentTime;
-              railCheckNext = 2;
+              Serial.println("Rail Check Finished");
             }
+            railCheckNext = 0;
           }
-          if (railCheckNext == 2)
+        }
+        // END OF VIBRATOR CYCLE
+        // Crimp Cycle
+        crimpLoop = digitalRead(sensorArray[3]);
+        if (
+          //Trigger All
+          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (currentTime - previousTimer4 >= sysArray[4])) ||
+          //Protection - Only crimp if malfunction was not detected
+          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4])))
+        {
+          if (debug >= 2)
           {
-            railCheck = digitalRead(sensorArray[4]);
-            if (railCheck == HIGH)
-            {
-              railCheckNext = 1;
-            }
-            if ((railCheck == LOW) && (currentTime - previousTimer2 >= sysArray[5]))
-            {
-              digitalWrite(solenoidArray[6], LOW);
-              digitalWrite(panelLed5, LOW);
-              previousTimer2 = currentTime;
-              if (debug >= 3)
-              {
-                Serial.println("Rail Check Finished");
-              }
-              railCheckNext = 0;
-            }
+            Serial.print("Crimp Cycle Activated [");
+            Serial.print(currentTime / 1000);
+            Serial.println("]");
           }
-          // END OF VIBRATOR CYCLE
-          // Crimp Cycle
-          crimpLoop = digitalRead(sensorArray[3]);
-          if (
-              //Trigger All
-              ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (currentTime - previousTimer4 >= sysArray[4])) ||
-              //Protection - Only crimp if malfunction was not detected
-              ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (currentTime - previousTimer4 >= sysArray[4])))
+          digitalWrite(panelLed4, HIGH);
+          digitalWrite(solenoidArray[4], HIGH);
+          previousTimer4 = currentTime;
+          crimpNext = 1;
+        }
+        //Crimp Protection Reset
+        if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount))
+        {
+          //Reset lastMFcount to continue cycles after one pass.
+          errorReport(6, mfcount);
+          lastMFcount = mfcount;
+          previousTimer4 = currentTime;
+        }
+        if ((crimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3]))
+        {
+          previousTimer4 = currentTime;
+          digitalWrite(solenoidArray[5], HIGH);
+          if (debug >= 3)
+          {
+            Serial.println("Crimp Cycle | Crimp");
+          }
+          crimpNext = 2;
+        }
+        // Crimp Reset
+        if ((crimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4]))
+        {
+          if (debug >= 3)
+          {
+            Serial.println("Crimp Cycle | Reset");
+          }
+          previousTimer4 = currentTime;
+          digitalWrite(solenoidArray[5], LOW);
+          digitalWrite(solenoidArray[4], LOW);
+          digitalWrite(panelLed4, LOW);
+          crimpNext = 0;
+        }
+        // Hook Cycle
+        hookLoop = digitalRead(sensorArray[2]);
+        if ((hookLoop == LOW) && (hookNext == 0))
+        {
+          if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
           {
             if (debug >= 2)
             {
-              Serial.print("Crimp Cycle Activated [");
+              Serial.print("Hook Cycle Activated [");
               Serial.print(currentTime / 1000);
               Serial.println("]");
             }
-            digitalWrite(panelLed4, HIGH);
-            digitalWrite(solenoidArray[4], HIGH);
-            previousTimer4 = currentTime;
-            crimpNext = 1;
-          }
-          //Crimp Protection Reset
-          if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount))
-          {
-            //Reset lastMFcount to continue cycles after one pass.
-            errorReport(006,mfcount);
-            lastMFcount = mfcount;
-            previousTimer4 = currentTime;
-          }
-          if ((crimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3]))
-          {
-            previousTimer4 = currentTime;
-            digitalWrite(solenoidArray[5], HIGH);
-            if (debug >= 3)
+            digitalWrite(panelLed2, HIGH);
+            boolean hookCheck;
+            hookCheck = digitalRead(sensorArray[0]);
+            if (hookCheck == HIGH)
             {
-              Serial.println("Crimp Cycle | Crimp");
-            }
-            crimpNext = 2;
-          }
-          // Crimp Reset
-          if ((crimpNext == 2) && (currentTime - previousTimer4 >= sysArray[4]))
-          {
-            if (debug >= 3)
-            {
-              Serial.println("Crimp Cycle | Reset");
-            }
-            previousTimer4 = currentTime;
-            digitalWrite(solenoidArray[5], LOW);
-            digitalWrite(solenoidArray[4], LOW);
-            digitalWrite(panelLed4, LOW);
-            crimpNext = 0;
-          }
-          // Hook Cycle
-          hookLoop = digitalRead(sensorArray[2]);
-          if ((hookLoop == LOW) && (hookNext == 0))
-          {
-            if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (currentTime - previousTimer3 >= sysArray[7])))
-            {
-              if (debug >= 2)
-              {
-                Serial.print("Hook Cycle Activated [");
-                Serial.print(currentTime / 1000);
-                Serial.println("]");
-              }
-              digitalWrite(panelLed2, HIGH);
-              boolean hookCheck;
-              hookCheck = digitalRead(sensorArray[0]);
-              if (hookCheck == HIGH)
-              {
-                errorReport(007,null);
-                //partError = 1;
-                digitalWrite(panelLed2, LOW);
-                feedLoop = 0;
-                feedNext = 0;
-                digitalWrite(errorLed, HIGH);
-              }
-              if (hookCheck == LOW)
-              {
-                previousTimer3 = currentTime;
-                digitalWrite(solenoidArray[1], HIGH);
-                hookNext = 1;
-              }
-            }
-            if ((mpsEnable >= 2) && (currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6]))
-            {
-              //Check if MPS is enabled.  If so, check value of time sensor triggered.
-              machStop(0);
-              runCheck = 0;
-              previousTimer3 = currentTime;
-            }
-          }
-          //Send Head Down
-          if ((hookNext == 1) && (currentTime - previousTimer3 >= sysArray[2]))
-          {
-            previousTimer3 = currentTime;
-            if (debug >= 3)
-            {
-              Serial.println("Hook Cycle | Tool/Head OUT");
-            }
-            digitalWrite(solenoidArray[2], HIGH);
-            hookNext = 2;
-          }
-          //Send Strip Off Out / Check Head location
-          if (hookNext == 2)
-          {
-            int HeadCheckDown = digitalRead(sensorArray[6]);
-            //MPS Disabled
-            if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 < sysArray[8])))
-            {
-              digitalWrite(solenoidArray[3], HIGH);
-              hookNext = 3;
-              if (debug >= 3)
-              {
-                Serial.println("Hook Cycle | Strip Off OUT");
-              }
-            }
-            //MPS Setting 5 - Shut down on timer
-            if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
-            {
-              machStop(1);
-              Serial.println("Motor stopped due to ERROR[0036]");
-              hookNext = 0;
-              runCheck = 0;
-            }
-            if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8]))
-            {
-              mfcount++;
-              hookNext = 3;
-              if (mpsEnable == 4)
-              {
-                machStop(1);
-                hookNext - 0;
-                runCheck = 0;
-                Serial.println(F("Motor stopped due to ERROR[0034]"));
-                Serial.print("preTime: ");
-                Serial.print(previousTimer3);
-                Serial.print(" - ");
-                Serial.print("currentTime: ");
-                Serial.print(currentTime);
-                Serial.print(" > ");
-                Serial.print("varTime: ");
-                Serial.println(sysArray[8]);
-                previousTimer3 = currentTime;
-                //Turn off machine
-              }
-              digitalWrite(solenoidArray[3], HIGH);
-              if (debug >= 3)
-              {
-                Serial.println("Hook Cycle | Strip Off OUT");
-              }
-              Serial.print("Malfunction detected CT[");
-              Serial.print(mfcount);
-              Serial.println("]");
-            }
-          }
-          //Send Head Up
-          if (hookNext == 3)
-          {
-            int StripOffCheck = digitalRead(sensorArray[5]);
-            if (StripOffCheck == LOW)
-            {
-              digitalWrite(solenoidArray[2], LOW);
-              digitalWrite(panelLed3, HIGH);
+              errorReport(7, 0);
+              //partError = 1;
               digitalWrite(panelLed2, LOW);
-              hookNext = 4;
+              feedLoop = 0;
+              feedNext = 0;
+              digitalWrite(errorLed, HIGH);
             }
-          }
-          // Reset Strip Off / Reset Stopper
-          if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 < sysArray[8])))
-          {
-            int HeadUpCheck = digitalRead(sensorArray[7]);
-            if (HeadUpCheck == LOW)
+            if (hookCheck == LOW)
             {
-              if (debug >= 3)
-              {
-                Serial.println("Hook Cycle | Reset");
-              }
-              digitalWrite(solenoidArray[1], LOW);
-              digitalWrite(solenoidArray[3], LOW);
-              digitalWrite(panelLed3, LOW);
-              hookNext = 0;
+              previousTimer3 = currentTime;
+              digitalWrite(solenoidArray[1], HIGH);
+              hookNext = 1;
             }
           }
-          else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8]))
+          if ((mpsEnable >= 2) && (currentTime - previousTimer3 < sysArray[7]) && (currentTime - previousTimer3 >= sysArray[6]))
+          {
+            //Check if MPS is enabled.  If so, check value of time sensor triggered.
+            machStop(0);
+            runCheck = 0;
+            previousTimer3 = currentTime;
+          }
+        }
+        //Send Head Down
+        if ((hookNext == 1) && (currentTime - previousTimer3 >= sysArray[2]))
+        {
+          previousTimer3 = currentTime;
+          if (debug >= 3)
+          {
+            Serial.println("Hook Cycle | Tool/Head OUT");
+          }
+          digitalWrite(solenoidArray[2], HIGH);
+          hookNext = 2;
+        }
+        //Send Strip Off Out / Check Head location
+        if (hookNext == 2)
+        {
+          int HeadCheckDown = digitalRead(sensorArray[6]);
+          //MPS Disabled
+          if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 < sysArray[8])))
+          {
+            digitalWrite(solenoidArray[3], HIGH);
+            hookNext = 3;
+            if (debug >= 3)
+            {
+              Serial.println("Hook Cycle | Strip Off OUT");
+            }
+          }
+          //MPS Setting 5 - Shut down on timer
+          if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
           {
             machStop(1);
+            Serial.println("Motor stopped due to ERROR[0036]");
             hookNext = 0;
             runCheck = 0;
           }
-          // End of hook Cycle
-          if (logicCount >= 100)
+          if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (currentTime - previousTimer3 >= sysArray[8]))
           {
-            TimeKeeper();
+            mfcount++;
+            hookNext = 3;
+            if (mpsEnable == 4)
+            {
+              machStop(1);
+              hookNext - 0;
+              runCheck = 0;
+              Serial.println(F("Motor stopped due to ERROR[0034]"));
+              Serial.print("preTime: ");
+              Serial.print(previousTimer3);
+              Serial.print(" - ");
+              Serial.print("currentTime: ");
+              Serial.print(currentTime);
+              Serial.print(" > ");
+              Serial.print("varTime: ");
+              Serial.println(sysArray[8]);
+              previousTimer3 = currentTime;
+              //Turn off machine
+            }
+            digitalWrite(solenoidArray[3], HIGH);
+            if (debug >= 3)
+            {
+              Serial.println("Hook Cycle | Strip Off OUT");
+            }
+            Serial.print("Malfunction detected CT[");
+            Serial.print(mfcount);
+            Serial.println("]");
           }
-        } // end of runcheck 1
-      }   // End of If active == true (Else Statement)
-    }     // End of SOverride == 0 or 1
+        }
+        //Send Head Up
+        if (hookNext == 3)
+        {
+          int StripOffCheck = digitalRead(sensorArray[5]);
+          if (StripOffCheck == LOW)
+          {
+            digitalWrite(solenoidArray[2], LOW);
+            digitalWrite(panelLed3, HIGH);
+            digitalWrite(panelLed2, LOW);
+            hookNext = 4;
+          }
+        }
+        // Reset Strip Off / Reset Stopper
+        if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 < sysArray[8])))
+        {
+          int HeadUpCheck = digitalRead(sensorArray[7]);
+          if (HeadUpCheck == LOW)
+          {
+            if (debug >= 3)
+            {
+              Serial.println("Hook Cycle | Reset");
+            }
+            digitalWrite(solenoidArray[1], LOW);
+            digitalWrite(solenoidArray[3], LOW);
+            digitalWrite(panelLed3, LOW);
+            hookNext = 0;
+          }
+        }
+        else if ((hookNext == 4) && (mpsEnable >= 5) && (currentTime - previousTimer3 >= sysArray[8]))
+        {
+          machStop(1);
+          hookNext = 0;
+          runCheck = 0;
+        }
+        // End of hook Cycle
+        if (logicCount >= 100)
+        {
+          TimeKeeper();
+        }
+      } // end of runcheck 1
+    }   // End of If active == true (Else Statement)
+  }     // End of SOverride == 0 or 1
 
   /* Start System Override
      - Trigger Relays individually
@@ -788,7 +789,7 @@ void loop()
     if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
     {
       buttonPreviousTime = currentTime;
-      errorReport(008,null);
+      errorReport(8, 0);
       sOverride = 0;
       sysPosition = 0;
     }
@@ -799,20 +800,20 @@ void loop()
       key = keypad.getKey();
       if (key)
       {
-        switch(key)
+        switch (key)
         {
           case 'A':
           case 'B':
           case 'C':
           case 'D':
-          return;
+            return;
           case '#':
           case '*':
           case '0':
-          sOverride = 0;
-          return;
+            sOverride = 0;
+            return;
           default:
-          break;
+            break;
         }
         int tempb = key - '0';
         //Send keypad input to Override_Trigger function
@@ -848,60 +849,60 @@ void displaySwitch(int sysPos)
   lcd.print("Time:");
   switch (sysPos)
   {
-  case 0:
-    setLEDS(panelLed1);
-    lcd.setCursor(0, 1);
-    lcd.print("Feed Wait Time:     ");
-    changetime(sysPos);
-    break;
-  case 1:
-    setLEDS(panelLed2);
-    lcd.setCursor(0, 1);
-    lcd.print("Feed Open Time      ");
-    changetime(sysPos);
-    break;
-  case 2:
-    setLEDS(panelLed3);
-    lcd.setCursor(0, 1);
-    lcd.print("Hook Cycle Wait     ");
-    changetime(sysPos);
-    break;
-  case 3:
-    setLEDS(panelLed4);
-    lcd.setCursor(0, 1);
-    lcd.print("Crimp Cycle Wait    ");
-    changetime(sysPos);
-    break;
-  case 4:
-    setLEDS(panelLed5);
-    lcd.setCursor(0, 1);
-    lcd.print("Crimp Time          ");
-    changetime(sysPos);
-    break;
-  case 5:
-    setLEDS(panelLed1);
-    lcd.setCursor(0, 1);
-    lcd.print("Vibrator Time     ");
-    changetime(sysPos);
-    break;
-  case 6:
-    setLEDS(panelLed2);
-    lcd.setCursor(0, 1);
-    lcd.print("Sensor Ignore [MPS] ");
-    changetime(sysPos);
-    break;
-  case 7:
-    setLEDS(panelLed3);
-    lcd.setCursor(0, 1);
-    lcd.print("Main Cycle [MPS]   ");
-    changetime(sysPos);
-    break;
-  case 8:
-    setLEDS(panelLed4);
-    lcd.setCursor(0, 1);
-    lcd.print("Head LOC [MPS]     ");
-    changetime(sysPos);
-    break;
+    case 0:
+      setLEDS(panelLed1);
+      lcd.setCursor(0, 1);
+      lcd.print("Feed Wait Time:     ");
+      changetime(sysPos);
+      break;
+    case 1:
+      setLEDS(panelLed2);
+      lcd.setCursor(0, 1);
+      lcd.print("Feed Open Time      ");
+      changetime(sysPos);
+      break;
+    case 2:
+      setLEDS(panelLed3);
+      lcd.setCursor(0, 1);
+      lcd.print("Hook Cycle Wait     ");
+      changetime(sysPos);
+      break;
+    case 3:
+      setLEDS(panelLed4);
+      lcd.setCursor(0, 1);
+      lcd.print("Crimp Cycle Wait    ");
+      changetime(sysPos);
+      break;
+    case 4:
+      setLEDS(panelLed5);
+      lcd.setCursor(0, 1);
+      lcd.print("Crimp Time          ");
+      changetime(sysPos);
+      break;
+    case 5:
+      setLEDS(panelLed1);
+      lcd.setCursor(0, 1);
+      lcd.print("Vibrator Time     ");
+      changetime(sysPos);
+      break;
+    case 6:
+      setLEDS(panelLed2);
+      lcd.setCursor(0, 1);
+      lcd.print("Sensor Ignore [MPS] ");
+      changetime(sysPos);
+      break;
+    case 7:
+      setLEDS(panelLed3);
+      lcd.setCursor(0, 1);
+      lcd.print("Main Cycle [MPS]   ");
+      changetime(sysPos);
+      break;
+    case 8:
+      setLEDS(panelLed4);
+      lcd.setCursor(0, 1);
+      lcd.print("Head LOC [MPS]     ");
+      changetime(sysPos);
+      break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
 //Save trigger function.
@@ -913,10 +914,10 @@ void saveTrigger(byte sysPos)
   if (sysArray[sysPos] >= 5101)
   {
     sysArray[sysPos] = 5100;
-    errorReport(010,sysPos);
+    errorReport(10, sysPos);
   }
   eepromWrite(sysPos, sysArray[sysPos]);
-  errorReport(009,sysPos+1);
+  errorReport(9, sysPos + 1);
   digitalWrite(errorLed, HIGH);
   delay(200);
   digitalWrite(errorLed, LOW);
@@ -1027,7 +1028,7 @@ void mpsInput()
         keyValue = 6;
       }
       mpsEnable = keyValue;
-      errorReport(011,mpsEnable);
+      errorReport(11, mpsEnable);
       EEPROM.update(MPSMEMLOC, mpsEnable);
     }
   }
@@ -1298,13 +1299,13 @@ void changetime(int sysPos)
     {
       switch (dispOverride)
       {
-      case 0:
-        dispOverride = 1;
-        break;
+        case 0:
+          dispOverride = 1;
+          break;
 
-      case 1:
-        dispOverride = 0;
-        break;
+        case 1:
+          dispOverride = 0;
+          break;
       }
       lcd.setCursor(pos, 2);
       lcd.print("     ");
@@ -1340,7 +1341,7 @@ void changetime(int sysPos)
       if (value > 5100)
       {
         value = 5100;
-        errorReport(010,sysPos);
+        errorReport(10, sysPos);
       }
       eepromWrite(sysPos, value);
       sysArray[sysPos] = value;
@@ -1384,11 +1385,11 @@ void eepromUpdate()
 
 void errorReport(byte errorType, int refID)
 {
-  lcd.setCursor(0,3); //Set cursor to last line of LCD
-  switch(errorType)
+  lcd.setCursor(0, 3); //Set cursor to last line of LCD
+  switch (errorType)
   {
     // Input greater than limit ( eepromWrite Function )
-    case 001:
+    case 1:
       lcd.print("MEM CORRUPT [");
       lcd.print(refID);
       lcd.print("]");
@@ -1396,65 +1397,65 @@ void errorReport(byte errorType, int refID)
       Serial.println(refID);
       break;
     // memCheck Function
-    case 002:
+    case 2:
       Serial.print("ALERT: Memory limit reached. ID( ");
       Serial.print(refID);
       Serial.println(" ) [REF: 4320]");
       break;
     // Version control memory corrupted
-    case 003:
+    case 3:
       Serial.print("WARNING: Version control memory location[ ");
       Serial.print(refID);
       Serial.println(" ] is corrupted.");
       break;
     // Runcheck Reset
-    case 004:
+    case 4:
       lcd.print("Runcheck Reset!");
       Serial.println("WARNING: RunCheck reset!");
       break;
     // Hanger Rack not full
-    case 005:
+    case 5:
       lcd.print("ERROR: Hanger Rack");
       Serial.print("ALERT: Hanger rack detected empty. [REF: 1593]");
       break;
     // Skip crimp cycle
-    case 006:
+    case 6:
       lcd.print("ALERT: [REF:4455]");
       Serial.print("Skipping crimp cycle [REF 4455] [MFC: ");
       Serial.print(refID);
       Serial.println(" ]");
       break;
     // Hook Check failed
-    case 007:
+    case 7:
       lcd.print("ALERT: Hook Check");
       Serial.println("ALERT: Hook check failed. [REF 3294]");
       break;
     // Override Deactivated
-    case 008:
+    case 8:
       lcd.print("Override Deactivated");
       Serial.println("SYSTEM OVERRIDE | Deactivated ");
       break;
     // Value Updated
-    case 009:
+    case 9:
       lcd.print("EE.Update VAR[");
       lcd.print(refID);
       lcd.print("]    ");
       break;
     // Max value hit
-    case 010:
+    case 10:
       lcd.print("Max Value Hit!");
       Serial.print("WARNING: Max value hit when trying to save variable id:");
       Serial.println(refID);
       break;
     // MPS Input
-    case 011:
+    case 11:
       lcd.print("MPS set to: ");
       lcd.print(refID);
       Serial.print("SYSTEM: Updated mpsEnable: ");
       Serial.println(refID);
       break;
     // Vector change
-    case 012:
+    case 12:
       lcd.print("Loaded VCT");
       lcd.print(refID);
       lcd.print(" timing");
@@ -1463,7 +1464,7 @@ void errorReport(byte errorType, int refID)
       Serial.print(" settings");
       break;
     // Vector invalid input
-    case 013:
+    case 13:
       lcd.print("INVALID INPUT");
       break;
   }
@@ -1606,47 +1607,47 @@ void vectorChange()
     lcd.print(key);
     switch (key)
     {
-    case '0':
-      vector = 0;
-      errorReport(012,vector);
-      EEPROM.update(100, 0);
-      memoryLoad();
-      lcd.setCursor(16, 0);
-      lcd.print("VCT0");
-      complete = true;
-      break;
+      case '0':
+        vector = 0;
+        errorReport(12, vector);
+        EEPROM.update(100, 0);
+        memoryLoad();
+        lcd.setCursor(16, 0);
+        lcd.print("VCT0");
+        complete = true;
+        break;
 
-    case '1':
-      vector = 1;
-      errorReport(012,vector);
-      EEPROM.update(100, 1);
-      memoryLoad();
-      lcd.setCursor(16, 0);
-      lcd.print("VCT1");
-      complete = true;
-      break;
+      case '1':
+        vector = 1;
+        errorReport(12, vector);
+        EEPROM.update(100, 1);
+        memoryLoad();
+        lcd.setCursor(16, 0);
+        lcd.print("VCT1");
+        complete = true;
+        break;
 
-    case '2':
-      vector = 2;
-      errorReport(012,vector);
-      EEPROM.update(100, 2);
-      Serial.println("Vector 2");
-      memoryLoad();
-      lcd.setCursor(16, 0);
-      lcd.print("VCT2");
-      complete = true;
-      break;
+      case '2':
+        vector = 2;
+        errorReport(12, vector);
+        EEPROM.update(100, 2);
+        Serial.println("Vector 2");
+        memoryLoad();
+        lcd.setCursor(16, 0);
+        lcd.print("VCT2");
+        complete = true;
+        break;
 
-    case '#':
-      complete = true;
-      return;
+      case '#':
+        complete = true;
+        return;
 
-    default:
-      errorReport(013,null);
-      preLCDClear = millis();
-      pos = POSDEFAULT;
-      lcd.print("     ");
-      break;
+      default:
+        errorReport(13, 0);
+        preLCDClear = millis();
+        pos = POSDEFAULT;
+        lcd.print("     ");
+        break;
     }
   }
 }
@@ -1687,7 +1688,7 @@ void eepromWrite(byte arrayLoc, int value)
   {
     if ((value >= 5100) || (value <= 0))
     {
-      errorReport(001,memAddress);
+      errorReport(1, memAddress);
       return;
     }
     int tempValue = value / 10;
@@ -1739,7 +1740,7 @@ boolean memCheck(unsigned int address, byte refID)
 {
   if (address > EEPROM.length())
   {
-    errorReport(002,refID);
+    errorReport(2, refID);
     return false;
   }
   else
