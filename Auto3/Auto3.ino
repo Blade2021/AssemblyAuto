@@ -202,9 +202,7 @@ void setup()
     versionControl[k] = EEPROM.read(vcAddress);
     if ((versionControl[k]) < 0)
     {
-      Serial.print("Version control memory location[ ");
-      Serial.print(vcAddress);
-      Serial.println(" ] is corrupted.");
+      errorReport(003,vcAddress);
     }
     vcAddress++;
   }
@@ -307,9 +305,7 @@ void loop()
           buttonPreviousTime = currentTime + 2000;
           runCheck = 1;
           digitalWrite(solenoidArray[8], LOW);
-          Serial.println("RunCheck reset!");
-          lcd.setCursor(0, 3);
-          lcd.print("RunCheck Reset!");
+          errorReport(004,null);
         }
       }
       toggleLogic = digitalRead(toggleButton);
@@ -461,10 +457,7 @@ void loop()
               feedCheck = digitalRead(sensorArray[1]);
               if ((feedCheck == HIGH) && (secStart != 1))
               {
-                Serial.println(F("ERROR: Hanger Rack NOT full."));
-                lcd.setCursor(0, 3);
-                lcd.print("ERROR: Hanger Rack");
-                preLCDClear = currentTime;
+                errorReport(005,null);
                 partError = 1;
                 secStart = 1;
                 if (dispOverride == 0)
@@ -587,13 +580,8 @@ void loop()
           if ((crimpLoop == LOW) && (crimpNext == 0) && (mfcount > lastMFcount))
           {
             //Reset lastMFcount to continue cycles after one pass.
-            Serial.print("Skipping crimp cycle [ERROR 4455] [REFID: ");
-            Serial.print(mfcount);
-            Serial.println(" ]");
+            errorReport(006,mfcount);
             lastMFcount = mfcount;
-            lcd.setCursor(0, 3);
-            lcd.print("ERROR [4455]");
-            preLCDClear = currentTime;
             previousTimer4 = currentTime;
           }
           if ((crimpNext == 1) && (currentTime - previousTimer4 >= sysArray[3]))
@@ -636,10 +624,7 @@ void loop()
               hookCheck = digitalRead(sensorArray[0]);
               if (hookCheck == HIGH)
               {
-                Serial.println("ERROR: Hook Check failed");
-                lcd.setCursor(0, 3);
-                lcd.print("ERROR: Hook Check");
-                preLCDClear = currentTime;
+                errorReport(007,null);
                 //partError = 1;
                 digitalWrite(panelLed2, LOW);
                 feedLoop = 0;
@@ -803,10 +788,7 @@ void loop()
     if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
     {
       buttonPreviousTime = currentTime;
-      lcd.setCursor(0, 3);
-      lcd.print("Override Deactivated");
-      Serial.println("SYSTEM OVERRIDE | Deactivated ");
-      preLCDClear = currentTime;
+      errorReport(008,null);
       sOverride = 0;
       sysPosition = 0;
     }
@@ -931,17 +913,10 @@ void saveTrigger(byte sysPos)
   if (sysArray[sysPos] >= 5101)
   {
     sysArray[sysPos] = 5100;
-    lcd.setCursor(0, 3);
-    lcd.print("Max Value hit!");
-    Serial.println("SYSTEM: Max value hit when trying to save.");
+    errorReport(010,sysPos);
   }
   eepromWrite(sysPos, sysArray[sysPos]);
-  lcd.setCursor(0, 3);
-  lcd.print("EE.Update VAR[");
-  lcd.print(sysPos + 1);
-  lcd.print("]    ");
-  unsigned long currentTime = millis();
-  preLCDClear = currentTime;
+  errorReport(009,sysPos+1);
   digitalWrite(errorLed, HIGH);
   delay(200);
   digitalWrite(errorLed, LOW);
@@ -1052,13 +1027,8 @@ void mpsInput()
         keyValue = 6;
       }
       mpsEnable = keyValue;
-      lcd.setCursor(0, 3);
-      lcd.print("MPS set to: ");
-      lcd.print(mpsEnable);
+      errorReport(011,mpsEnable);
       EEPROM.update(MPSMEMLOC, mpsEnable);
-      Serial.print("SYSTEM: Updated mpsEnable: ");
-      Serial.println(mpsEnable);
-      preLCDClear = millis();
     }
   }
 }
@@ -1310,7 +1280,6 @@ void changetime(int sysPos)
     if ((key == 'A') || (key == 'a'))
     {
       mpsInput();
-      Serial.println("MPS Activated");
       return;
     }
     if (key == 'B')
@@ -1371,10 +1340,7 @@ void changetime(int sysPos)
       if (value > 5100)
       {
         value = 5100;
-        Serial.println("WARNING: MAX VALUE HIT");
-        lcd.setCursor(0, 3);
-        lcd.print("ERROR: MAX VALUE HIT");
-        preLCDClear = millis();
+        errorReport(010,sysPos);
       }
       eepromWrite(sysPos, value);
       sysArray[sysPos] = value;
@@ -1414,6 +1380,94 @@ void eepromUpdate()
     EEPROM.update(address, eepromValue);
     memoryLoad();
   }
+}
+
+void errorReport(byte errorType, int refID)
+{
+  lcd.setCursor(0,3); //Set cursor to last line of LCD
+  switch(errorType)
+  {
+    // Input greater than limit ( eepromWrite Function )
+    case 001:
+      lcd.print("MEM CORRUPT [");
+      lcd.print(refID);
+      lcd.print("]");
+      Serial.print("[REF: 0320] EEPROM Memory corrupted. Address: ");
+      Serial.println(refID);
+      break;
+    // memCheck Function
+    case 002:
+      Serial.print("ALERT: Memory limit reached. ID( ");
+      Serial.print(refID);
+      Serial.println(" ) [REF: 4320]");
+      break;
+    // Version control memory corrupted
+    case 003:
+      Serial.print("WARNING: Version control memory location[ ");
+      Serial.print(refID);
+      Serial.println(" ] is corrupted.");
+      break;
+    // Runcheck Reset
+    case 004:
+      lcd.print("Runcheck Reset!");
+      Serial.println("WARNING: RunCheck reset!");
+      break;
+    // Hanger Rack not full
+    case 005:
+      lcd.print("ERROR: Hanger Rack");
+      Serial.print("ALERT: Hanger rack detected empty. [REF: 1593]");
+      break;
+    // Skip crimp cycle
+    case 006:
+      lcd.print("ALERT: [REF:4455]");
+      Serial.print("Skipping crimp cycle [REF 4455] [MFC: ");
+      Serial.print(refID);
+      Serial.println(" ]");
+      break;
+    // Hook Check failed
+    case 007:
+      lcd.print("ALERT: Hook Check");
+      Serial.println("ALERT: Hook check failed. [REF 3294]");
+      break;
+    // Override Deactivated
+    case 008:
+      lcd.print("Override Deactivated");
+      Serial.println("SYSTEM OVERRIDE | Deactivated ");
+      break;
+    // Value Updated
+    case 009:
+      lcd.print("EE.Update VAR[");
+      lcd.print(refID);
+      lcd.print("]    ");
+      break;
+    // Max value hit
+    case 010:
+      lcd.print("Max Value Hit!");
+      Serial.print("WARNING: Max value hit when trying to save variable id:");
+      Serial.println(refID);
+      break;
+    // MPS Input
+    case 011:
+      lcd.print("MPS set to: ");
+      lcd.print(refID);
+      Serial.print("SYSTEM: Updated mpsEnable: ");
+      Serial.println(refID);
+      break;
+    // Vector change
+    case 012:
+      lcd.print("Loaded VCT");
+      lcd.print(refID);
+      lcd.print(" timing");
+      Serial.print("Loaded VCT");
+      Serial.print(refID);
+      Serial.print(" settings");
+      break;
+    // Vector invalid input
+    case 013:
+      lcd.print("INVALID INPUT");
+      break;
+  }
+  preLCDClear = millis();
 }
 
 int firstValue()
@@ -1553,12 +1607,9 @@ void vectorChange()
     switch (key)
     {
     case '0':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded VCT0 timing");
-      Serial.println("Loaded VCT0 settings");
-      EEPROM.update(100, 0);
       vector = 0;
-      Serial.println("Vector 0");
+      errorReport(012,vector);
+      EEPROM.update(100, 0);
       memoryLoad();
       lcd.setCursor(16, 0);
       lcd.print("VCT0");
@@ -1566,24 +1617,19 @@ void vectorChange()
       break;
 
     case '1':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded VCT1 timing");
-      Serial.println("Loaded VCT1 settings");
-      EEPROM.update(100, 1);
       vector = 1;
+      errorReport(012,vector);
+      EEPROM.update(100, 1);
       memoryLoad();
-      Serial.println("Vector 1");
       lcd.setCursor(16, 0);
       lcd.print("VCT1");
       complete = true;
       break;
 
     case '2':
-      lcd.setCursor(0, 3);
-      lcd.print("Loaded VCT2 timing");
-      Serial.println("Loaded VCT2 settings");
-      EEPROM.update(100, 2);
       vector = 2;
+      errorReport(012,vector);
+      EEPROM.update(100, 2);
       Serial.println("Vector 2");
       memoryLoad();
       lcd.setCursor(16, 0);
@@ -1596,8 +1642,7 @@ void vectorChange()
       return;
 
     default:
-      lcd.setCursor(0, 3);
-      lcd.print("INVALID INPUT");
+      errorReport(013,null);
       preLCDClear = millis();
       pos = POSDEFAULT;
       lcd.print("     ");
@@ -1642,7 +1687,7 @@ void eepromWrite(byte arrayLoc, int value)
   {
     if ((value >= 5100) || (value <= 0))
     {
-      Serial.println("EEPROM Function Aborted [REF:3692]");
+      errorReport(001,memAddress);
       return;
     }
     int tempValue = value / 10;
@@ -1694,9 +1739,7 @@ boolean memCheck(unsigned int address, byte refID)
 {
   if (address > EEPROM.length())
   {
-    Serial.print("Memory limit reached. ID( ");
-    Serial.print(refID);
-    Serial.println(" ) [REF: 4320]");
+    errorReport(002,refID);
     return false;
   }
   else
