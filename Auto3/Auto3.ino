@@ -1711,7 +1711,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print("Updating EEPROM Address ( ");
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
-      Serial.print(tempValue);
+      Serial.print('0');
       Serial.println(" ]");
     }
     if (value > 2550)
@@ -1732,7 +1732,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print("Updating EEPROM Address ( ");
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
-      Serial.print(tempValue);
+      Serial.print('255');
       Serial.println(" ]");
     }
   }
