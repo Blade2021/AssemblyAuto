@@ -187,7 +187,7 @@ void setup()
 
   Serial.begin(DATASPEED);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.3.2");
+  Serial.println("Program Version 1.3.5");
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -479,7 +479,6 @@ void loop()
                 lcd.print("OFF");
                 lcd.setCursor(0, 1);
                 lcd.print("SC: ");
-                lcd.setCursor(4, 1);
                 lcd.print(logicCount);
                 lcd.print("  ");
               }
@@ -1091,6 +1090,9 @@ void checkData()
       if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
       {
         pinUpdate();
+      }
+      if (apple.substring(0,10) == "TIMECHANGE"){
+        ext_timeChange();
       }
       if (apple.substring(0, 7) == "SENWAIT")
       {
