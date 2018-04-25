@@ -319,56 +319,57 @@ void loop()
     {
       active = 1;
     }
+
+    bUpLogic = digitalRead(upButton);
+    if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+    {
+      if (dispOverride == 1)
+      {
+        sysArray[sysPosition] = sysArray[sysPosition] + 20;
+        buttonPreviousTime = currentTime;
+        // Serial print function
+      }
+      // Reserved
+    }
+    bDownLogic = digitalRead(downButton);
+    if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+    {
+      if (dispOverride == 1)
+      {
+        sysArray[sysPosition] = sysArray[sysPosition] - 20;
+        buttonPreviousTime = currentTime;
+        // Serial print function
+      }
+      // Reserved
+    }
+    saveButtonLogic = digitalRead(saveButton);
+    if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+    {
+      if (dispOverride == 1)
+      {
+        buttonPreviousTime = currentTime;
+        saveTrigger(sysPosition);
+        // Serial print function
+      }
+      // Reserved
+    }
+    bNextLogic = digitalRead(nextButton);
+    if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
+    {
+      if (dispOverride == 1)
+      {
+        buttonPreviousTime = currentTime;
+        sysPosition++;
+        if (sysPosition >= sysLength)
+        {
+          sysPosition = 0;
+        }
+        // Serial print function
+      }
+      // Reserved
+    }
     if ((active == 1) && (sOverride == 1))
     {
-      bUpLogic = digitalRead(upButton);
-      if ((bUpLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-      {
-        if (dispOverride == 1)
-        {
-          sysArray[sysPosition] = sysArray[sysPosition] + 20;
-          buttonPreviousTime = currentTime;
-          // Serial print function
-        }
-        // Reserved
-      }
-      bDownLogic = digitalRead(downButton);
-      if ((bDownLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-      {
-        if (dispOverride == 1)
-        {
-          sysArray[sysPosition] = sysArray[sysPosition] - 20;
-          buttonPreviousTime = currentTime;
-          // Serial print function
-        }
-        // Reserved
-      }
-      saveButtonLogic = digitalRead(saveButton);
-      if ((saveButtonLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-      {
-        if (dispOverride == 1)
-        {
-          buttonPreviousTime = currentTime;
-          saveTrigger(sysPosition);
-          // Serial print function
-        }
-        // Reserved
-      }
-      bNextLogic = digitalRead(nextButton);
-      if ((bNextLogic == LOW) && (currentTime - buttonPreviousTime >= buttonWait))
-      {
-        if (dispOverride == 1)
-        {
-          buttonPreviousTime = currentTime;
-          sysPosition++;
-          if (sysPosition >= sysLength)
-          {
-            sysPosition = 0;
-          }
-          // Serial print function
-        }
-        // Reserved
-      }
       // Activate display Override
       char key = keypad.getKey();
       if (key == 'D')
@@ -1091,7 +1092,7 @@ void checkData()
       {
         pinUpdate();
       }
-      if (apple.substring(0,10) == "TIMECHANGE"){
+      if (apple.substring(0, 10) == "TIMECHANGE") {
         ext_timeChange();
       }
       if (apple.substring(0, 7) == "SENWAIT")
