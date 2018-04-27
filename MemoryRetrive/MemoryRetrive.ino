@@ -49,6 +49,7 @@ void recvWithEndMarker()
     {
       receivedChars[ndx] = '\0'; // terminate the string
       ndx = 0;
+      Serial.println(receivedChars);
       newData = true;
     }
   }
@@ -63,10 +64,13 @@ void checkData()
     {
       if (apple.substring(0, 4) == "READ")
       {
+        Serial.println("debug 3242");
         readFunction();
       }
       if (apple.substring(0, 7) == "READALL")
       {
+        Serial.println("debug 4567");
+
         readAllFunction();
       }
     }
@@ -115,6 +119,7 @@ int firstValue(){
     slaveindx++;
   }
   masterArray[slaveindx] = '\0';
+  Serial.println(masterArray);
   int value = atoi(masterArray);
   if(debug >= 2){
   Serial.print("fvF firstValue: ");

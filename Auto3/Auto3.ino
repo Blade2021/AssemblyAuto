@@ -1498,6 +1498,7 @@ int firstValue()
   masterArray[slaveindx] = '\0';
   Serial.println(masterArray);
   int value = atoi(masterArray);
+
   if (debug >= 2)
   {
     Serial.print("fvF firstValue: ");
@@ -1505,6 +1506,7 @@ int firstValue()
   }
   return value;
 }
+
 
 int lastValue()
 {
