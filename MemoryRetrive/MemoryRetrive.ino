@@ -70,7 +70,6 @@ void checkData()
       if (apple.substring(0, 7) == "READALL")
       {
         Serial.println("debug 4567");
-
         readAllFunction();
       }
     }
