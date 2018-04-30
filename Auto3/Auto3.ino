@@ -254,7 +254,7 @@ void setup()
   }
 
   Serial.println(F("*** System Variables ***"));
-  Serial.print("Button Wait Time: ");
+  Serial.print(F("Button Wait Time: "));
   Serial.println(buttonWait);
   Serial.print("LCD Clear Time: ");
   Serial.println(lcdClearTime);
@@ -280,7 +280,7 @@ void loop()
   {
     if (debug >= 1)
     {
-      Serial.println("DEBUG: newData function ran [REF:0234]");
+      Serial.println(F("DEBUG: newData function ran [REF:0234]"));
     }
     checkData();
   }
@@ -441,7 +441,7 @@ void loop()
             // FEED ACTIVATED
             if (debug >= 2)
             {
-              Serial.print("Feed Cycle Activated [");
+              Serial.print(F("Feed Cycle Activated ["));
               Serial.print(currentTime / 1000);
               Serial.println(" ]");
             }
@@ -497,7 +497,7 @@ void loop()
           digitalWrite(solenoidArray[0], HIGH);
           if (debug >= 3)
           {
-            Serial.println("Feed Cycle | FEED OPEN");
+            Serial.println(F("Feed Cycle | FEED OPEN"));
           }
           feedNext = 2;
         }
@@ -506,7 +506,7 @@ void loop()
         {
           if (debug >= 3)
           {
-            Serial.println("Feed Cycle | FEED CLOSE");
+            Serial.println(F("Feed Cycle | FEED CLOSE"));
           }
           previousTimer1 = currentTime;
           digitalWrite(solenoidArray[0], LOW);
@@ -520,7 +520,7 @@ void loop()
         {
           if (debug >= 2)
           {
-            Serial.print("Rail Check Activated [");
+            Serial.print(F("Rail Check Activated ["));
             Serial.print(currentTime / 1000);
             Serial.println("]");
           }
@@ -568,7 +568,7 @@ void loop()
         {
           if (debug >= 2)
           {
-            Serial.print("Crimp Cycle Activated [");
+            Serial.print(F("Crimp Cycle Activated ["));
             Serial.print(currentTime / 1000);
             Serial.println("]");
           }
@@ -616,7 +616,7 @@ void loop()
           {
             if (debug >= 2)
             {
-              Serial.print("Hook Cycle Activated [");
+              Serial.print(F("Hook Cycle Activated ["));
               Serial.print(currentTime / 1000);
               Serial.println("]");
             }
@@ -653,7 +653,7 @@ void loop()
           previousTimer3 = currentTime;
           if (debug >= 3)
           {
-            Serial.println("Hook Cycle | Tool/Head OUT");
+            Serial.println(F("Hook Cycle | Tool/Head OUT"));
           }
           digitalWrite(solenoidArray[2], HIGH);
           hookNext = 2;
@@ -669,14 +669,14 @@ void loop()
             hookNext = 3;
             if (debug >= 3)
             {
-              Serial.println("Hook Cycle | Strip Off OUT");
+              Serial.println(F("Hook Cycle | Strip Off OUT"));
             }
           }
           //MPS Setting 5 - Shut down on timer
           if ((mpsEnable >= 6) && (currentTime - previousTimer3 >= sysArray[8]))
           {
             machStop(1);
-            Serial.println("Motor stopped due to ERROR[0036]");
+            Serial.println(F("Motor stopped due to ERROR[0036]"));
             hookNext = 0;
             runCheck = 0;
           }
@@ -704,7 +704,7 @@ void loop()
             digitalWrite(solenoidArray[3], HIGH);
             if (debug >= 3)
             {
-              Serial.println("Hook Cycle | Strip Off OUT");
+              Serial.println(F("Hook Cycle | Strip Off OUT"));
             }
             Serial.print("Malfunction detected CT[");
             Serial.print(mfcount);
@@ -852,55 +852,55 @@ void displaySwitch(int sysPos)
     case 0:
       setLEDS(panelLed1);
       lcd.setCursor(0, 1);
-      lcd.print("Feed Wait Time:     ");
+      lcd.print(F("Feed Wait Time:     "));
       changetime(sysPos);
       break;
     case 1:
       setLEDS(panelLed2);
       lcd.setCursor(0, 1);
-      lcd.print("Feed Open Time      ");
+      lcd.print(F("Feed Open Time      "));
       changetime(sysPos);
       break;
     case 2:
       setLEDS(panelLed3);
       lcd.setCursor(0, 1);
-      lcd.print("Hook Cycle Wait     ");
+      lcd.print(F("Hook Cycle Wait     "));
       changetime(sysPos);
       break;
     case 3:
       setLEDS(panelLed4);
       lcd.setCursor(0, 1);
-      lcd.print("Crimp Cycle Wait    ");
+      lcd.print(F("Crimp Cycle Wait    "));
       changetime(sysPos);
       break;
     case 4:
       setLEDS(panelLed5);
       lcd.setCursor(0, 1);
-      lcd.print("Crimp Time          ");
+      lcd.print(F("Crimp Time          "));
       changetime(sysPos);
       break;
     case 5:
       setLEDS(panelLed1);
       lcd.setCursor(0, 1);
-      lcd.print("Vibrator Time     ");
+      lcd.print(F("Vibrator Time     "));
       changetime(sysPos);
       break;
     case 6:
       setLEDS(panelLed2);
       lcd.setCursor(0, 1);
-      lcd.print("Sensor Ignore [MPS] ");
+      lcd.print(F("Sensor Ignore [MPS] "));
       changetime(sysPos);
       break;
     case 7:
       setLEDS(panelLed3);
       lcd.setCursor(0, 1);
-      lcd.print("Main Cycle [MPS]   ");
+      lcd.print(F("Main Cycle [MPS]   "));
       changetime(sysPos);
       break;
     case 8:
       setLEDS(panelLed4);
       lcd.setCursor(0, 1);
-      lcd.print("Head LOC [MPS]     ");
+      lcd.print(F("Head LOC [MPS]     "));
       changetime(sysPos);
       break;
   } //END OF MAIN SWITCH
@@ -951,7 +951,7 @@ void Override_Trigger(int RTrigger)
   lcd.print(" SET TO: ");
   lcd.print(lcdstate);
   lcd.print(" ");
-  Serial.print("SYSTEM OVERRIDE | Relay ");
+  Serial.print(F("SYSTEM OVERRIDE | Relay "));
   Serial.print(RTrigger);
   Serial.print(" | ");
   Serial.println(lcdstate);
@@ -1161,7 +1161,7 @@ void checkData()
 void senWaitFunction()
 {
   senWait = lastValue();
-  Serial.print("Sensor Wait Peroid Updated: ");
+  Serial.print(F("Sensor Wait Peroid Updated: "));
   Serial.println(senWait);
 }
 
@@ -1396,42 +1396,42 @@ void errorReport(byte errorType, int refID)
       lcd.print("MEM CORRUPT [");
       lcd.print(refID);
       lcd.print("]");
-      Serial.print("[REF: 0320] EEPROM Memory corrupted. Address: ");
+      Serial.print(F("[REF: 0320] EEPROM Memory corrupted. Address: "));
       Serial.println(refID);
       break;
     // memCheck Function
     case 2:
-      Serial.print("ALERT: Memory limit reached. ID( ");
+      Serial.print(F("ALERT: Memory limit reached. ID( "));
       Serial.print(refID);
       Serial.println(" ) [REF: 4320]");
       break;
     // Version control memory corrupted
     case 3:
-      Serial.print("WARNING: Version control memory location[ ");
+      Serial.print(F("WARNING: Version control memory location[ "));
       Serial.print(refID);
       Serial.println(" ] is corrupted.");
       break;
     // Runcheck Reset
     case 4:
       lcd.print("Runcheck Reset!");
-      Serial.println("WARNING: RunCheck reset!");
+      Serial.println(F("WARNING: RunCheck reset!"));
       break;
     // Hanger Rack not full
     case 5:
       lcd.print("ERROR: Hanger Rack");
-      Serial.print("ALERT: Hanger rack detected empty. [REF: 1593]");
+      Serial.print(F("ALERT: Hanger rack detected empty. [REF: 1593]"));
       break;
     // Skip crimp cycle
     case 6:
       lcd.print("ALERT: [REF:4455]");
-      Serial.print("Skipping crimp cycle [REF 4455] [MFC: ");
+      Serial.print(F("Skipping crimp cycle [REF 4455] [MFC: "));
       Serial.print(refID);
       Serial.println(" ]");
       break;
     // Hook Check failed
     case 7:
       lcd.print("ALERT: Hook Check");
-      Serial.println("ALERT: Hook check failed. [REF 3294]");
+      Serial.println(F("ALERT: Hook check failed. [REF 3294]"));
       break;
     // Override Deactivated
     case 8:
@@ -1447,7 +1447,7 @@ void errorReport(byte errorType, int refID)
     // Max value hit
     case 10:
       lcd.print("Max Value Hit!");
-      Serial.print("WARNING: Max value hit when trying to save variable id:");
+      Serial.print(F("WARNING: Max value hit when trying to save variable id:"));
       Serial.println(refID);
       break;
     // MPS Input
@@ -1538,7 +1538,7 @@ void ext_timeChange()
   int sysArrayLoc = firstValue();
   if ((sysArrayLoc < 0) || (sysArrayLoc > sysLength))
   {
-    Serial.println("Array length exceeded. [REF 8973]");
+    Serial.println(F("Array length exceeded. [REF 8973]"));
     return;
   }
   int timeChangeValue = lastValue();
@@ -1735,7 +1735,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print("Updating EEPROM Address ( ");
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
-      Serial.print('255');
+      Serial.print("255");
       Serial.println(" ]");
     }
   }
