@@ -408,6 +408,7 @@ void loop()
         {
           if (mpsEnable >= 1)
           {
+            if ((feedNext == 0) && (millis() - previousTimer1 <= sysArray[7]) && (millis() - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
             {
               hookNext = 0;
               runCheck = 0;
@@ -430,6 +431,7 @@ void loop()
             // Machine protection enabled MPS 1+
             ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
             // Manual feed button activated && debounce button
+            ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait)))
           {
             buttonPreviousTime = millis();
             // FEED ACTIVATED
