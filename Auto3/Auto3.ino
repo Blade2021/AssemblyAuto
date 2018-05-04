@@ -911,7 +911,7 @@ void displaySwitch(int sysPos)
 */
 void saveTrigger(byte sysPos)
 {
-  if (sysArray[sysPos] >= 5101)
+  if (sysArray[sysPos] > 5100)
   {
     sysArray[sysPos] = 5100;
     errorReport(10, sysPos);

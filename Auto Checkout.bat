@@ -3,9 +3,10 @@ echo off
 title Checkout Utility
 Mode 110,40
 cls
-echo ///////////////////////////////////////////////////////////////
-echo ////////////////////////  Auto Checkout  //////////////////////
-echo ///////////////////////////////////////////////////////////////
+echo "              _______   __          ___        ___    ___  |     __         _______       "
+echo "   / \   |  |    |     /  \        /    |   | /___/  /     | /  /  \   |  |    |          "
+echo "  / - \  |  |    |    |    |      |     |---| |     |      |\  |    |  |  |    |          "
+echo " /     \ \__/    |     \__/        \___ |   |  \__/  \___  | \  \__/   \__/    |          "     
 echo.
 echo.
 echo.
@@ -20,19 +21,17 @@ echo Procede with CAUTION!
 echo.
 echo Menu:
 echo 1 - Checkout AssemblyAuto Folder
-echo 2 - Push AssemblyAuto Folder to Server
-echo 3 - Pull AssemblyAuto Folder from Server
-echo 4 - Get staus of repsoitory
-echo 5 - Clone respository [ ! Only execute if needed ! ]
+echo 2 - Pull AssemblyAuto Folder from Server
+echo 3 - Get staus of repsoitory
+echo 4 - Clone respository [ ! Only execute if needed ! ]
 echo.
 echo.
 set /P o=Choose option:  
 if /I "%o%" EQU "1" goto :option1
 if /I "%o%" EQU "2" goto :option2
 if /I "%o%" EQU "3" goto :option3
-if /I "%o%" EQU "4" goto :option4
-if /I "%o%" EQU "5" (
-    goto :option5
+if /I "%o%" EQU "4" (
+    goto :option4
 ) else (
     goto :start
 )
@@ -45,7 +44,7 @@ echo.
 set /P c=Are you sure you want to continue[Y/N]?
 if /I "%c%" EQU "y" (
     cls
-    cd %Homedrive%%Homepath%\GitHub\AssemblyAuto\
+    cd %Homedrive%%Homepath%\Documents\GitHub\AssemblyAuto\
     git checkout master
     echo.
     echo Checkout complete.  Program will now terminate.
@@ -56,23 +55,8 @@ if /I "%c%" EQU "y" (
     goto :exit
 )
 
-:option2
-cls
-echo This will overwrite everything on the server with local changes.
-echo Please be sure you want to do this!  This cannot be undone.
-echo.
-set /P c=Are you sure you want to continue[Y/N]?
-if /I "%c%" EQU "y" (
-    cls
-    cd %Homedrive%%Homepath%\GitHub\AssemblyAuto\
-    echo.
-    echo Checkout complete.  Program will now terminate.
-    pause
-    exit
-)
-if /I "%c%" EQU "N" goto :exit
 
-:option3
+:option2
 echo.
 echo.
 echo /////////// CAUTION \\\\\\\\\\\\
@@ -97,7 +81,7 @@ if /I "%c%" EQU "y" (
     goto :exit
 )
 
-:option4
+:option3
 cd %Homedrive%%Homepath%\Documents\GitHub\AssemblyAuto\
 echo.
 echo.
@@ -105,7 +89,7 @@ git status
 echo.
 goto :menu
 
-:option5
+:option4
 echo.
 echo.
 echo /////////// CAUTION \\\\\\\\\\\\
