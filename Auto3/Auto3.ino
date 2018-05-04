@@ -404,7 +404,7 @@ void loop()
           feedCheck - Check Feed station for material.
           manualFeed - Ignore other variables and trigger on button press
         */
-        if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || (manualFeed == LOW))
+        if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || ((manualFeed == LOW) && (feedNext == 0)))
         {
           if (mpsEnable >= 1)
           {
@@ -431,7 +431,7 @@ void loop()
             // Machine protection enabled MPS 1+
             ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
             // Manual feed button activated && debounce button
-            ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait)))
+            ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (feedNext == 0)))
           {
             buttonPreviousTime = millis();
             // FEED ACTIVATED
