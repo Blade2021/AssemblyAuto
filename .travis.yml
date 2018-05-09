@@ -9,7 +9,7 @@ before_install:
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
 install:
   - ln -s $PWD /usr/local/share/arduino/libraries/Keypad
-  - arduino --install-library "Keypad"
+#  - arduino --install-library "Keypad"
 script:
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/Auto3/Auto3.ino
 notifications:
