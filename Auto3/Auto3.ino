@@ -1413,7 +1413,7 @@ void errorReport(byte errorType, int refID)
     // Hanger Rack not full
     case 5:
       lcd.print("ERROR: Hanger Rack");
-      Serial.print(F("ALERT: Hanger rack detected empty. [REF: 1593]"));
+      Serial.println(F("ALERT: Hanger rack detected empty. [REF: 1593]"));
       break;
     // Skip crimp cycle
     case 6:
