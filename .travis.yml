@@ -13,6 +13,8 @@ install:
   - arduino --install-library 'Keypad'
 script:
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/Auto3/Auto3.ino
+  - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblySemiBoard/AssemblySemiBoard.ino
+  - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblyManual/AssemblyManual.ino
 notifications:
   email:
     on_success: change
