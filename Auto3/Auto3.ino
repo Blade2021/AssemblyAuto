@@ -1556,7 +1556,7 @@ void memoryLoad()
     memBlockOne = memBlockOne * 10;
     if ((memBlockOne > 2550) || (memBlockOne < 0))
     {
-      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(F("ERROR | Corrupted memory LOC:"));
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockOne);
@@ -1574,7 +1574,7 @@ void memoryLoad()
     memBlockTwo = memBlockTwo * 10;
     if ((memBlockTwo > 2550) || (memBlockTwo < 0))
     {
-      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(F("ERROR | Corrupted memory LOC:"));
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockTwo);
@@ -1694,7 +1694,7 @@ void eepromWrite(byte arrayLoc, int value)
     if ((value <= 2550))
     {
       EEPROM.update(memAddress, tempValue);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
@@ -1705,7 +1705,7 @@ void eepromWrite(byte arrayLoc, int value)
         return;
       }
       EEPROM.update(memAddress, 0);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print('0');
@@ -1715,7 +1715,7 @@ void eepromWrite(byte arrayLoc, int value)
     {
       tempValue = tempValue - 255;
       EEPROM.update(memAddress, tempValue);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
@@ -1726,7 +1726,7 @@ void eepromWrite(byte arrayLoc, int value)
         return;
       }
       EEPROM.update(memAddress, 255);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print("255");
