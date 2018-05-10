@@ -1,4 +1,4 @@
-# Assembly Auto Repository  
+# Assembly Auto Repository  [![Build Status](https://travis-ci.com/Blade2021/AssemblyAuto.svg?branch=patch-1.3.2)](https://travis-ci.com/Blade2021/AssemblyAuto)
 ## Introduction
 This repository was made to assist in programming and distribution of a program developed specifically to run an industrial machine.  The program uses a variance between #C/C++.  It is still in alpha mode with no intention of release anytime soon.  
 
