@@ -7,6 +7,8 @@ before_install:
   - tar xf arduino-1.6.5-linux64.tar.xz
   - sudo mv arduino-1.6.5 /usr/local/share/arduino
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
+  - mkdir $HOME/.arduino15
+  - wget http://downloads.arduino.cc/libraries/library_index.json -O $HOME/.arduino15/library_index.json
 install:
   - arduino --install-library 'Keypad'
 script:
