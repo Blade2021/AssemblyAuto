@@ -10,7 +10,7 @@ before_install:
   - mkdir $HOME/.arduino15
   - wget http://downloads.arduino.cc/libraries/library_index.json -O $HOME/.arduino15/library_index.json
 install:
-  - arduino --install-library 'Keypad'
+  - arduino --install-library "Keypad,Adafruit_LiquidCrystal"
 script:
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/Auto3/Auto3.ino
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblySemiBoard/AssemblySemiBoard.ino
