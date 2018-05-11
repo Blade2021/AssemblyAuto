@@ -944,7 +944,7 @@ void checkData()
         }
         else
         {
-          Serial.println("Debug value not accepted");
+          Serial.println(F("Debug value not accepted"));
         }
       }
       if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
