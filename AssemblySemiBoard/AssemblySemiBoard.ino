@@ -68,7 +68,7 @@ const byte sysLength = 7;        // System timer array length
 const int buttonWait = 400;           // Button Debounce Time
 unsigned long preLCDClear = 0;        // LCD Clear Timer
 unsigned long buttonPreviousTime = 0; // Button Debounce Timer
-unsigned long previousTimer1 = 0;     // Feed Timer
+//unsigned long previousTimer1 = 0;     // Feed Timer  *Disabled on Semi Boards
 unsigned long previousTimer2 = 0;     // Hook Cycle Timer
 unsigned long previousTimer3 = 0;     // Crimp Cycle Timer
 unsigned long previousTimer4 = 0;     // Vibrator Timer
@@ -421,14 +421,14 @@ void loop()
           {
             railCheckNext = 1;
           }
-          if ((railCheck == LOW) && (millis() - previousTimer2 >= sysArray[5]))
+          if ((railCheck == LOW) && (millis() - previousTimer2 >= sysArray[4]))
           {
             digitalWrite(solenoidArray[6], LOW);
             digitalWrite(panelLed5, LOW);
             previousTimer2 = millis();
             if (debug >= 3)
             {
-              Serial.println("Rail Check Finished");
+              Serial.println(F("Rail Check Finished"));
             }
             railCheckNext = 0;
           }
@@ -438,9 +438,9 @@ void loop()
         crimpLoop = digitalRead(sensorArray[3]);
         if (
           //Trigger All
-          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[4])) ||
+          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[3])) ||
           //Protection - Only crimp if malfunction was not detected
-          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
+          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[3])))
         {
           if (debug >= 2)
           {
@@ -461,7 +461,7 @@ void loop()
           lastMFcount = mfcount;
           previousTimer4 = millis();
         }
-        if ((crimpNext == 1) && (millis() - previousTimer4 >= sysArray[3]))
+        if ((crimpNext == 1) && (millis() - previousTimer4 >= sysArray[2]))
         {
           previousTimer4 = millis();
           digitalWrite(solenoidArray[5], HIGH);
@@ -472,7 +472,7 @@ void loop()
           crimpNext = 2;
         }
         // Crimp Reset
-        if ((crimpNext == 2) && (millis() - previousTimer4 >= sysArray[4]))
+        if ((crimpNext == 2) && (millis() - previousTimer4 >= sysArray[2]))
         {
           if (debug >= 3)
           {
@@ -488,7 +488,7 @@ void loop()
         hookLoop = digitalRead(sensorArray[2]);
         if ((hookLoop == LOW) && (hookNext == 0))
         {
-          if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[7])))
+          if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[6])))
           {
             if (debug >= 2)
             {
@@ -513,7 +513,7 @@ void loop()
               hookNext = 1;
             }
           }
-          if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
+          if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[6]) && (millis() - previousTimer3 >= sysArray[5]))
           {
             //Check if MPS is enabled.  If so, check value of time sensor triggered.
             machStop(0);
@@ -522,7 +522,7 @@ void loop()
           }
         }
         //Send Head Down
-        if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
+        if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[1]))
         {
           previousTimer3 = millis();
           if (debug >= 3)
@@ -537,7 +537,7 @@ void loop()
         {
           int HeadCheckDown = digitalRead(sensorArray[6]);
           //MPS Disabled
-          if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[8])))
+          if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[7])))
           {
             digitalWrite(solenoidArray[3], HIGH);
             hookNext = 3;
@@ -547,14 +547,14 @@ void loop()
             }
           }
           //MPS Setting 5 - Shut down on timer
-          if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
+          if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[7]))
           {
             machStop(1);
             Serial.println(F("Motor stopped due to ERROR[0036]"));
             hookNext = 0;
             runCheck = 0;
           }
-          if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[8]))
+          if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[7]))
           {
             mfcount++;
             hookNext = 3;
@@ -598,7 +598,7 @@ void loop()
           }
         }
         // Reset Strip Off / Reset Stopper
-        if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[8])))
+        if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[7])))
         {
           int HeadUpCheck = digitalRead(sensorArray[7]);
           if (HeadUpCheck == LOW)
@@ -613,7 +613,7 @@ void loop()
             hookNext = 0;
           }
         }
-        else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[8]))
+        else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[7]))
         {
           machStop(1);
           hookNext = 0;
