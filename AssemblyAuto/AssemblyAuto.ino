@@ -7,7 +7,7 @@
 #include <EEPROM.h>
 
 #define SENARRAYSIZE 8
-#define SOLARRAYSIZE 9
+#define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
 #define DEBUGMEMLOC 112
@@ -17,7 +17,7 @@
 #define DATASPEED 19200
 
 //Panel Buttons
-const byte manualButton = 6;  //Manual feed button
+const byte manualButton = 62;  //Manual feed button
 const byte nextButton = 42;   // Next Button
 const byte saveButton = 46;   // Savel/Select Button
 const byte upButton = 48;     // Up Button
@@ -44,17 +44,17 @@ const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
+const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
 /*
-    7 - [AL-0] Hanger Feed
-    8 - [AL-1] Hook Stopper
-   16 - [AL-2] Head/Tooling
-   17 - [AL-3] Strip Off
-   18 - [AL-4] Crimp Stopper
-   19 - [AL-5] Crimp
-   15 - [AL-6] Vibrator
-   14 - [AL-7] MainAir
-   9  - [AL-8] Motor Relay
+  12 - [AL-0] Hanger Feed
+  11 - [AL-1] Hook Stopper
+  10 - [AL-2] Head/Tooling
+   9 - [AL-3] Strip Off
+   8 - [AL-4] Crimp Stopper
+   7 - [AL-5] Crimp
+   6 - [AL-6] Vibrator
+  17 - [AL-7] MainAir
+   x - [AL-8] Motor Relay
 */
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
@@ -86,7 +86,7 @@ int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200};
   AL-8 - Head LOC [MPS]
 */
 //LiquidCrystal
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
 
 //Keypad
 const byte ROWS = 4; // # of rows for keypad
