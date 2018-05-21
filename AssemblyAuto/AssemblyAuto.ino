@@ -980,6 +980,9 @@ void setLEDS(byte LEDSnumber)
 
 void machStop(byte airoff)
 {
+  feedNext = 0;
+  hookNext = 0;
+  railCheckNext = 0;
   digitalWrite(solenoidArray[8], HIGH);
   for (byte k; k < 7; k++)
   {
@@ -990,9 +993,6 @@ void machStop(byte airoff)
   {
     digitalWrite(solenoidArray[7], LOW);
   }
-  feedNext = 0;
-  hookNext = 0;
-  railCheckNext = 0;
   return;
 }
 
@@ -1079,7 +1079,7 @@ void checkData()
         }
         else
         {
-          Serial.println("Debug value not accepted");
+          Serial.println(F("Debug value not accepted"));
         }
       }
       if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
@@ -1109,7 +1109,7 @@ void checkData()
       if (apple.substring(0, 8) == "SENCHECK")
       {
         senBool = !senBool;
-        Serial.print("Sensor Auto Updated: ");
+        Serial.print(F("Sensor Auto Updated: "));
         Serial.println(senBool);
       }
       if (apple.substring(0, 6) == "SITREP")

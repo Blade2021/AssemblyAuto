@@ -12,7 +12,7 @@ before_install:
 install:
   - arduino --install-library 'Keypad','Adafruit LiquidCrystal'
 script:
-  - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/Auto3/Auto3.ino
+  - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblyAuto/AssemblyAuto.ino
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblySemiBoard/AssemblySemiBoard.ino
   - arduino --verify --board arduino:avr:mega:cpu=atmega2560 $PWD/AssemblyManual/AssemblyManual.ino
 notifications:
