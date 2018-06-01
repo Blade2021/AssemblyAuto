@@ -1169,8 +1169,7 @@ void changetime(int sysPos)
           dispOverride = 0;
           break;
       }
-      lcd.setCursor(pos, 2);
-      lcd.print("     ");
+      lcd.clear();
       jindx = 0;
       return;
     }
