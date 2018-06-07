@@ -69,6 +69,7 @@ byte toggleLogic = 0;
 byte mpsEnable = 0; // Machine Protection Enabler
 const int passcode = 7777; //System override passcode
 byte crimpCycle = 0;
+byte runCheck = 1;
 
 //PC Control
 const byte numChars = 32; // Array character limit
@@ -78,6 +79,7 @@ int senWait = 100; // Sensor data wait time
 String apple = ""; // Incoming serial data string
 byte initial = 1; //Initial contact toggle
 byte debug = 0;
+boolean newData = false;
 //byte runCheck = 1;
 byte mode = 1;
 
@@ -120,20 +122,46 @@ void loop()
 {
   unsigned long currentTime = millis();
   lcdControl();
+
+  if (Serial.available() > 0)
+  {
+    recvWithEndMarker();
+  }
+  if (newData == true)
+  {
+    if (debug >= 1)
+    {
+      Serial.println(F("DEBUG: newData Function ran."));
+    }
+    checkData();
+  }
   toggleLogic = digitalRead(toggleButton); //Check the status of the Toggle Button
   if(sysPosition >= sysLength){
     //Included one for null
     sysPosition = 0;
   }
   // If Toggle Button is pressed or "Active"
-  if((toggleLogic == 0) || (mode == 0)){
+  if((toggleLogic == LOW) || (runCheck == 0)){
     digitalWrite(errorLed, HIGH);
+    mode = 0;
     inactive(sysPosition);
-  } 
-  if((toggleLogic == 1) && (mode == 1)) {
+  }
+  if(toggleLogic == HIGH){
+    if(mode == 0){
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Run Time:");
+    }
+    mode = 1;
+  }
+  if(mode == 1) {
   // If Toggle Button is unpressed or "Inactive"
     digitalWrite(errorLed, LOW);
-    if((mainSensor == LOW) && (crimpCycle == 0)){
+    byte mSensorLogic = digitalRead(mainSensor);
+    if((mSensorLogic == LOW) && (crimpCycle == 0)){
+      if(debug >= 2){
+        Serial.println("Main Cycle Started");
+      }
       digitalWrite(solenoidArray[0], HIGH);
       preTimer1 = currentTime;
       crimpCycle = 1;
@@ -428,4 +456,154 @@ void lcdControl()
     lcd.setCursor(0, 3);
     lcd.print("                    ");
   }
+}
+
+void recvWithEndMarker()
+{
+  static byte ndx = 0;
+  char endMarker = '\n';
+  char rc;
+
+  while (Serial.available() > 0 && newData == false)
+  {
+    rc = Serial.read();
+
+    if (rc != endMarker)
+    {
+      receivedChars[ndx] = rc;
+      ndx++;
+      apple = apple += rc;
+      if (ndx >= numChars)
+      {
+        ndx = numChars - 1;
+      }
+    }
+    else
+    {
+      receivedChars[ndx] = '\0'; // terminate the string
+      ndx = 0;
+      newData = true;
+    }
+  }
+}
+void checkData()
+{
+  if (newData == true)
+  {
+    if (apple.length() >= 5)
+    {
+      if (apple.substring(0, 6) == "EEPROM")
+      {
+        eepromUpdate();
+      }
+      if (apple.substring(0, 5) == "DEBUG")
+      {
+        char voucher = apple.charAt(6);
+        byte endingVoucher = voucher - '0';
+        if ((endingVoucher >= 0) && (endingVoucher <= 9))
+        {
+          debug = endingVoucher;
+          Serial.print("Debug updated to: ");
+          Serial.println(debug);
+          EEPROM.update(DEBUGMEMLOC, debug);
+        }
+        else
+        {
+          Serial.println(F("Debug value not accepted"));
+        }
+      }
+      if (apple.substring(0, 8) == "OVERRIDE")
+      {
+        if ((mode == 0) || (mode == 1))
+        {
+          mode = 2;
+          Serial.println("Override:On");
+        }
+        else
+        {
+          mode = 0;
+          Serial.println("Override:Off");
+        }
+      }
+    }
+    newData = false;
+    apple = "";
+  }
+}
+void eepromUpdate()
+{
+  int address = firstValue();
+  if (memCheck(address, 10) == false)
+  {
+    return;
+  }
+  else
+  {
+    int eepromValue = lastValue();
+    Serial.print("EEPROM.update(");
+    Serial.print(address);
+    Serial.print(", ");
+    Serial.print(eepromValue);
+    Serial.println(")");
+    EEPROM.update(address, eepromValue);
+    memoryLoad();
+  }
+}
+int firstValue()
+{
+  char masterArray[numChars];
+  byte slaveindx;
+  byte value_start = apple.indexOf('.');
+  if (debug >= 2)
+  {
+    Serial.print("V Start: ");
+    Serial.println(value_start);
+  }
+  byte value_end = apple.indexOf('.', value_start + 1);
+  if (debug >= 2)
+  {
+    Serial.print("V End: ");
+    Serial.println(value_end);
+  }
+  for (byte k = value_start + 1; k < value_end; k++)
+  {
+    masterArray[slaveindx] = receivedChars[k];
+    slaveindx++;
+  }
+  masterArray[slaveindx] = '\0';
+  Serial.println(masterArray);
+  int value = atoi(masterArray);
+
+  if (debug >= 2)
+  {
+    Serial.print("fvF firstValue: ");
+    Serial.println(value);
+  }
+  return value;
+}
+
+
+int lastValue()
+{
+  char masterArray[numChars];
+  byte slaveindx = 0;
+  byte value_end = apple.lastIndexOf('.');
+  if (debug >= 2)
+  {
+    Serial.print("V End (2): ");
+    Serial.println(value_end);
+  }
+  for (byte k = value_end + 1; k < apple.length(); k++)
+  {
+    masterArray[slaveindx] = receivedChars[k];
+    slaveindx++;
+  }
+  masterArray[slaveindx] = '\0';
+  int lastvalue = atoi(masterArray);
+  if (debug >= 2)
+  {
+    Serial.print("lvF lastValue: ");
+    Serial.println(lastvalue);
+  }
+  return lastvalue;
 }
