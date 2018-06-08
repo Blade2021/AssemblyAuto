@@ -75,7 +75,7 @@ byte slaveSensorLogic = 1;
 byte senMode = 0;
 
 //PC Control
-const byte numChars = 32;     // Array character limit
+const byte numChars = 14;     // Array character limit
 char receivedChars[numChars]; // Recieved bytes from serial input
 unsigned long preSerialCheck; // Previous sensor check variable
 int senWait = 100;            // Sensor data wait time
@@ -101,7 +101,7 @@ void setup()
 
   Serial.begin(DATASPEED);
   Serial.println("Starting...");
-  Serial.println("Program Version 1.0.0");
+  Serial.println(F("Program Version 1.0.0"));
   lcd.begin(20, 4);
   lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
@@ -119,8 +119,6 @@ void setup()
   Serial.println(passcode);
   Serial.println();
   Serial.println("<Controller Ready>");
-  lcd.setCursor(0, 1);
-  lcd.print("                    ");
 }
 
 void loop()
@@ -172,7 +170,7 @@ void loop()
     {
       if (debug >= 2)
       {
-        Serial.println("Main Cycle Started");
+        Serial.println(F("Main Cycle Started"));
       }
       digitalWrite(solenoidArray[0], HIGH);
       preTimer1 = currentTime;
@@ -193,7 +191,7 @@ void loop()
       {
         preTimer1 = currentTime;
         crimpCycle = 2;
-        Serial.println("Blockage Detected.  Resetting in _ seconds");
+        blockTime();
       }
       else
       {
@@ -202,13 +200,13 @@ void loop()
         crimpCycle = 6;
       }
     }
-    if ((crimpCycle == 2) && (currentTime - preTimer1 >= sysArray[5]))
+    if ((crimpCycle == 2) && (currentTime - preTimer1 >= sysArray[4]))
     {
       slaveSensorLogic = digitalRead(slaveSensor);
       if (slaveSensorLogic == LOW)
       {
         preTimer1 = currentTime;
-        Serial.println("Blockage Detected. Retrying in _ seconds");
+        blockTime();
       }
       else
       {
@@ -261,6 +259,12 @@ void loop()
     }
   } // End of Else Statment
 }
+void blockTime(){
+  Serial.print("Blockage Detected.  Retrying in ");
+  float subValue = sysArray[4]/1000;
+  Serial.print(subValue);
+  Serial.println(" second(s)");
+}
 void inactive(byte sysPos)
 {
   lcd.setCursor(0, 2);
@@ -268,26 +272,27 @@ void inactive(byte sysPos)
   digitalWrite(errorLed, HIGH);
   digitalWrite(solenoidArray[0], LOW);
   digitalWrite(solenoidArray[1], LOW);
+  crimpCycle = 0;
   switch (sysPos)
   {
   case 0:
     lcd.setCursor(0, 1);
-    lcd.print("Crimp Wait Delay    ");
+    lcd.print(F("Crimp Wait Delay    "));
     changetime(sysPos);
     break;
   case 1:
     lcd.setCursor(0, 1);
-    lcd.print("Crimp Time          ");
+    lcd.print(F("Crimp Time          "));
     changetime(sysPos);
     break;
   case 2:
     lcd.setCursor(0, 1);
-    lcd.print("Sensor Ignore Delay ");
+    lcd.print(F("Sensor Ignore Delay "));
     changetime(sysPos);
     break;
   case 3:
     lcd.setCursor(0, 1);
-    lcd.print("Crimp Jam [ MPS ]   ");
+    lcd.print(F("Crimp Jam [ MPS ]   "));
     changetime(sysPos);
     break;
     /*
@@ -299,7 +304,7 @@ void inactive(byte sysPos)
     */
   case 4:
     lcd.setCursor(0, 1);
-    lcd.print("Blockage Wait Time  ");
+    lcd.print(F("Blockage Wait Time  "));
     changetime(sysPos);
     break;
   } //END OF MAIN SWITCH
@@ -321,6 +326,7 @@ void changetime(int sysPos)
       {
         sysPosition = 0;
       }
+      return;
     }
     if ((key == 'C') || (key == 'c'))
     {
@@ -334,29 +340,36 @@ void changetime(int sysPos)
         char key = keypad.getKey();
         if (key)
         {
-          if (key == '0')
+          switch (key)
           {
+          case '0':
             senMode = 0;
             Serial.println("SenMode = 0");
             EEPROM.update(SENMODELOC, 0);
             lcd.setCursor(0, 3);
             lcd.print("Sensor Mode: 0");
             complete = true;
-          }
-          if (key == '1')
-          {
+            break;
+
+          case '1':
             senMode = 1;
             Serial.println("SenMode = 1");
             EEPROM.update(SENMODELOC, 1);
             lcd.setCursor(0, 3);
             lcd.print("Sensor Mode: 1");
             complete = true;
-          }
-          else
-          {
+            break;
+
+          case '#':
+            Serial.println("Premature Exit");
+            complete = true;
+            break;
+
+          default:
             Serial.print("Key [ ");
             Serial.print(key);
             Serial.println(" ] not accepted");
+            break;
           }
         }
       }
@@ -378,7 +391,7 @@ void changetime(int sysPos)
     if (key == '*')
     {
       int value = atoi(arraya);
-      Serial.print("SYSTEM | Keypad Input: ");
+      Serial.print(F("SYSTEM | Keypad Input: "));
       Serial.println(value);
       if ((value == passcode) && (mode == 0))
       {
