@@ -13,6 +13,8 @@
 #define POSDEFAULT 15
 #define DATASPEED 19200
 #define SOLARRAYSIZE 2
+#define LCD_CLEARLOC_A 130
+#define LCD_CLEARLOC_B 131
 
 //Panel Buttons
 const byte toggleButton = A2; // toggle Button
@@ -29,7 +31,8 @@ const byte stopperSolenoid = 11;
 
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
-const int lcdClearTime = 7000;
+//const int lcdClearTime = 3000;
+const int lcdClearTime = ((EEPROM.read(LCD_CLEARLOC_A) * 100) + (EEPROM.read(LCD_CLEARLOC_B) * 100));
 byte pos = POSDEFAULT;           //LCD position for key input
 byte jindx = 0;                  //Key Input Position (Array)
 char arraya[] = {0, 1, 2, 3, 0}; //Key input array
@@ -151,17 +154,26 @@ void loop()
     mode = 0;
     inactive(sysPosition);
   }
-  if (toggleLogic == HIGH)
+  if ((toggleLogic == HIGH) && (mode != 2))
   {
-    if (mode == 0)
-    {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Run Time:");
-    }
     mode = 1;
   }
-  if (mode == 1)
+  if (mode == 1){
+    lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Run Time:");
+      lcd.setCursor(0,1);
+      lcd.print("sMode:");
+      lcd.setCursor(6,1);
+      if(senMode == 1){
+        lcd.print("Enabled");
+      }
+      if(senMode == 0){
+        lcd.print("Disabled");
+      }
+      mode = 2;
+  }
+  if (mode == 2)
   {
     // If Toggle Button is unpressed or "Inactive"
     digitalWrite(errorLed, LOW);
@@ -200,6 +212,10 @@ void loop()
         crimpCycle = 6;
       }
     }
+    if((crimpCycle == 2)){
+      lcd.setCursor(15,2);
+      lcd.print((currentTime - preTimer1)/100);
+    }
     if ((crimpCycle == 2) && (currentTime - preTimer1 >= sysArray[4]))
     {
       slaveSensorLogic = digitalRead(slaveSensor);
@@ -213,6 +229,8 @@ void loop()
         digitalWrite(solenoidArray[1], HIGH);
         preTimer1 = currentTime;
         crimpCycle = 6;
+        lcd.setCursor(15,2);
+        lcd.print("     ");
       }
     }
     if ((crimpCycle == 5) && (currentTime - preTimer1 >= sysArray[0]))
@@ -248,7 +266,7 @@ void loop()
       case '#':
       case '*':
       case '0':
-        mode = 1;
+        mode = 2;
         return;
       default:
         break;
@@ -264,6 +282,9 @@ void blockTime(){
   float subValue = sysArray[4]/1000;
   Serial.print(subValue);
   Serial.println(" second(s)");
+  lcd.setCursor(0,3);
+  lcd.print("Block detected");
+  preLCDClear = millis();
 }
 void inactive(byte sysPos)
 {
