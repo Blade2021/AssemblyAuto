@@ -198,13 +198,16 @@ void loop()
       crimpCycle = 1;
       if (senMode == 1)
       {
+        // Go to block detection sequence
         crimpCycle = 1;
       }
       else
       {
+        // Skip block detection
         crimpCycle = 5;
       }
     }
+    //Block Detection Enabled
     if ((crimpCycle == 1) && (currentTime - preTimer1 >= sysArray[0]))
     {
       slaveSensorLogic = digitalRead(slaveSensor);
@@ -212,7 +215,11 @@ void loop()
       {
         preTimer1 = currentTime;
         crimpCycle = 2;
-        blockTime();
+        Serial.print("Block Detected.  SC:");
+        Serial.println(systemCount);
+        lcd.setCursor(0, 3);
+        lcd.print("Block detected      ");
+        preLCDClear = millis();
       }
       else
       {
@@ -221,34 +228,42 @@ void loop()
         crimpCycle = 6;
       }
     }
-    if ((crimpCycle == 2))
-    {
-      lcd.setCursor(15, 2);
-      lcd.print((currentTime - preTimer1) / 100);
-    }
-    if ((crimpCycle == 2) && (currentTime - preTimer1 >= sysArray[4]))
-    {
+    // Wait for Sensor to be cleared
+    if(crimpCycle == 2){
+      lcd.setCursor(15,2);
+      lcd.print((currentTime - preTimer1) / 1000);
       slaveSensorLogic = digitalRead(slaveSensor);
-      if (slaveSensorLogic == LOW)
-      {
+      if(slaveSensorLogic == HIGH){
+        crimpCycle = 3;
         preTimer1 = currentTime;
-        blockTime();
-      }
-      else
-      {
-        digitalWrite(solenoidArray[1], HIGH);
-        preTimer1 = currentTime;
-        crimpCycle = 6;
-        lcd.setCursor(15, 2);
-        lcd.print("     ");
+        Serial.print("Block Cleared | SC:");
+        Serial.println(systemCount);
+        lcd.setCursor(0,3);
+        lcd.print("Block Cleared       ");
+        preLCDClear = millis();
       }
     }
+    // Block Detection - Extra wait timer
+    if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[4])){
+      slaveSensorLogic = digitalRead(slaveSensor);
+      if(slaveSensorLogic == LOW){
+        crimpCycle = 2;
+        return;
+      }
+      digitalWrite(solenoidArray[1], HIGH);
+      preTimer1 = currentTime;
+      crimpCycle = 6;
+      lcd.setCursor(15,2);
+      lcd.print("     ");
+    }
+    // Block Detection Disabled
     if ((crimpCycle == 5) && (currentTime - preTimer1 >= sysArray[0]))
     {
       digitalWrite(solenoidArray[1], HIGH);
       preTimer1 = currentTime;
       crimpCycle = 6;
     }
+    // Reset Cylinders
     if ((crimpCycle == 6) && (currentTime - preTimer1 >= sysArray[1]))
     {
       digitalWrite(solenoidArray[0], LOW);
@@ -291,16 +306,6 @@ void loop()
     }
   } // End of Else Statment
 }
-void blockTime()
-{
-  Serial.print("Blockage Detected.  Retrying in ");
-  float subValue = sysArray[4] / 1000;
-  Serial.print(subValue);
-  Serial.println(" second(s)");
-  lcd.setCursor(0, 3);
-  lcd.print("Block detected");
-  preLCDClear = millis();
-}
 void inactive(byte sysPos)
 {
   lcd.setCursor(0, 2);
@@ -333,7 +338,7 @@ void inactive(byte sysPos)
     break;
   case 4:
     lcd.setCursor(0, 1);
-    lcd.print(F("Blockage Wait Time  "));
+    lcd.print(F("Block Wait Time  "));
     changetime(sysPos);
     break;
   } //END OF MAIN SWITCH
