@@ -185,7 +185,7 @@ void loop()
     if ((mSensorLogic == LOW) && (crimpCycle == 0))
     {
       systemCount++;
-      if (debug >= 2)
+      if (debug >= 1)
       {
         Serial.print(F("Main Cycle Started | SC:"));
         Serial.println(systemCount);
@@ -214,12 +214,7 @@ void loop()
       if (slaveSensorLogic == LOW)
       {
         preTimer1 = currentTime;
-        crimpCycle = 2;
-        Serial.print("Block Detected.  SC:");
-        Serial.println(systemCount);
-        lcd.setCursor(0, 3);
-        lcd.print("Block detected      ");
-        preLCDClear = millis();
+        blockFunction();
       }
       else
       {
@@ -236,7 +231,7 @@ void loop()
       if(slaveSensorLogic == HIGH){
         crimpCycle = 3;
         preTimer1 = currentTime;
-        Serial.print("Block Cleared | SC:");
+        Serial.print("Block Cleared      | SC:");
         Serial.println(systemCount);
         lcd.setCursor(0,3);
         lcd.print("Block Cleared       ");
@@ -247,7 +242,7 @@ void loop()
     if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[4])){
       slaveSensorLogic = digitalRead(slaveSensor);
       if(slaveSensorLogic == LOW){
-        crimpCycle = 2;
+        blockFunction();
         return;
       }
       digitalWrite(solenoidArray[1], HIGH);
@@ -268,6 +263,10 @@ void loop()
     {
       digitalWrite(solenoidArray[0], LOW);
       digitalWrite(solenoidArray[1], LOW);
+      if(debug >= 2){
+      Serial.print("Cycle Finished     | SC:");
+      Serial.println(systemCount);
+      }
       preTimer1 = currentTime;
       crimpCycle = 0;
     }
@@ -305,6 +304,14 @@ void loop()
       Override_Trigger(trigger);
     }
   } // End of Else Statment
+}
+void blockFunction() {
+  crimpCycle = 2;
+  Serial.print("Block Detected.  SC:");
+  Serial.println(systemCount);
+  lcd.setCursor(0, 3);
+  lcd.print("Block detected      ");
+  preLCDClear = millis();
 }
 void inactive(byte sysPos)
 {
