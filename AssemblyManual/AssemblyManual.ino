@@ -133,7 +133,7 @@ void loop()
   }
   if (newData == true)
   {
-    if (debug >= 1)
+    if (debug >= 2)
     {
       Serial.println(F("DEBUG: newData Function ran."));
     }
