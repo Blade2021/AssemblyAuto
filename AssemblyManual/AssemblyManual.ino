@@ -24,10 +24,6 @@ const byte errorLed = 13;
 const byte mainSensor = A0;
 const byte slaveSensor = A1;
 const byte solenoidArray[SOLARRAYSIZE + 1] = {11, 12};
-/*
-const byte crimpSolenoid = 12;
-const byte stopperSolenoid = 11;
-*/
 
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
@@ -45,9 +41,9 @@ unsigned long preTimer1 = 0;
 int sysArray[sysLength] = {1000, 400, 100, 300, 0};
 /*AL-0 - Crimp Wait
   AL-1 - Crimp Time
-  AL-2 - Sensor Ignore Delay [ MPS ]
-  AL-3 - Jam Timer [MPS]
-  AL-4 - Sensor Mode
+  AL-2 - Block Delay Timer
+  AL-3 - Sensor Ignore Delay [ MPS ]
+  AL-4 - Jam Timer [MPS]
 */
 byte stateArray[SOLARRAYSIZE + 1] = {0};
 
@@ -158,6 +154,9 @@ void loop()
   }
   if (mode == 1)
   {
+    if (debug >= 2){
+      Serial.println("System mode resetting");
+    }
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Run Time:");
@@ -239,7 +238,7 @@ void loop()
       }
     }
     // Block Detection - Extra wait timer
-    if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[4])){
+    if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[2])){
       slaveSensorLogic = digitalRead(slaveSensor);
       if(slaveSensorLogic == LOW){
         blockFunction();
@@ -317,6 +316,8 @@ void inactive(byte sysPos)
 {
   lcd.setCursor(0, 2);
   lcd.print("Time:");
+  lcd.setCursor(18,0);
+  lcd.print("IA");
   digitalWrite(errorLed, HIGH);
   digitalWrite(solenoidArray[0], LOW);
   digitalWrite(solenoidArray[1], LOW);
@@ -335,17 +336,17 @@ void inactive(byte sysPos)
     break;
   case 2:
     lcd.setCursor(0, 1);
-    lcd.print(F("Sensor Ignore Delay "));
+    lcd.print(F("Block Wait Time  "));
     changetime(sysPos);
     break;
   case 3:
     lcd.setCursor(0, 1);
-    lcd.print(F("Crimp Jam [ MPS ]   "));
+    lcd.print(F("Sensor Ignore Delay "));
     changetime(sysPos);
     break;
   case 4:
     lcd.setCursor(0, 1);
-    lcd.print(F("Block Wait Time  "));
+    lcd.print(F("Crimp Jam [ MPS ]   "));
     changetime(sysPos);
     break;
   } //END OF MAIN SWITCH
@@ -416,6 +417,7 @@ void changetime(int sysPos)
         }
       }
       jindx = 0;
+      preLCDClear = millis();
     }
     else
     {
@@ -452,13 +454,13 @@ void changetime(int sysPos)
         if (value >= 1)
         {
           value = 1;
-          sysArray[4] = value;
+          sysArray[2] = value;
           Serial.println("Sensor Mode Changed: ON");
         }
         else
         {
           value = 0;
-          sysArray[4] = value;
+          sysArray[2] = value;
           Serial.println("Sensor Mode Changed: OFF");
         }
       }*/
