@@ -1389,25 +1389,26 @@ void errorReport(byte errorType, int refID)
       lcd.print("MEM CORRUPT [");
       lcd.print(refID);
       lcd.print("]");
-      Serial.print(F("[REF: 0320] EEPROM Memory corrupted. Address: "));
-      Serial.println(refID);
+      Serial.print(F("EEPROM Memory corrupted. Address: "));
+      Serial.print(refID);
+      Serial.println(" [REF: 0320]");
       break;
     // memCheck Function
     case 2:
-      Serial.print(F("ALERT: Memory limit reached. ID( "));
+      Serial.print(F("ALERT: Memory limit reached. ID: "));
       Serial.print(refID);
-      Serial.println(" ) [REF: 4320]");
+      Serial.println(" [REF: 4320]");
       break;
     // Version control memory corrupted
     case 3:
-      Serial.print(F("WARNING: Version control memory location[ "));
+      Serial.print(F("ALERT: Version control memory location[ "));
       Serial.print(refID);
-      Serial.println(" ] is corrupted.");
+      Serial.println(" ] is corrupted. [REF: 8432]");
       break;
     // Runcheck Reset
     case 4:
       lcd.print("Runcheck Reset!");
-      Serial.println(F("WARNING: RunCheck reset!"));
+      Serial.println(F("WARNING: RunCheck reset! [REF: 0042]"));
       break;
     // Hanger Rack not full
     case 5:
@@ -1440,8 +1441,9 @@ void errorReport(byte errorType, int refID)
     // Max value hit
     case 10:
       lcd.print("Max Value Hit!");
-      Serial.print(F("WARNING: Max value hit when trying to save variable id:"));
-      Serial.println(refID);
+      Serial.print(F("ALERT: Max value hit while saving var id:"));
+      Serial.print(refID);
+      Serial.println(" [REF: 2205]");
       break;
     // MPS Input
     case 11:
@@ -1660,6 +1662,7 @@ void overrideReset()
     Serial.println(" reset.");
   }
   lcd.clear();
+  lcd.setCursor(0,0);
   lcd.print("Run Time: ");
   Serial.println("LCD Cleared");
   digitalWrite(panelLed1, LOW);

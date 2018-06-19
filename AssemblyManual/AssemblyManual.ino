@@ -157,6 +157,9 @@ void loop()
     if (debug >= 2){
       Serial.println("System mode resetting");
     }
+    digitalWrite(errorLed, LOW);
+    digitalWrite(solenoidArray[0], LOW);
+    digitalWrite(solenoidArray[1], LOW);
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Run Time:");
@@ -178,8 +181,7 @@ void loop()
   }
   if (mode == 2)
   {
-    // If Toggle Button is unpressed or "Inactive"
-    digitalWrite(errorLed, LOW);
+    // Active Mode
     mSensorLogic = digitalRead(mainSensor);
     if ((mSensorLogic == LOW) && (crimpCycle == 0))
     {
@@ -230,6 +232,7 @@ void loop()
       if(slaveSensorLogic == HIGH){
         crimpCycle = 3;
         preTimer1 = currentTime;
+        digitalWrite(errorLed, LOW);
         Serial.print(F("Block Cleared      | SC:"));
         Serial.println(systemCount);
         lcd.setCursor(0,3);
@@ -279,7 +282,7 @@ void loop()
     key = keypad.getKey();
     if (key)
     {
-      if(debug >= 2){
+      if(debug >= 3){
         Serial.print("Debug Key: ");
         Serial.println(key);
       }
@@ -311,6 +314,7 @@ void blockFunction() {
   lcd.setCursor(0, 3);
   lcd.print(F("Block detected      "));
   preLCDClear = millis();
+  digitalWrite(errorLed, HIGH);
 }
 void inactive(byte sysPos)
 {
@@ -755,6 +759,7 @@ int firstValue()
     slaveindx++;
   }
   masterArray[slaveindx] = '\0';
+  Serial.print("Recieved Input: ");
   Serial.println(masterArray);
   int value = atoi(masterArray);
 
