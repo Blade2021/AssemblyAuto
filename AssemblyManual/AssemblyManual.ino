@@ -230,7 +230,7 @@ void loop()
       if(slaveSensorLogic == HIGH){
         crimpCycle = 3;
         preTimer1 = currentTime;
-        Serial.print("Block Cleared      | SC:");
+        Serial.print(F("Block Cleared      | SC:"));
         Serial.println(systemCount);
         lcd.setCursor(0,3);
         lcd.print("Block Cleared       ");
@@ -263,7 +263,7 @@ void loop()
       digitalWrite(solenoidArray[0], LOW);
       digitalWrite(solenoidArray[1], LOW);
       if(debug >= 2){
-      Serial.print("Cycle Finished     | SC:");
+      Serial.print(F("Cycle Finished     | SC:"));
       Serial.println(systemCount);
       }
       preTimer1 = currentTime;
@@ -273,7 +273,7 @@ void loop()
   if (mode == 3)
   {
     lcd.setCursor(0, 1);
-    lcd.print("OVERRIDE: ON        ");
+    lcd.print(F("OVERRIDE: ON        "));
     //Get keypad input
     char key;
     key = keypad.getKey();
@@ -306,10 +306,10 @@ void loop()
 }
 void blockFunction() {
   crimpCycle = 2;
-  Serial.print("Block Detected.  SC:");
+  Serial.print(F("Block Detected.  SC:"));
   Serial.println(systemCount);
   lcd.setCursor(0, 3);
-  lcd.print("Block detected      ");
+  lcd.print(F("Block detected      "));
   preLCDClear = millis();
 }
 void inactive(byte sysPos)
@@ -374,7 +374,7 @@ void changetime(int sysPos)
     {
       lcd.clear();
       lcd.setCursor(0, 1);
-      lcd.print("Enter Sensor Mode:  ");
+      lcd.print(F("Enter Sensor Mode:  "));
 
       boolean complete = false;
       while (complete == false)
@@ -448,22 +448,6 @@ void changetime(int sysPos)
         jindx = 0;
         return;
       }
-      //Function to control to use two sensors or one!
-      /*if ((sysPos == 4))
-      {
-        if (value >= 1)
-        {
-          value = 1;
-          sysArray[2] = value;
-          Serial.println("Sensor Mode Changed: ON");
-        }
-        else
-        {
-          value = 0;
-          sysArray[2] = value;
-          Serial.println("Sensor Mode Changed: OFF");
-        }
-      }*/
       if (value > 5100)
       {
         value = 5100;
@@ -500,16 +484,16 @@ void eepromWrite(byte arrayLoc, int value)
   {
     if ((value >= 5100) || (value <= 0))
     {
-      Serial.println("EEPROM Function Aborted [REF:3692]");
+      Serial.println(F("EEPROM Function Aborted [REF:3692]"));
       return;
     }
     int tempValue = value / 10;
     if ((value <= 2550))
     {
       EEPROM.update(memAddress, tempValue);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
-      Serial.print(" ) with value [ ");
+      Serial.print(F(" ) with value [ "));
       Serial.print(tempValue);
       Serial.println(" ]");
       memAddress++;
@@ -518,17 +502,17 @@ void eepromWrite(byte arrayLoc, int value)
         return;
       }
       EEPROM.update(memAddress, 0);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
-      Serial.println(" ) with value [ 0 ]");
+      Serial.println(F(" ) with value [ 0 ]"));
     }
     if (value > 2550)
     {
       tempValue = tempValue - 255;
       EEPROM.update(memAddress, tempValue);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
-      Serial.print(" ) with value [ ");
+      Serial.print(F(" ) with value [ "));
       Serial.print(tempValue);
       Serial.println(" ]");
       memAddress++;
@@ -537,9 +521,9 @@ void eepromWrite(byte arrayLoc, int value)
         return;
       }
       EEPROM.update(memAddress, 255);
-      Serial.print("Updating EEPROM Address ( ");
+      Serial.print(F("Updating EEPROM Address ( "));
       Serial.print(memAddress);
-      Serial.println(" ) with value [ 255 ]");
+      Serial.println(F(" ) with value [ 255 ]"));
     }
   }
 }
@@ -549,7 +533,9 @@ void memoryLoad()
   //Load EEPROM Memory
   for (byte k = 0; k < sysLength; k++)
   {
+    // Grab memory address
     int memAddress = (k * 2);
+    //Read 
     int memBlockOne = EEPROM.read(memAddress);
     Serial.print("X23 Address[ ");
     Serial.print(memAddress);
@@ -558,7 +544,7 @@ void memoryLoad()
     memBlockOne = memBlockOne * 10;
     if ((memBlockOne > 2550) || (memBlockOne < 0))
     {
-      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(F("ERROR | Corrupted memory LOC:"));
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockOne);
@@ -576,7 +562,7 @@ void memoryLoad()
     memBlockTwo = memBlockTwo * 10;
     if ((memBlockTwo > 2550) || (memBlockTwo < 0))
     {
-      Serial.print("ERROR | Corrupted memory LOC:");
+      Serial.print(F("ERROR | Corrupted memory LOC:"));
       Serial.print(memAddress);
       Serial.print(" Result:");
       Serial.println(memBlockTwo);
@@ -598,7 +584,7 @@ boolean memCheck(unsigned int address, byte refID)
 {
   if (address > EEPROM.length())
   {
-    Serial.print("Memory limit reached. ID( ");
+    Serial.print(F("Memory limit reached. ID( "));
     Serial.print(refID);
     Serial.println(" ) [REF: 4320]");
     return false;
