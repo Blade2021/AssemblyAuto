@@ -350,7 +350,9 @@ void loop()
         saveTrigger(sysPosition);
         // Serial print function
       }
-      // Reserved
+      if (dispOverride == 0){
+
+      }
     }
     bNextLogic = digitalRead(nextButton);
     if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
@@ -412,15 +414,7 @@ void loop()
             {
               hookNext = 0;
               runCheck = 0;
-              Serial.println(F("Motor stopped due to ERROR[0032]"));
-              Serial.print("millis(): ");
-              Serial.print(millis());
-              Serial.print(" - ");
-              Serial.print("preTime: ");
-              Serial.print(previousTimer1);
-              Serial.print(" < ");
-              Serial.print("varTime: ");
-              Serial.println(sysArray[7]);
+              mfPrintOut(7,previousTimer1);
               previousTimer1 = millis();
               machStop(0);
             }
@@ -672,7 +666,8 @@ void loop()
           if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
           {
             machStop(1);
-            Serial.println(F("Motor stopped due to ERROR[0036]"));
+            errorReport(13,0);
+            mfPrintOut(8,previousTimer3);
             hookNext = 0;
             runCheck = 0;
           }
@@ -685,15 +680,8 @@ void loop()
               machStop(1);
               hookNext - 0;
               runCheck = 0;
-              Serial.println(F("Motor stopped due to ERROR[0034]"));
-              Serial.print("preTime: ");
-              Serial.print(previousTimer3);
-              Serial.print(" - ");
-              Serial.print("millis(): ");
-              Serial.print(millis());
-              Serial.print(" > ");
-              Serial.print("varTime: ");
-              Serial.println(sysArray[8]);
+              errorReport(13,0);
+              mfPrintOut(8,previousTimer3);
               previousTimer3 = millis();
               //Turn off machine
             }
@@ -702,7 +690,7 @@ void loop()
             {
               Serial.println(F("Hook Cycle | Strip Off OUT"));
             }
-            Serial.print("Malfunction detected CT[");
+            Serial.print(F("Malfunction detected CT["));
             Serial.print(mfcount);
             Serial.println("]");
           }
@@ -1449,7 +1437,7 @@ void errorReport(byte errorType, int refID)
     case 11:
       lcd.print("MPS set to: ");
       lcd.print(refID);
-      Serial.print("SYSTEM: Updated mpsEnable: ");
+      Serial.print(F("SYSTEM: Updated mpsEnable: "));
       Serial.println(refID);
       break;
     // Vector change
@@ -1461,8 +1449,13 @@ void errorReport(byte errorType, int refID)
       Serial.print(refID);
       Serial.print(" settings");
       break;
-    // Vector invalid input
     case 13:
+      Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
+      Serial.print(mpsEnable);
+      Serial.println("[REF 0034]");
+      break;
+    // Vector invalid input
+    case 14:
       lcd.print("INVALID INPUT");
       break;
   }
@@ -1643,7 +1636,7 @@ void vectorChange()
         return;
 
       default:
-        errorReport(13, 0);
+        errorReport(14, 0);
         preLCDClear = millis();
         pos = POSDEFAULT;
         lcd.print("     ");
@@ -1657,9 +1650,9 @@ void overrideReset()
   for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
   {
     stateArray[indx] = 0;
-    Serial.print("Relay status INDEX: ");
+    Serial.print("Relay trigger INDEX: ");
     Serial.print(indx);
-    Serial.println(" reset.");
+    Serial.println(" reset. [REF 3305]");
   }
   lcd.clear();
   lcd.setCursor(0,0);
@@ -1700,7 +1693,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
       memAddress++;
       if (memCheck(memAddress, 13) == false)
       {
@@ -1711,7 +1704,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print('0');
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
     }
     if (value > 2550)
     {
@@ -1721,7 +1714,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
       memAddress++;
       if (memCheck(memAddress, 14) == false)
       {
@@ -1732,7 +1725,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print("255");
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
     }
   }
 }
@@ -1747,6 +1740,21 @@ boolean memCheck(unsigned int address, byte refID)
   else
   {
     return true;
+  }
+}
+
+void mfPrintOut(byte arrayId, unsigned long &timerId){
+  if (debug >= 3){
+  Serial.println("Debug Error: ");
+  Serial.print("preTime: ");
+  Serial.print(timerId);
+  Serial.print(" - ");
+              Serial.print("millis(): ");
+              Serial.print(millis());
+              Serial.print(" > ");
+              Serial.print("varTime: ");
+              Serial.println(sysArray[arrayId]);
+              Serial.println("");
   }
 }
 
