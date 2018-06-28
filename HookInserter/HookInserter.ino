@@ -86,6 +86,10 @@ byte rowPins[ROWS] = {25, 27, 29, 31}; //row pins
 byte colPins[COLS] = {33, 35, 37, 39}; //column pins
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
+// System Variables
+byte railCycle = 0;
+byte sMode = 0;
+
 void setup()
 {
     //Set pinModes
@@ -111,6 +115,7 @@ void loop()
 {
     startButtonLogic = digitalRead(startButton);
     stopButtonLogic = digitalRead(stopButton);
+    //Start measurement of TRIGGERTIME, If Start & Stop button are both pressed
     if ((startButtonLogic == LOW) && (stopButtonLogic == LOW) && (feedOverSeq != 1))
     {
         previousTimer1 = millis();
@@ -188,22 +193,46 @@ void loop()
             if(cycleMode == 1){
                 cycleStep = 5;
             }
-            preTimer2 = millis();
+            preTimer2 = millis();  //Set time reference for next step
         }
-        //Send Head Up
+        // Send Head Up
+        // Send Head Up on Sensor Reading
         if (cycleStep == 4)
         {
-            byte upperHeadCheck = digitalRead(sensorArray[4]); // Check upper head sensor
+            byte upperHeadCheck = digitalRead(sensorArray[3]); // Check upper head sensor
             if (upperHeadCheck == LOW)
             {
                 digitalWrite(solenoidArray[1], LOW); // Send Head UP
                 cycleStep = 0;
             }
         }
+        // Send Head Up on Timer
         if ((cycleStep == 5) && (preTimer2 - millis() >= headWaitTime))
         {
             digitalWrite(solenoidArray[1], LOW); // Send Head UP
             cycleStep = 0;
+        }
+        byte railInput = digitalRead(sensorArray[3]);
+        if((railInput == HIGH) && (railCycle == 0)){
+            digitalWrite(solenoidArray[4], HIGH); // Turn on Vibrator
+            Serial.println("Rail Cycle Triggered");
+            preTimer3 = millis();
+            railCycle = 1;
+        }
+        //Timer check
+        if((railCycle == 1) && (preTimer3 - millis() >= sysArray[4])){
+            railCycle = 2;
+        }
+        //Check Sensor
+        if(railCycle == 2){
+            railInput = digitalRead(sensorArray[3]);
+            if(railInput == LOW){
+                digitalWrite(solenoidArray[4], LOW); // Turn off Vibrator
+                railCycle = 0;  //Reset Rail Cycle
+            } else {
+                railCycle = 1;  //Export cycle back to step 1
+                preTimer3 = millis(); //record current time for step 1
+            }
         }
     }
 }
