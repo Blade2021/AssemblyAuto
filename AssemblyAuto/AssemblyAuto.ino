@@ -17,7 +17,7 @@
 #define DATASPEED 19200
 
 //Panel Buttons
-const byte manualButton = 62;  //Manual feed button
+const byte manualButton = 62; //Manual feed button
 const byte nextButton = 42;   // Next Button
 const byte saveButton = 46;   // Savel/Select Button
 const byte upButton = 48;     // Up Button
@@ -92,11 +92,10 @@ LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
 const byte ROWS = 4; // # of rows for keypad
 const byte COLS = 4; // # of columns for keypad
 char keys[ROWS][COLS] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
-};
+    {'1', '2', '3', 'A'},
+    {'4', '5', '6', 'B'},
+    {'7', '8', '9', 'C'},
+    {'*', '0', '#', 'D'}};
 byte rowPins[ROWS] = {25, 27, 29, 31}; //row pins
 byte colPins[COLS] = {33, 35, 37, 39}; //column pins
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -235,22 +234,22 @@ void setup()
   // Display time setting:
   switch (vector)
   {
-    case 0:
-      lcd.setCursor(16, 0);
-      lcd.print("VCT0");
-      break;
-    case 1:
-      lcd.setCursor(16, 0);
-      lcd.print("VCT1");
-      break;
-    case 2:
-      lcd.setCursor(16, 0);
-      lcd.print("VCT2");
-      break;
-    default:
-      lcd.setCursor(16, 0);
-      lcd.print("    ");
-      break;
+  case 0:
+    lcd.setCursor(16, 0);
+    lcd.print("VCT0");
+    break;
+  case 1:
+    lcd.setCursor(16, 0);
+    lcd.print("VCT1");
+    break;
+  case 2:
+    lcd.setCursor(16, 0);
+    lcd.print("VCT2");
+    break;
+  default:
+    lcd.setCursor(16, 0);
+    lcd.print("    ");
+    break;
   }
 
   Serial.println(F("*** System Variables ***"));
@@ -350,7 +349,9 @@ void loop()
         saveTrigger(sysPosition);
         // Serial print function
       }
-      // Reserved
+      if (dispOverride == 0)
+      {
+      }
     }
     bNextLogic = digitalRead(nextButton);
     if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
@@ -412,26 +413,18 @@ void loop()
             {
               hookNext = 0;
               runCheck = 0;
-              Serial.println(F("Motor stopped due to ERROR[0032]"));
-              Serial.print("millis(): ");
-              Serial.print(millis());
-              Serial.print(" - ");
-              Serial.print("preTime: ");
-              Serial.print(previousTimer1);
-              Serial.print(" < ");
-              Serial.print("varTime: ");
-              Serial.println(sysArray[7]);
+              mfPrintOut(7, previousTimer1);
               previousTimer1 = millis();
               machStop(0);
             }
           }
           if (
-            // Machine Protection disabled
-            ((feedNext == 0) && (mpsEnable <= 0)) ||
-            // Machine protection enabled MPS 1+
-            ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
-            // Manual feed button activated && debounce button
-            ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (feedNext == 0)))
+              // Machine Protection disabled
+              ((feedNext == 0) && (mpsEnable <= 0)) ||
+              // Machine protection enabled MPS 1+
+              ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
+              // Manual feed button activated && debounce button
+              ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (feedNext == 0)))
           {
             buttonPreviousTime = millis();
             // FEED ACTIVATED
@@ -557,10 +550,10 @@ void loop()
         // Crimp Cycle
         crimpLoop = digitalRead(sensorArray[3]);
         if (
-          //Trigger All
-          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[4])) ||
-          //Protection - Only crimp if malfunction was not detected
-          ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
+            //Trigger All
+            ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[4])) ||
+            //Protection - Only crimp if malfunction was not detected
+            ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
         {
           if (debug >= 2)
           {
@@ -672,7 +665,8 @@ void loop()
           if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
           {
             machStop(1);
-            Serial.println(F("Motor stopped due to ERROR[0036]"));
+            errorReport(13, 0);
+            mfPrintOut(8, previousTimer3);
             hookNext = 0;
             runCheck = 0;
           }
@@ -685,15 +679,8 @@ void loop()
               machStop(1);
               hookNext - 0;
               runCheck = 0;
-              Serial.println(F("Motor stopped due to ERROR[0034]"));
-              Serial.print("preTime: ");
-              Serial.print(previousTimer3);
-              Serial.print(" - ");
-              Serial.print("millis(): ");
-              Serial.print(millis());
-              Serial.print(" > ");
-              Serial.print("varTime: ");
-              Serial.println(sysArray[8]);
+              errorReport(13, 0);
+              mfPrintOut(8, previousTimer3);
               previousTimer3 = millis();
               //Turn off machine
             }
@@ -702,7 +689,7 @@ void loop()
             {
               Serial.println(F("Hook Cycle | Strip Off OUT"));
             }
-            Serial.print("Malfunction detected CT[");
+            Serial.print(F("Malfunction detected CT["));
             Serial.print(mfcount);
             Serial.println("]");
           }
@@ -798,18 +785,18 @@ void loop()
       {
         switch (key)
         {
-          case 'A':
-          case 'B':
-          case 'C':
-          case 'D':
-            return;
-          case '#':
-          case '*':
-          case '0':
-            sOverride = 0;
-            return;
-          default:
-            break;
+        case 'A':
+        case 'B':
+        case 'C':
+        case 'D':
+          return;
+        case '#':
+        case '*':
+        case '0':
+          sOverride = 0;
+          return;
+        default:
+          break;
         }
         int tempb = key - '0';
         //Send keypad input to Override_Trigger function
@@ -845,60 +832,60 @@ void displaySwitch(int sysPos)
   lcd.print("Time:");
   switch (sysPos)
   {
-    case 0:
-      setLEDS(panelLed1);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Feed Wait Time:     "));
-      changetime(sysPos);
-      break;
-    case 1:
-      setLEDS(panelLed2);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Feed Open Time      "));
-      changetime(sysPos);
-      break;
-    case 2:
-      setLEDS(panelLed3);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Hook Cycle Wait     "));
-      changetime(sysPos);
-      break;
-    case 3:
-      setLEDS(panelLed4);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Crimp Cycle Wait    "));
-      changetime(sysPos);
-      break;
-    case 4:
-      setLEDS(panelLed5);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Crimp Time          "));
-      changetime(sysPos);
-      break;
-    case 5:
-      setLEDS(panelLed1);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Vibrator Time     "));
-      changetime(sysPos);
-      break;
-    case 6:
-      setLEDS(panelLed2);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Sensor Ignore [MPS] "));
-      changetime(sysPos);
-      break;
-    case 7:
-      setLEDS(panelLed3);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Main Cycle [MPS]   "));
-      changetime(sysPos);
-      break;
-    case 8:
-      setLEDS(panelLed4);
-      lcd.setCursor(0, 1);
-      lcd.print(F("Head LOC [MPS]     "));
-      changetime(sysPos);
-      break;
+  case 0:
+    setLEDS(panelLed1);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Feed Wait Time:     "));
+    changetime(sysPos);
+    break;
+  case 1:
+    setLEDS(panelLed2);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Feed Open Time      "));
+    changetime(sysPos);
+    break;
+  case 2:
+    setLEDS(panelLed3);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Hook Cycle Wait     "));
+    changetime(sysPos);
+    break;
+  case 3:
+    setLEDS(panelLed4);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Crimp Cycle Wait    "));
+    changetime(sysPos);
+    break;
+  case 4:
+    setLEDS(panelLed5);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Crimp Time          "));
+    changetime(sysPos);
+    break;
+  case 5:
+    setLEDS(panelLed1);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Vibrator Time     "));
+    changetime(sysPos);
+    break;
+  case 6:
+    setLEDS(panelLed2);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Sensor Ignore [MPS] "));
+    changetime(sysPos);
+    break;
+  case 7:
+    setLEDS(panelLed3);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Main Cycle [MPS]   "));
+    changetime(sysPos);
+    break;
+  case 8:
+    setLEDS(panelLed4);
+    lcd.setCursor(0, 1);
+    lcd.print(F("Head LOC [MPS]     "));
+    changetime(sysPos);
+    break;
   } //END OF MAIN SWITCH
 } // End of Inactive void
 //Save trigger function.
@@ -1086,7 +1073,8 @@ void checkData()
       {
         pinUpdate();
       }
-      if (apple.substring(0, 10) == "TIMECHANGE") {
+      if (apple.substring(0, 10) == "TIMECHANGE")
+      {
         ext_timeChange();
       }
       if (apple.substring(0, 7) == "SENWAIT")
@@ -1296,13 +1284,13 @@ void changetime(int sysPos)
     {
       switch (dispOverride)
       {
-        case 0:
-          dispOverride = 1;
-          break;
+      case 0:
+        dispOverride = 1;
+        break;
 
-        case 1:
-          dispOverride = 0;
-          break;
+      case 1:
+        dispOverride = 0;
+        break;
       }
       lcd.clear();
       jindx = 0;
@@ -1384,85 +1372,92 @@ void errorReport(byte errorType, int refID)
   lcd.setCursor(0, 3); //Set cursor to last line of LCD
   switch (errorType)
   {
-    // Input greater than limit ( eepromWrite Function )
-    case 1:
-      lcd.print("MEM CORRUPT [");
-      lcd.print(refID);
-      lcd.print("]");
-      Serial.print(F("[REF: 0320] EEPROM Memory corrupted. Address: "));
-      Serial.println(refID);
-      break;
-    // memCheck Function
-    case 2:
-      Serial.print(F("ALERT: Memory limit reached. ID( "));
-      Serial.print(refID);
-      Serial.println(" ) [REF: 4320]");
-      break;
-    // Version control memory corrupted
-    case 3:
-      Serial.print(F("WARNING: Version control memory location[ "));
-      Serial.print(refID);
-      Serial.println(" ] is corrupted.");
-      break;
-    // Runcheck Reset
-    case 4:
-      lcd.print("Runcheck Reset!");
-      Serial.println(F("WARNING: RunCheck reset!"));
-      break;
-    // Hanger Rack not full
-    case 5:
-      lcd.print("ERROR: Hanger Rack");
-      Serial.println(F("ALERT: Hanger rack detected empty. [REF: 1593]"));
-      break;
-    // Skip crimp cycle
-    case 6:
-      lcd.print("ALERT: [REF:4455]");
-      Serial.print(F("Skipping crimp cycle [REF 4455] [MFC: "));
-      Serial.print(refID);
-      Serial.println(" ]");
-      break;
-    // Hook Check failed
-    case 7:
-      lcd.print("ALERT: Hook Check");
-      Serial.println(F("ALERT: Hook check failed. [REF 3294]"));
-      break;
-    // Override Deactivated
-    case 8:
-      lcd.print("Override Deactivated");
-      Serial.println("SYSTEM OVERRIDE | Deactivated ");
-      break;
-    // Value Updated
-    case 9:
-      lcd.print("EE.Update VAR[");
-      lcd.print(refID);
-      lcd.print("]    ");
-      break;
-    // Max value hit
-    case 10:
-      lcd.print("Max Value Hit!");
-      Serial.print(F("WARNING: Max value hit when trying to save variable id:"));
-      Serial.println(refID);
-      break;
-    // MPS Input
-    case 11:
-      lcd.print("MPS set to: ");
-      lcd.print(refID);
-      Serial.print("SYSTEM: Updated mpsEnable: ");
-      Serial.println(refID);
-      break;
-    // Vector change
-    case 12:
-      lcd.print("Loaded VCT");
-      lcd.print(refID);
-      lcd.print(" timing");
-      Serial.print("Loaded VCT");
-      Serial.print(refID);
-      Serial.print(" settings");
-      break;
-    // Vector invalid input
-    case 13:
-      lcd.print("INVALID INPUT");
-      break;
+  // Input greater than limit ( eepromWrite Function )
+  case 1:
+    lcd.print("MEM CORRUPT [");
+    lcd.print(refID);
+    lcd.print("]");
+    Serial.print(F("EEPROM Memory corrupted. Address: "));
+    Serial.print(refID);
+    Serial.println(" [REF: 0320]");
+    break;
+  // memCheck Function
+  case 2:
+    Serial.print(F("ALERT: Memory limit reached. ID: "));
+    Serial.print(refID);
+    Serial.println(" [REF: 4320]");
+    break;
+  // Version control memory corrupted
+  case 3:
+    Serial.print(F("ALERT: Version control memory location[ "));
+    Serial.print(refID);
+    Serial.println(" ] is corrupted. [REF: 8432]");
+    break;
+  // Runcheck Reset
+  case 4:
+    lcd.print("Runcheck Reset!");
+    Serial.println(F("WARNING: RunCheck reset! [REF: 0042]"));
+    break;
+  // Hanger Rack not full
+  case 5:
+    lcd.print("ERROR: Hanger Rack");
+    Serial.println(F("ALERT: Hanger rack detected empty. [REF: 1593]"));
+    break;
+  // Skip crimp cycle
+  case 6:
+    lcd.print("ALERT: [REF:4455]");
+    Serial.print(F("Skipping crimp cycle [REF 4455] [MFC: "));
+    Serial.print(refID);
+    Serial.println(" ]");
+    break;
+  // Hook Check failed
+  case 7:
+    lcd.print("ALERT: Hook Check");
+    Serial.println(F("ALERT: Hook check failed. [REF 3294]"));
+    break;
+  // Override Deactivated
+  case 8:
+    lcd.print("Override Deactivated");
+    Serial.println("SYSTEM OVERRIDE | Deactivated ");
+    break;
+  // Value Updated
+  case 9:
+    lcd.print("EE.Update VAR[");
+    lcd.print(refID);
+    lcd.print("]    ");
+    break;
+  // Max value hit
+  case 10:
+    lcd.print("Max Value Hit!");
+    Serial.print(F("ALERT: Max value hit while saving var id:"));
+    Serial.print(refID);
+    Serial.println(" [REF: 2205]");
+    break;
+  // MPS Input
+  case 11:
+    lcd.print("MPS set to: ");
+    lcd.print(refID);
+    Serial.print(F("SYSTEM: Updated mpsEnable: "));
+    Serial.println(refID);
+    break;
+  // Vector change
+  case 12:
+    lcd.print("Loaded VCT");
+    lcd.print(refID);
+    lcd.print(" timing");
+    Serial.print("Loaded VCT");
+    Serial.print(refID);
+    Serial.print(" settings");
+    break;
+  case 13:
+    Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
+    Serial.print(mpsEnable);
+    Serial.println("[REF 0034]");
+    break;
+  // Vector invalid input
+  case 14:
+    lcd.print("INVALID INPUT");
+    break;
   }
   preLCDClear = millis();
 }
@@ -1499,7 +1494,6 @@ int firstValue()
   }
   return value;
 }
-
 
 int lastValue()
 {
@@ -1605,47 +1599,47 @@ void vectorChange()
     lcd.print(key);
     switch (key)
     {
-      case '0':
-        vector = 0;
-        errorReport(12, vector);
-        EEPROM.update(100, 0);
-        memoryLoad();
-        lcd.setCursor(16, 0);
-        lcd.print("VCT0");
-        complete = true;
-        break;
+    case '0':
+      vector = 0;
+      errorReport(12, vector);
+      EEPROM.update(100, 0);
+      memoryLoad();
+      lcd.setCursor(16, 0);
+      lcd.print("VCT0");
+      complete = true;
+      break;
 
-      case '1':
-        vector = 1;
-        errorReport(12, vector);
-        EEPROM.update(100, 1);
-        memoryLoad();
-        lcd.setCursor(16, 0);
-        lcd.print("VCT1");
-        complete = true;
-        break;
+    case '1':
+      vector = 1;
+      errorReport(12, vector);
+      EEPROM.update(100, 1);
+      memoryLoad();
+      lcd.setCursor(16, 0);
+      lcd.print("VCT1");
+      complete = true;
+      break;
 
-      case '2':
-        vector = 2;
-        errorReport(12, vector);
-        EEPROM.update(100, 2);
-        Serial.println("Vector 2");
-        memoryLoad();
-        lcd.setCursor(16, 0);
-        lcd.print("VCT2");
-        complete = true;
-        break;
+    case '2':
+      vector = 2;
+      errorReport(12, vector);
+      EEPROM.update(100, 2);
+      Serial.println("Vector 2");
+      memoryLoad();
+      lcd.setCursor(16, 0);
+      lcd.print("VCT2");
+      complete = true;
+      break;
 
-      case '#':
-        complete = true;
-        return;
+    case '#':
+      complete = true;
+      return;
 
-      default:
-        errorReport(13, 0);
-        preLCDClear = millis();
-        pos = POSDEFAULT;
-        lcd.print("     ");
-        break;
+    default:
+      errorReport(14, 0);
+      preLCDClear = millis();
+      pos = POSDEFAULT;
+      lcd.print("     ");
+      break;
     }
   }
 }
@@ -1655,11 +1649,12 @@ void overrideReset()
   for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
   {
     stateArray[indx] = 0;
-    Serial.print("Relay status INDEX: ");
+    Serial.print("Relay trigger INDEX: ");
     Serial.print(indx);
-    Serial.println(" reset.");
+    Serial.println(" reset. [REF 3305]");
   }
   lcd.clear();
+  lcd.setCursor(0, 0);
   lcd.print("Run Time: ");
   Serial.println("LCD Cleared");
   digitalWrite(panelLed1, LOW);
@@ -1697,7 +1692,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
       memAddress++;
       if (memCheck(memAddress, 13) == false)
       {
@@ -1708,7 +1703,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print('0');
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
     }
     if (value > 2550)
     {
@@ -1718,7 +1713,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print(tempValue);
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
       memAddress++;
       if (memCheck(memAddress, 14) == false)
       {
@@ -1729,7 +1724,7 @@ void eepromWrite(byte arrayLoc, int value)
       Serial.print(memAddress);
       Serial.print(" ) with value [ ");
       Serial.print("255");
-      Serial.println(" ]");
+      Serial.println(" ] [REF 1204]");
     }
   }
 }
@@ -1744,6 +1739,23 @@ boolean memCheck(unsigned int address, byte refID)
   else
   {
     return true;
+  }
+}
+
+void mfPrintOut(byte arrayId, unsigned long &timerId)
+{
+  if (debug >= 3)
+  {
+    Serial.println("Debug Error: ");
+    Serial.print("preTime: ");
+    Serial.print(timerId);
+    Serial.print(" - ");
+    Serial.print("millis(): ");
+    Serial.print(millis());
+    Serial.print(" > ");
+    Serial.print("varTime: ");
+    Serial.println(sysArray[arrayId]);
+    Serial.println("");
   }
 }
 
