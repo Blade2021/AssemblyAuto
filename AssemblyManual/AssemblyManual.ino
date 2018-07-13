@@ -278,8 +278,7 @@ void loop()
     lcd.setCursor(0, 1);
     lcd.print(F("OVERRIDE: ON        "));
     //Get keypad input
-    char key;
-    key = keypad.getKey();
+    char key = keypad.getKey();
     if (key)
     {
       if(debug >= 3){
