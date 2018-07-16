@@ -5,8 +5,7 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
-// This is a test line
-// This is test line #2
+
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
@@ -16,6 +15,7 @@
 #define VECTORMEMLOC 100
 #define POSDEFAULT 15
 #define DATASPEED 19200
+#define MPSLENGTH 4
 
 //Panel Buttons
 const byte manualButton = 62; //Manual feed button
@@ -86,6 +86,21 @@ int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200};
   AL-7 - Feed/Hook [MPS]
   AL-8 - Head LOC [MPS]
 */
+
+byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
+/*AL-0 - Feed Protection
+        0 - disabled
+        1 - enabled
+  AL-1 - Head location mode
+        0 - disabled
+        1 - Keep track of jams for crimping
+        2 - Shut down if jammed after getting to lower sensor
+        3 - Timed shutdown (going Down)
+        4 - Timed shutdown (coming Up)
+  AL-2 - Crimp Protection
+        0 - disabled
+        1 - enabled
+*/
 //LiquidCrystal
 LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
 
@@ -106,7 +121,7 @@ boolean active = LOW;                    // System active variable
 byte partError = 0;                      // Hook status
 byte mpsEnable = 0;                      // Machine Protection Enabler
 byte toggleLogic = 0;                    // Value of toggle button
-byte feedLoop = 0;                       //Feed loop postion
+byte feedLoop = 0;                       // Feed loop postion
 byte feedCheck = 0;                      // Feed check variable
 byte feedNext = 0;                       // Feed loop position
 byte hookNext = 0;                       // Hook loop position
@@ -118,9 +133,9 @@ byte railCheck = 0;                      // Upper Rail sensor
 byte railCheckNext = 0;                  // Vibrator cycle position
 byte rswitch = 0;                        // System override, solenoid position variable
 byte sOverride = 1;                      // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
-byte stateArray[SOLARRAYSIZE + 1] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
-const int passcode = 7777;               //System override passcode
-byte runCheck = 1;                       //Machine protection variable, Initalize as 1 until machine error.
+byte stateArray[SOLARRAYSIZE + 1] = {0}; // State array for status of all solenoids [Include extra 0 for the NULL END]
+const int passcode = 7777;               // System override passcode
+byte runCheck = 1;                       // Machine protection variable, Initalize as 1 until machine error.
 int mfcount;                             // Malfunction counter
 int lastMFcount;                         // Previous malfunction count, Used for MPS 3+
 byte vector;                             // Memory vector postion
@@ -196,6 +211,7 @@ void setup()
 
     debug = EEPROM.read(DEBUGMEMLOC);
 
+    /*
     byte versionControl[4] = {0};
     int vcAddress = VERSIONMEM;
     for (byte k; k < 3; k++)
@@ -217,7 +233,7 @@ void setup()
         }
         Serial.println("");
     }
-
+    */
     //Reset all solenoids to LOW
     for (byte k; k < SOLARRAYSIZE; k++)
     {
@@ -408,7 +424,7 @@ void loop()
         */
                 if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || ((manualFeed == LOW) && (feedNext == 0)))
                 {
-                    if (mpsEnable >= 1)
+                    if (mpsArray[0] >= 1)
                     {
                         if ((feedNext == 0) && (millis() - previousTimer1 <= sysArray[7]) && (millis() - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
                         {
@@ -421,7 +437,7 @@ void loop()
                     }
                     if (
                         // Machine Protection disabled
-                        ((feedNext == 0) && (mpsEnable <= 0)) ||
+                        ((feedNext == 0) && (mpsArray[0] == 0)) ||
                         // Machine protection enabled MPS 1+
                         ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
                         // Manual feed button activated && debounce button
@@ -602,7 +618,8 @@ void loop()
                 hookLoop = digitalRead(sensorArray[2]);
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
-                    if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[7])))
+                    //if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[7])))
+                    if ((mpsArray[0] == 0) || ((mpsArray[0] == 1) && (millis() - previousTimer3 >= sysArray[7])))
                     {
                         if (debug >= 2)
                         {
@@ -629,7 +646,8 @@ void loop()
                             hookNext = 1;
                         }
                     }
-                    if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
+                    //if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
+                    if ((mpsArray[0] == 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
@@ -653,7 +671,8 @@ void loop()
                 {
                     int HeadCheckDown = digitalRead(sensorArray[6]);
                     //MPS Disabled
-                    if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[8])))
+                    //if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[8])))
+                    if ((HeadCheckDown == LOW) || ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -663,7 +682,8 @@ void loop()
                         }
                     }
                     //MPS Setting 5 - Shut down on timer
-                    if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
+                    //if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
+                    if ((mpsArray[1] >= 3) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         machStop(1);
                         errorReport(13, 0);
@@ -671,11 +691,13 @@ void loop()
                         hookNext = 0;
                         runCheck = 0;
                     }
-                    if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[8]))
+                    //if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[8]))
+                    if ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         mfcount++;
                         hookNext = 3;
-                        if (mpsEnable == 4)
+                        //if (mpsEnable == 4)
+                        if (mpsArray[1] == 2)
                         {
                             machStop(1);
                             hookNext - 0;
@@ -708,7 +730,8 @@ void loop()
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[8])))
+                //if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[8])))
+                if (((hookNext == 4) && (mpsArray[1] <= 3)) || ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
                     int HeadUpCheck = digitalRead(sensorArray[7]);
                     if (HeadUpCheck == LOW)
@@ -723,7 +746,8 @@ void loop()
                         hookNext = 0;
                     }
                 }
-                else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[8]))
+                //else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[8]))
+                else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[8]))
                 {
                     machStop(1);
                     hookNext = 0;
