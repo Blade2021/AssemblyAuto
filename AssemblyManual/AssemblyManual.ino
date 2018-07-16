@@ -183,7 +183,7 @@ void loop()
   {
     // Active Mode
     mSensorLogic = digitalRead(mainSensor);
-    if ((mSensorLogic == LOW) && (crimpCycle == 0))
+    if ((mSensorLogic == LOW) && (crimpCycle == 0) && (currentTime - preTimer1 >= sysArray[4])) //Checks crimp Cycle and compares last run vs time allotment
     {
       systemCount++;
       if (debug >= 1)
