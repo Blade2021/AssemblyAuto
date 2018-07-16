@@ -67,8 +67,7 @@ echo.
 set /P c=Are you sure you want to continue[Y/N]? 
 if /I "%c%" EQU "y" (
     cd %Homedrive%%Homepath%\Documents\GitHub\AssemblyAuto\
-    git fetch --all
-    git reset --hard origin/master
+    git checkout master -f
     echo.
     git status
     echo.
