@@ -6,7 +6,7 @@
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
 // This is a test line
-
+// This is test line #2
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
