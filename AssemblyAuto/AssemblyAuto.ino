@@ -11,7 +11,6 @@
 #define MEMVECTORMULTIPLE 11
 #define MPSMEMLOC 110
 #define DEBUGMEMLOC 112
-#define VERSIONMEM 770
 #define VECTORMEMLOC 100
 #define POSDEFAULT 15
 #define DATASPEED 19200
@@ -211,29 +210,6 @@ void setup()
 
     debug = EEPROM.read(DEBUGMEMLOC);
 
-    /*
-    byte versionControl[4] = {0};
-    int vcAddress = VERSIONMEM;
-    for (byte k; k < 3; k++)
-    {
-        versionControl[k] = EEPROM.read(vcAddress);
-        if ((versionControl[k]) < 0)
-        {
-            errorReport(3, vcAddress);
-        }
-        vcAddress++;
-    }
-    if (Serial)
-    {
-        Serial.print("Memory Version: ");
-        for (byte k; k < 3; k++)
-        {
-            Serial.print(versionControl[k]);
-            Serial.print(".");
-        }
-        Serial.println("");
-    }
-    */
     //Reset all solenoids to LOW
     for (byte k; k < SOLARRAYSIZE; k++)
     {
@@ -1073,10 +1049,12 @@ void checkData()
     if (newData == true)
     {
         if (apple.length() >= 5)
-        {   
-            if (apple.substring(0,5) == "EREAD"){
+        {
+            if (apple.substring(0, 5) == "EREAD")
+            {
                 int address = firstValue();
-                if((address <= EEPROM.length()) && (address >= 0)){
+                if ((address <= EEPROM.length()) && (address >= 0))
+                {
                     byte value = EEPROM.read(address);
                     Serial.print("EEPROM Memory Address: ");
                     Serial.println(address);
@@ -1101,7 +1079,7 @@ void checkData()
                 }
                 else
                 {
-                    errorReport(14,11);
+                    errorReport(14, 11);
                 }
             }
             if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
@@ -1300,8 +1278,7 @@ void changetime(int sysPos)
     {
         if ((key == 'A') || (key == 'a'))
         {
-            mpsInput();
-            return;
+            mpsSelection();
         }
         if (key == 'B')
         {
@@ -1333,19 +1310,19 @@ void changetime(int sysPos)
                         if ((passCheck == passcode) && (active != 0))
                         {
                             lcd.clear();
-                            errorReport(15,0);
+                            errorReport(15, 0);
                         }
                         else
                         {
                             lcd.clear();
-                            errorReport(14,0);
+                            errorReport(14, 0);
                         }
                         complete = true;
                     }
                     if (key == '#')
                     {
                         lcd.clear();
-                        errorReport(16,0);
+                        errorReport(16, 0);
                         complete = true;
                     }
                 }
@@ -1835,5 +1812,70 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
         Serial.print("varTime: ");
         Serial.println(sysArray[arrayId]);
         Serial.println("");
+    }
+}
+
+void mpsSelection()
+{
+    boolean complete = false;
+    byte arrayIndex = 0;
+    lcd.clear();
+    while (complete == false)
+    {
+        bNextLogic = digitalRead(nextButton);
+        if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
+        {
+            arrayIndex++;
+        }
+        if (arrayIndex == MPSLENGTH)
+        {
+            arrayIndex = 0;
+        }
+        lcd.setCursor(0, 1);
+        switch (arrayIndex)
+        {
+        case 0:
+            lcd.print("Feed MPS:");
+            lcd.print(mpsArray[0]);
+            break;
+        case 1:
+            lcd.print("Inserter MPS:");
+            lcd.print(mpsArray[1]);
+            break;
+        case 2:
+            lcd.print("Crimper MPS:");
+            lcd.print(mpsArray[2];
+            break;
+        default:
+            break;
+        }
+
+        char key = keypad.getKey();
+        if(key)
+        {
+            if (key == '#')
+            {
+                complete = true;
+                return;
+            }
+            byte keyValue = key - '0';
+            if ((keyValue >= 0) && (keyValue <= 9))
+            {
+                mpsArray[arrayIndex] = keyValue;
+                lcd.setCursor(0,3);
+                lcd.print("MPS[");
+                lcd.print(arrayIndex);
+                lcd.print("] Value: ");
+                lcd.print(keyValue);
+                Serial.print("MPS Array LOC:");
+                Serial.println(arrayIndex);
+                Serial.print("   Value: ");
+                Serial.println(keyValue);
+                
+            } else {
+                errorRepor(14,3);
+                complete = true;
+            }
+        }
     }
 }
