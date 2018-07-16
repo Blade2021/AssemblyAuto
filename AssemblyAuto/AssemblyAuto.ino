@@ -5,6 +5,7 @@
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
+// This is a test line
 
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
