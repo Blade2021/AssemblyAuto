@@ -1048,7 +1048,17 @@ void checkData()
     if (newData == true)
     {
         if (apple.length() >= 5)
-        {
+        {   
+            if (apple.substring(0,5) == "EREAD"){
+                int address = firstValue();
+                if((address <= EEPROM.length()) && (address >= 0)){
+                    byte value = EEPROM.read(address);
+                    Serial.print("EEPROM Memory Address: ");
+                    Serial.println(address);
+                    Serial.print("   Value: ");
+                    Serial.println(value);
+                }
+            }
             if (apple.substring(0, 6) == "EEPROM")
             {
                 eepromUpdate();
@@ -1066,7 +1076,7 @@ void checkData()
                 }
                 else
                 {
-                    Serial.println(F("Debug value not accepted"));
+                    errorReport(14,11);
                 }
             }
             if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
@@ -1270,8 +1280,53 @@ void changetime(int sysPos)
         }
         if (key == 'B')
         {
+            byte tempPos = 5; //Temporary lcd location
             jindx = 0;
-            quickChange();
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(F("Enter Override Passcode:"));
+            boolean complete = false;
+            lcd.setCursor(0, 1);
+            while (complete == false)
+            {
+                char key = keypad.getKey();
+                if (key)
+                {
+                    lcd.print(key);
+                    tempPos++;
+                    lcd.setCursor(tempPos, 1);
+                    arraya[jindx++] = key;
+                    arraya[jindx];
+                    if (key == '*')
+                    {
+                        int passCheck = atoi(arraya);
+                        if ((passCheck == passcode) && (active == 0))
+                        {
+                            sOverride = 2;
+                            lcd.clear();
+                        }
+                        if ((passCheck == passcode) && (active != 0))
+                        {
+                            lcd.clear();
+                            errorReport(15,0);
+                        }
+                        else
+                        {
+                            lcd.clear();
+                            errorReport(14,0);
+                        }
+                        complete = true;
+                    }
+                    if (key == '#')
+                    {
+                        lcd.clear();
+                        errorReport(16,0);
+                        complete = true;
+                    }
+                }
+            }
+            preLCDClear = millis();
+            jindx = 0;
             return;
         }
         if (key == 'C')
@@ -1312,17 +1367,6 @@ void changetime(int sysPos)
             int value = atoi(arraya);
             Serial.print("SYSTEM | Keypad Input: ");
             Serial.println(value);
-            if ((value == passcode) && (active == 0))
-            {
-                /* VERY IMPORTANT!  Check to see if active is 0
-          so that override isn't turned on while machine running.  */
-                sOverride = 2;
-                pos = POSDEFAULT;
-                lcd.setCursor(pos, 2);
-                lcd.print("       ");
-                jindx = 0;
-                return;
-            }
             if (value > 5100)
             {
                 value = 5100;
@@ -1458,6 +1502,15 @@ void errorReport(byte errorType, int refID)
     // Vector invalid input
     case 14:
         lcd.print("INVALID INPUT");
+        Serial.print("INVALID INPUT REF: ");
+        Serial.println(refID);
+        break;
+    case 15:
+        lcd.print("ERROR:2358");
+        Serial.print("ERROR: 2358");
+        break;
+    case 16:
+        lcd.print(F("System function Terminated"));
         break;
     }
     preLCDClear = millis();
@@ -1757,27 +1810,5 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
         Serial.print("varTime: ");
         Serial.println(sysArray[arrayId]);
         Serial.println("");
-    }
-}
-
-void quickChange()
-{
-    boolean complete = true;
-    while (complete == false)
-    {
-        char key = keypad.getKey();
-        if ((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D'))
-        {
-            complete = true;
-        }
-        else
-        {
-            byte value = key - '0';
-            sysPosition = value;
-            lcd.setCursor(POSDEFAULT, 2);
-            lcd.print("      ");
-            jindx = 0;
-            complete = true;
-        }
     }
 }
