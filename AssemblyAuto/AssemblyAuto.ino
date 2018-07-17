@@ -16,9 +16,10 @@
 #define DATASPEED 19200
 #define MPSLENGTH 4
 #define LEDARRAYLENGTH 6
+#define LEDSPEED 150
 
 //Panel Buttons
-const byte manualButton = 62; // Manual feed button
+const byte manualButton = 6;  // Manual feed button
 const byte nextButton = 42;   // Next Button
 const byte saveButton = 46;   // Savel/Select Button
 const byte upButton = 48;     // Up Button
@@ -769,7 +770,7 @@ void loop()
     if (sOverride == 2)
     {
         static byte ledStatus;
-        if (millis() - previousTimer3 >= buttonWait)
+        if (millis() - previousTimer3 >= LEDSPEED)
         {
             if (ledStatus > (LEDARRAYLENGTH - 1))
             {
@@ -806,6 +807,7 @@ void loop()
             errorReport(8, 0);
             sOverride = 0;
             sysPosition = 0;
+            overrideReset();
         }
         else
         {
@@ -825,6 +827,7 @@ void loop()
                 case '*':
                 case '0':
                     sOverride = 0;
+                    overrideReset();
                     return;
                 default:
                     break;
@@ -1298,9 +1301,9 @@ void changetime(int sysPos)
             byte tempPos = 5; //Temporary lcd location
             jindx = 0;
             lcd.clear();
-            lcd.setCursor(10,0);
+            lcd.setCursor(6,0);
             lcd.print("Enter");
-            lcd.setCursor(3, 1);
+            lcd.setCursor(1, 1);
             lcd.print(F("Override Passcode:"));
             boolean complete = false;
             lcd.setCursor(tempPos, 2);
@@ -1323,8 +1326,10 @@ void changetime(int sysPos)
                             lcd.clear();
                             lcd.setCursor(0,0);
                             lcd.print("Run Time:");
+                            complete = true;
+                            return;
                         }
-                        if ((passCheck == passcode) && (active != 0))
+                        if ((passCheck == passcode) && (active >= 1))
                         {
                             lcd.clear();
                             errorReport(15, 0);
@@ -1335,6 +1340,7 @@ void changetime(int sysPos)
                             errorReport(14, 7);
                         }
                         complete = true;
+                        return;
                     }
                     if (key == '#')
                     {
@@ -1528,7 +1534,7 @@ void errorReport(byte errorType, int refID)
         break;
     // System function termination
     case 16:
-        lcd.print(F("System function Terminated"));
+        lcd.print(F("Function Terminated"));
         break;
     }
     preLCDClear = millis();
