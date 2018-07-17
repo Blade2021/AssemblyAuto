@@ -217,7 +217,13 @@ void setup()
         delay(1);
     }
 
-    mpsEnable = EEPROM.read(MPSMEMLOC);
+    //mpsEnable = EEPROM.read(MPSMEMLOC);
+    for (byte k = 0; k < MPSLENGTH; k++)
+    { // debug for issues with array length
+        byte mpsMemoryAddress = MPSMEMLOC + k;
+        mpsArray = EEPROM.read(mpsMemoryAddress);
+        delay(1);
+    }
     vector = EEPROM.read(VECTORMEMLOC);
     Serial.print("Vector: ");
     Serial.println(vector);
@@ -662,7 +668,7 @@ void loop()
                     if ((mpsArray[1] >= 3) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         machStop(1);
-                        errorReport(13, 0);
+                        errorReport(13, 1);
                         mfPrintOut(8, previousTimer3);
                         hookNext = 0;
                         runCheck = 0;
@@ -678,7 +684,7 @@ void loop()
                             machStop(1);
                             hookNext - 0;
                             runCheck = 0;
-                            errorReport(13, 0);
+                            errorReport(13, 1);
                             mfPrintOut(8, previousTimer3);
                             previousTimer3 = millis();
                             //Turn off machine
@@ -984,38 +990,6 @@ void machStop(byte airoff)
     return;
 }
 
-void mpsInput()
-{
-    char key;
-    lcd.setCursor(0, 1);
-    lcd.print("Enter key for MPS");
-    lcd.setCursor(0, 2);
-    lcd.print("Current: ");
-    lcd.print(mpsEnable);
-    key = keypad.getKey();
-    while (!key)
-    {
-        key = keypad.getKey();
-        lcdControl();
-        if (key)
-        {
-            if (key == '#')
-            {
-                return;
-            }
-            int keyValue = key - '0';
-            Serial.println(keyValue);
-            if (keyValue > 6)
-            {
-                keyValue = 6;
-            }
-            mpsEnable = keyValue;
-            errorReport(11, mpsEnable);
-            EEPROM.update(MPSMEMLOC, mpsEnable);
-        }
-    }
-}
-
 void recvWithEndMarker()
 {
     static byte ndx = 0;
@@ -1093,6 +1067,12 @@ void checkData()
             if (apple.substring(0, 7) == "SENWAIT")
             {
                 senWaitFunction();
+            }
+            if (apple.substring(0, 3) == "MPS")
+            {
+                int keyValue = firstValue();
+                int arrayIndex = lastValue();
+                mpsInput(keyValue, arrayIndex);
             }
             if (apple.substring(0, 8) == "OVERRIDE")
             {
@@ -1480,12 +1460,8 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.println(" [REF: 2205]");
         break;
-    // MPS Input
+    // Deglatory
     case 11:
-        lcd.print("MPS set to: ");
-        lcd.print(refID);
-        Serial.print(F("SYSTEM: Updated mpsEnable: "));
-        Serial.println(refID);
         break;
     // Vector change
     case 12:
@@ -1496,9 +1472,10 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.print(" settings");
         break;
+    // Stop due to MPS
     case 13:
         Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
-        Serial.print(mpsEnable);
+        Serial.print(mpsArray[refId]);
         Serial.println("[REF 0034]");
         break;
     // Vector invalid input
@@ -1507,10 +1484,12 @@ void errorReport(byte errorType, int refID)
         Serial.print("INVALID INPUT REF: ");
         Serial.println(refID);
         break;
+    // Tried to enter override while in active mode
     case 15:
         lcd.print("ERROR:2358");
         Serial.print("ERROR: 2358");
         break;
+    // System function termination
     case 16:
         lcd.print(F("System function Terminated"));
         break;
@@ -1820,6 +1799,8 @@ void mpsSelection()
     boolean complete = false;
     byte arrayIndex = 0;
     lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Machine Protection");
     while (complete == false)
     {
         bNextLogic = digitalRead(nextButton);
@@ -1851,7 +1832,7 @@ void mpsSelection()
         }
 
         char key = keypad.getKey();
-        if(key)
+        if (key)
         {
             if (key == '#')
             {
@@ -1861,21 +1842,30 @@ void mpsSelection()
             byte keyValue = key - '0';
             if ((keyValue >= 0) && (keyValue <= 9))
             {
-                mpsArray[arrayIndex] = keyValue;
-                lcd.setCursor(0,3);
-                lcd.print("MPS[");
-                lcd.print(arrayIndex);
-                lcd.print("] Value: ");
-                lcd.print(keyValue);
-                Serial.print("MPS Array LOC:");
-                Serial.println(arrayIndex);
-                Serial.print("   Value: ");
-                Serial.println(keyValue);
-                
-            } else {
-                errorRepor(14,3);
+                mpsInput(keyValue, arrayIndex);
+            }
+            else
+            {
+                errorRepor(16, 3);
                 complete = true;
             }
         }
     }
+}
+
+void mpsInput(byte keyValue, byte arrayIndex)
+{
+    mpsArray[arrayIndex] = keyValue;
+    byte mpsMemoryAddress = arrayIndex + MPSMEMLOC;
+    EEPROM.update(mpsMemoryAddress, keyValue);
+    lcd.setCursor(0, 3);
+    lcd.print("MPS[");
+    lcd.print(arrayIndex);
+    lcd.print("] Value: ");
+    lcd.print(keyValue);
+    preLCDClear = millis();
+    Serial.print("MPS Array LOC:");
+    Serial.println(arrayIndex);
+    Serial.print("   Value: ");
+    Serial.println(keyValue);
 }
