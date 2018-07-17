@@ -9,7 +9,7 @@
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
-#define MPSMEMLOC 110
+#define MPSMEMLOC 110           // Start Address for MPS
 #define DEBUGMEMLOC 112
 #define VECTORMEMLOC 100
 #define POSDEFAULT 15
@@ -17,7 +17,7 @@
 #define MPSLENGTH 4
 
 //Panel Buttons
-const byte manualButton = 62; //Manual feed button
+const byte manualButton = 62; // Manual feed button
 const byte nextButton = 42;   // Next Button
 const byte saveButton = 46;   // Savel/Select Button
 const byte upButton = 48;     // Up Button
@@ -57,12 +57,12 @@ const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
    x - [AL-8] Motor Relay
 */
 //LCD Variables
-byte sysPosition = 0; // Position of sysArray
+byte sysPosition = 0;                 // Position of sysArray
 const int lcdClearTime = 7000;
-byte pos = POSDEFAULT;           //LCD position for key input
-byte jindx = 0;                  //Key Input Position (Array)
-char arraya[] = {0, 1, 2, 3, 0}; //Key input array
-const byte sysLength = 9;        // System timer array length
+byte pos = POSDEFAULT;                // LCD position for key input
+byte jindx = 0;                       // Key Input Position (Array)
+char arraya[] = {0, 1, 2, 3, 0};      // Key input array
+const byte sysLength = 9;             // System timer array length
 
 //Time Controls
 const int buttonWait = 400;           // Button Debounce Time
@@ -138,16 +138,16 @@ byte runCheck = 1;                       // Machine protection variable, Initali
 int mfcount;                             // Malfunction counter
 int lastMFcount;                         // Previous malfunction count, Used for MPS 3+
 byte vector;                             // Memory vector postion
-byte dispOverride = 0;
+byte dispOverride = 0;                   // Display Override variable ( Displaying timers while in active mode )
 
 //LOGIC CONTROLS
-byte logicCount = 0;      //Counter of material flow
-byte bNextLogic = 0;      //Button Next Logic
-byte bUpLogic = 0;        //Button Up Logic
-byte bDownLogic = 0;      //Button Down Logic
-byte saveButtonLogic = 0; //Save Button Logic
-byte manualFeed = 0;      //Manual Feed Logic
-byte secStart = 0;        //Second Start
+byte logicCount = 0;      // Counter of material flow
+byte bNextLogic = 0;      // Button Next Logic
+byte bUpLogic = 0;        // Button Up Logic
+byte bDownLogic = 0;      // Button Down Logic
+byte saveButtonLogic = 0; // Save Button Logic
+byte manualFeed = 0;      // Manual Feed Logic
+byte secStart = 0;        // Second Start
 
 //PC Control
 const byte numChars = 32;             // Array character limit
@@ -157,9 +157,9 @@ int senWait = 100;                    // Sensor data wait time
 boolean senBool = false;              // Sensor data output toggle
 boolean newData = false;              // New serial data toggle
 String apple = "";                    // Incoming serial data string
-byte initial = 1;                     //Initial contact toggle
+byte initial = 1;                     // Initial contact toggle
 byte orchard[SENARRAYSIZE + 1] = {0}; // Sensor output toggle
-byte debug = 0;
+byte debug = 0;                       // Debug Value
 
 void setup()
 {
@@ -218,8 +218,9 @@ void setup()
     }
 
     //mpsEnable = EEPROM.read(MPSMEMLOC);
-    for (byte k = 0; k < MPSLENGTH; k++)
-    { // debug for issues with array length
+    // Read memory for MPS DATA
+    for (byte k = 0; k < MPSLENGTH; k++)    // debug for issues with array length
+    { 
         byte mpsMemoryAddress = MPSMEMLOC + k;
         mpsArray = EEPROM.read(mpsMemoryAddress);
         delay(1);
@@ -805,7 +806,7 @@ void loop()
                 default:
                     break;
                 }
-                int tempb = key - '0';
+                byte tempb = key - '0';
                 //Send keypad input to Override_Trigger function
                 Override_Trigger(tempb);
             }
@@ -919,7 +920,7 @@ void saveTrigger(byte sysPos)
 
 void Override_Trigger(int RTrigger)
 {
-    int tempstate = LOW;
+    boolean tempstate = LOW;
     String lcdstate = "OFF";
     if (stateArray[RTrigger] == 1)
     {
@@ -1143,23 +1144,25 @@ void senWaitFunction()
 void pinUpdate()
 {
     boolean value = LOW;
-    int pinAddress = firstValue();
+    byte pinAddress = firstValue();
     if (pinAddress >= 64)
     {
         pinAddress = 64;
     }
-    byte lastPos = apple.lastIndexOf('.') + 1;
+    byte lastPos = lastValue();
     if (receivedChars[lastPos] == '\0')
     {
-        Serial.println("ERROR FOUND");
+        errorReport(14,4);
         return;
     }
-    else if (receivedChars[lastPos] == '0')
+    if (receivedChars[lastPos] == '0')
     {
         value = LOW;
-    }
-    else if (receivedChars[lastPos] == '1')
-    {
+    } else {
+        if(lastPos > 1){
+            errorReport(14,5);
+            return;
+        }
         value = HIGH;
     }
     for (byte pinCheck = 0; pinCheck < 10; pinCheck++)
@@ -1295,7 +1298,7 @@ void changetime(int sysPos)
                         else
                         {
                             lcd.clear();
-                            errorReport(14, 0);
+                            errorReport(14, 7);
                         }
                         complete = true;
                     }
@@ -1497,6 +1500,8 @@ void errorReport(byte errorType, int refID)
     preLCDClear = millis();
 }
 
+
+// Value after the first instance of a "." to the next instance of "."
 int firstValue()
 {
     char masterArray[numChars];
@@ -1530,6 +1535,7 @@ int firstValue()
     return value;
 }
 
+// Value after the last instance of a "." to the end of the string/array
 int lastValue()
 {
     char masterArray[numChars];
