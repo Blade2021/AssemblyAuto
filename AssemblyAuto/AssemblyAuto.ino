@@ -48,7 +48,21 @@ const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
+const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14};
+/*
+    7 - [AL-0] Hanger Feed
+    8 - [AL-1] Hook Stopper
+   16 - [AL-2] Head/Tooling
+   17 - [AL-3] Strip Off
+   18 - [AL-4] Crimp Stopper
+   19 - [AL-5] Crimp
+   15 - [AL-6] Vibrator
+   14 - [AL-7] MainAir
+   9  - [AL-8] Motor Relay
+*/
+// OLD NUMBERS
+//Solenoids
+//const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
 /*
   12 - [AL-0] Hanger Feed
   11 - [AL-1] Hook Stopper
@@ -60,6 +74,7 @@ const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
   17 - [AL-7] MainAir
    x - [AL-8] Motor Relay
 */
+
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
 const int lcdClearTime = 7000;
@@ -105,7 +120,8 @@ byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
         1 - enabled
 */
 //LiquidCrystal
-LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+//LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
 
 //Keypad
 const byte ROWS = 4; // # of rows for keypad
@@ -1282,10 +1298,12 @@ void changetime(int sysPos)
             byte tempPos = 5; //Temporary lcd location
             jindx = 0;
             lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print(F("Enter Override Passcode:"));
+            lcd.setCursor(10,0);
+            lcd.print("Enter");
+            lcd.setCursor(3, 1);
+            lcd.print(F("Override Passcode:"));
             boolean complete = false;
-            lcd.setCursor(0, 1);
+            lcd.setCursor(tempPos, 2);
             while (complete == false)
             {
                 char key = keypad.getKey();
@@ -1293,7 +1311,7 @@ void changetime(int sysPos)
                 {
                     lcd.print(key);
                     tempPos++;
-                    lcd.setCursor(tempPos, 1);
+                    lcd.setCursor(tempPos,2);
                     arraya[jindx++] = key;
                     arraya[jindx];
                     if (key == '*')
@@ -1303,6 +1321,8 @@ void changetime(int sysPos)
                         {
                             sOverride = 2;
                             lcd.clear();
+                            lcd.setCursor(0,0);
+                            lcd.print("Run Time:");
                         }
                         if ((passCheck == passcode) && (active != 0))
                         {
