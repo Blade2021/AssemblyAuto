@@ -9,12 +9,13 @@
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
-#define MPSMEMLOC 110           // Start Address for MPS
+#define MPSMEMLOC 110 // Start Address for MPS
 #define DEBUGMEMLOC 112
 #define VECTORMEMLOC 100
 #define POSDEFAULT 15
 #define DATASPEED 19200
 #define MPSLENGTH 4
+#define LEDARRAYLENGTH 6
 
 //Panel Buttons
 const byte manualButton = 62; // Manual feed button
@@ -25,12 +26,15 @@ const byte downButton = 44;   // Down Button
 const byte toggleButton = 50; // toggle Button
 
 // Panel LEDs
+/*
 const byte panelLed1 = 51;
 const byte panelLed2 = 49;
 const byte panelLed3 = 47;
 const byte panelLed4 = 45;
 const byte panelLed5 = 43;
 const byte errorLed = 13;
+*/
+const byte ledArray[LEDARRAYLENGTH] = {13, 51, 49, 47, 45, 43};
 //Sensors
 const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
 /* SENSOR LIST
@@ -57,12 +61,12 @@ const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
    x - [AL-8] Motor Relay
 */
 //LCD Variables
-byte sysPosition = 0;                 // Position of sysArray
+byte sysPosition = 0; // Position of sysArray
 const int lcdClearTime = 7000;
-byte pos = POSDEFAULT;                // LCD position for key input
-byte jindx = 0;                       // Key Input Position (Array)
-char arraya[] = {0, 1, 2, 3, 0};      // Key input array
-const byte sysLength = 9;             // System timer array length
+byte pos = POSDEFAULT;           // LCD position for key input
+byte jindx = 0;                  // Key Input Position (Array)
+char arraya[] = {0, 1, 2, 3, 0}; // Key input array
+const byte sysLength = 9;        // System timer array length
 
 //Time Controls
 const int buttonWait = 400;           // Button Debounce Time
@@ -139,6 +143,7 @@ int mfcount;                             // Malfunction counter
 int lastMFcount;                         // Previous malfunction count, Used for MPS 3+
 byte vector;                             // Memory vector postion
 byte dispOverride = 0;                   // Display Override variable ( Displaying timers while in active mode )
+//byte ledStatus = 1;
 
 //LOGIC CONTROLS
 byte logicCount = 0;      // Counter of material flow
@@ -164,12 +169,12 @@ byte debug = 0;                       // Debug Value
 void setup()
 {
     //LEDs
-    pinMode(panelLed1, OUTPUT);
-    pinMode(panelLed2, OUTPUT);
-    pinMode(panelLed3, OUTPUT);
-    pinMode(panelLed4, OUTPUT);
-    pinMode(panelLed5, OUTPUT);
-    pinMode(errorLed, OUTPUT);
+    pinMode(ledArray[1], OUTPUT);
+    pinMode(ledArray[2], OUTPUT);
+    pinMode(ledArray[3], OUTPUT);
+    pinMode(ledArray[4], OUTPUT);
+    pinMode(ledArray[5], OUTPUT);
+    pinMode(ledArray[0], OUTPUT);
     //Buttons
     pinMode(manualButton, INPUT_PULLUP);
     pinMode(nextButton, INPUT_PULLUP);
@@ -219,10 +224,10 @@ void setup()
 
     //mpsEnable = EEPROM.read(MPSMEMLOC);
     // Read memory for MPS DATA
-    for (byte k = 0; k < MPSLENGTH; k++)    // debug for issues with array length
-    { 
+    for (byte k = 0; k < MPSLENGTH; k++) // debug for issues with array length
+    {
         byte mpsMemoryAddress = MPSMEMLOC + k;
-        mpsArray = EEPROM.read(mpsMemoryAddress);
+        mpsArray[k] = EEPROM.read(mpsMemoryAddress);
         delay(1);
     }
     vector = EEPROM.read(VECTORMEMLOC);
@@ -383,12 +388,8 @@ void loop()
             }
 
             // Main code
-            digitalWrite(errorLed, LOW);
-            digitalWrite(panelLed1, LOW);
-            digitalWrite(panelLed2, LOW);
-            digitalWrite(panelLed3, LOW);
-            digitalWrite(panelLed4, LOW);
-            digitalWrite(panelLed5, LOW);
+            digitalWrite(ledArray[0], LOW);
+            setLEDS(0);
 
             if (runCheck == 1)
             {
@@ -472,8 +473,8 @@ void loop()
                                 lcd.print(logicCount);
                                 lcd.print("  ");
                             }
-                            digitalWrite(panelLed1, HIGH);
-                            digitalWrite(errorLed, LOW);
+                            digitalWrite(ledArray[1], HIGH);
+                            digitalWrite(ledArray[0], LOW);
                             feedNext = 1;
                             previousTimer1 = millis();
                         }
@@ -499,7 +500,7 @@ void loop()
                     }
                     previousTimer1 = millis();
                     digitalWrite(solenoidArray[0], LOW);
-                    digitalWrite(panelLed1, LOW);
+                    digitalWrite(ledArray[1], LOW);
                     feedNext = 0;
                 }
                 // END OF FEED CYCLE
@@ -514,7 +515,7 @@ void loop()
                         Serial.println("]");
                     }
                     previousTimer2 = millis();
-                    digitalWrite(panelLed5, HIGH);
+                    digitalWrite(ledArray[5], HIGH);
                     digitalWrite(solenoidArray[6], HIGH);
                     railCheckNext = 1;
                 }
@@ -537,7 +538,7 @@ void loop()
                     if ((railCheck == LOW) && (millis() - previousTimer2 >= sysArray[5]))
                     {
                         digitalWrite(solenoidArray[6], LOW);
-                        digitalWrite(panelLed5, LOW);
+                        digitalWrite(ledArray[5], LOW);
                         previousTimer2 = millis();
                         if (debug >= 3)
                         {
@@ -561,7 +562,7 @@ void loop()
                         Serial.print(millis() / 1000);
                         Serial.println("]");
                     }
-                    digitalWrite(panelLed4, HIGH);
+                    digitalWrite(ledArray[4], HIGH);
                     digitalWrite(solenoidArray[4], HIGH);
                     previousTimer4 = millis();
                     crimpNext = 1;
@@ -594,7 +595,7 @@ void loop()
                     previousTimer4 = millis();
                     digitalWrite(solenoidArray[5], LOW);
                     digitalWrite(solenoidArray[4], LOW);
-                    digitalWrite(panelLed4, LOW);
+                    digitalWrite(ledArray[4], LOW);
                     crimpNext = 0;
                 }
                 // Hook Cycle
@@ -610,17 +611,17 @@ void loop()
                             Serial.print(millis() / 1000);
                             Serial.println("]");
                         }
-                        digitalWrite(panelLed2, HIGH);
+                        digitalWrite(ledArray[2], HIGH);
                         boolean hookCheck;
                         hookCheck = digitalRead(sensorArray[0]);
                         if (hookCheck == HIGH)
                         {
                             errorReport(7, 0);
                             //partError = 1;
-                            digitalWrite(panelLed2, LOW);
+                            digitalWrite(ledArray[2], LOW);
                             feedLoop = 0;
                             feedNext = 0;
-                            digitalWrite(errorLed, HIGH);
+                            digitalWrite(ledArray[0], HIGH);
                         }
                         if (hookCheck == LOW)
                         {
@@ -707,8 +708,8 @@ void loop()
                     if (StripOffCheck == LOW)
                     {
                         digitalWrite(solenoidArray[2], LOW);
-                        digitalWrite(panelLed3, HIGH);
-                        digitalWrite(panelLed2, LOW);
+                        digitalWrite(ledArray[3], HIGH);
+                        digitalWrite(ledArray[2], LOW);
                         hookNext = 4;
                     }
                 }
@@ -725,7 +726,7 @@ void loop()
                         }
                         digitalWrite(solenoidArray[1], LOW);
                         digitalWrite(solenoidArray[3], LOW);
-                        digitalWrite(panelLed3, LOW);
+                        digitalWrite(ledArray[3], LOW);
                         hookNext = 0;
                     }
                 }
@@ -751,11 +752,17 @@ void loop()
   */
     if (sOverride == 2)
     {
-        digitalWrite(panelLed1, HIGH);
-        digitalWrite(panelLed2, HIGH);
-        digitalWrite(panelLed3, HIGH);
-        digitalWrite(panelLed4, HIGH);
-        digitalWrite(panelLed5, HIGH);
+        static byte ledStatus;
+        if (millis() - previousTimer3 >= buttonWait)
+        {
+            if (ledStatus > (LEDARRAYLENGTH - 1))
+            {
+                ledStatus = 1;
+            }
+            setLEDS(ledStatus);
+            ledStatus++;
+            previousTimer3 = millis();
+        }
         lcd.setCursor(0, 1);
         lcd.print("OVERRIDE: ON        ");
         lcd.setCursor(0, 2);
@@ -823,7 +830,7 @@ void inactive()
     sOverride = 0;
     dispOverride = 1;
     railCheckNext = 0;
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     digitalWrite(solenoidArray[0], LOW); //FeedTable
     digitalWrite(solenoidArray[1], LOW); //HookStopper
     digitalWrite(solenoidArray[2], LOW); //Head/Tooling
@@ -841,55 +848,55 @@ void displaySwitch(int sysPos)
     switch (sysPos)
     {
     case 0:
-        setLEDS(panelLed1);
+        setLEDS(1);
         lcd.setCursor(0, 1);
         lcd.print(F("Feed Wait Time:     "));
         changetime(sysPos);
         break;
     case 1:
-        setLEDS(panelLed2);
+        setLEDS(2);
         lcd.setCursor(0, 1);
         lcd.print(F("Feed Open Time      "));
         changetime(sysPos);
         break;
     case 2:
-        setLEDS(panelLed3);
+        setLEDS(3);
         lcd.setCursor(0, 1);
         lcd.print(F("Hook Cycle Wait     "));
         changetime(sysPos);
         break;
     case 3:
-        setLEDS(panelLed4);
+        setLEDS(4);
         lcd.setCursor(0, 1);
         lcd.print(F("Crimp Cycle Wait    "));
         changetime(sysPos);
         break;
     case 4:
-        setLEDS(panelLed5);
+        setLEDS(5);
         lcd.setCursor(0, 1);
         lcd.print(F("Crimp Time          "));
         changetime(sysPos);
         break;
     case 5:
-        setLEDS(panelLed1);
+        setLEDS(1);
         lcd.setCursor(0, 1);
         lcd.print(F("Vibrator Time     "));
         changetime(sysPos);
         break;
     case 6:
-        setLEDS(panelLed2);
+        setLEDS(2);
         lcd.setCursor(0, 1);
         lcd.print(F("Sensor Ignore [MPS] "));
         changetime(sysPos);
         break;
     case 7:
-        setLEDS(panelLed3);
+        setLEDS(3);
         lcd.setCursor(0, 1);
         lcd.print(F("Main Cycle [MPS]   "));
         changetime(sysPos);
         break;
     case 8:
-        setLEDS(panelLed4);
+        setLEDS(4);
         lcd.setCursor(0, 1);
         lcd.print(F("Head LOC [MPS]     "));
         changetime(sysPos);
@@ -909,13 +916,13 @@ void saveTrigger(byte sysPos)
     }
     eepromWrite(sysPos, sysArray[sysPos]);
     errorReport(9, sysPos + 1);
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     delay(200);
-    digitalWrite(errorLed, LOW);
+    digitalWrite(ledArray[0], LOW);
     delay(200);
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     delay(200);
-    digitalWrite(errorLed, LOW);
+    digitalWrite(ledArray[0], LOW);
 }
 
 void Override_Trigger(int RTrigger)
@@ -964,13 +971,16 @@ void lcdControl()
 //Set one LED to HIGH.
 void setLEDS(byte LEDSnumber)
 {
-    digitalWrite(panelLed1, LOW);
-    digitalWrite(panelLed2, LOW);
-    digitalWrite(panelLed3, LOW);
-    digitalWrite(panelLed4, LOW);
-    digitalWrite(panelLed5, LOW);
-
-    digitalWrite(LEDSnumber, HIGH);
+    digitalWrite(ledArray[1], LOW);
+    digitalWrite(ledArray[2], LOW);
+    digitalWrite(ledArray[3], LOW);
+    digitalWrite(ledArray[4], LOW);
+    digitalWrite(ledArray[5], LOW);
+    if ((LEDSnumber == 0) || (LEDSnumber > LEDARRAYLENGTH))
+    {
+        return;
+    }
+    digitalWrite(ledArray[LEDSnumber], HIGH);
 }
 
 void machStop(byte airoff)
@@ -1079,6 +1089,7 @@ void checkData()
             {
                 if ((sOverride == 0) || (sOverride == 1))
                 {
+                    setLEDS(0);
                     sOverride = 2;
                     Serial.println("Override:On");
                 }
@@ -1152,15 +1163,18 @@ void pinUpdate()
     byte lastPos = lastValue();
     if (receivedChars[lastPos] == '\0')
     {
-        errorReport(14,4);
+        errorReport(14, 4);
         return;
     }
     if (receivedChars[lastPos] == '0')
     {
         value = LOW;
-    } else {
-        if(lastPos > 1){
-            errorReport(14,5);
+    }
+    else
+    {
+        if (lastPos > 1)
+        {
+            errorReport(14, 5);
             return;
         }
         value = HIGH;
@@ -1478,7 +1492,7 @@ void errorReport(byte errorType, int refID)
     // Stop due to MPS
     case 13:
         Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
-        Serial.print(mpsArray[refId]);
+        Serial.print(mpsArray[refID]);
         Serial.println("[REF 0034]");
         break;
     // Vector invalid input
@@ -1499,7 +1513,6 @@ void errorReport(byte errorType, int refID)
     }
     preLCDClear = millis();
 }
-
 
 // Value after the first instance of a "." to the next instance of "."
 int firstValue()
@@ -1698,11 +1711,7 @@ void overrideReset()
     lcd.setCursor(0, 0);
     lcd.print("Run Time: ");
     Serial.println("LCD Cleared");
-    digitalWrite(panelLed1, LOW);
-    digitalWrite(panelLed2, LOW);
-    digitalWrite(panelLed3, LOW);
-    digitalWrite(panelLed4, LOW);
-    digitalWrite(panelLed5, LOW);
+    setLEDS(0);
     //Reset the count after leaving sOverride or inactive mode
     logicCount = 0;
     runCheck = 1;
@@ -1805,7 +1814,7 @@ void mpsSelection()
     boolean complete = false;
     byte arrayIndex = 0;
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print("Machine Protection");
     while (complete == false)
     {
@@ -1831,7 +1840,7 @@ void mpsSelection()
             break;
         case 2:
             lcd.print("Crimper MPS:");
-            lcd.print(mpsArray[2];
+            lcd.print(mpsArray[2]);
             break;
         default:
             break;
@@ -1852,7 +1861,7 @@ void mpsSelection()
             }
             else
             {
-                errorRepor(16, 3);
+                errorReport(16, 3);
                 complete = true;
             }
         }

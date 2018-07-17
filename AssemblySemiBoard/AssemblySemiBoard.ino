@@ -1148,7 +1148,6 @@ void changetime(int sysPos)
     if (key == 'B')
     {
       jindx = 0;
-      quickChange();
       return;
     }
     if (key == 'C')
@@ -1603,27 +1602,5 @@ boolean memCheck(unsigned int address, byte refID)
   else
   {
     return true;
-  }
-}
-
-void quickChange()
-{
-  boolean complete = true;
-  while (complete == false)
-  {
-    char key = keypad.getKey();
-    if ((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D'))
-    {
-      complete = true;
-    }
-    else
-    {
-      byte value = key - '0';
-      sysPosition = value;
-      lcd.setCursor(POSDEFAULT, 2);
-      lcd.print("      ");
-      jindx = 0;
-      complete = true;
-    }
   }
 }
