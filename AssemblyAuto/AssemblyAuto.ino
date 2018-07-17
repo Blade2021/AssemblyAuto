@@ -1301,7 +1301,7 @@ void changetime(int sysPos)
             byte tempPos = 5; //Temporary lcd location
             jindx = 0;
             lcd.clear();
-            lcd.setCursor(6,0);
+            lcd.setCursor(6, 0);
             lcd.print("Enter");
             lcd.setCursor(1, 1);
             lcd.print(F("Override Passcode:"));
@@ -1314,7 +1314,7 @@ void changetime(int sysPos)
                 {
                     lcd.print(key);
                     tempPos++;
-                    lcd.setCursor(tempPos,2);
+                    lcd.setCursor(tempPos, 2);
                     arraya[jindx++] = key;
                     arraya[jindx];
                     if (key == '*')
@@ -1324,7 +1324,7 @@ void changetime(int sysPos)
                         {
                             sOverride = 2;
                             lcd.clear();
-                            lcd.setCursor(0,0);
+                            lcd.setCursor(0, 0);
                             lcd.print("Run Time:");
                             complete = true;
                             return;
