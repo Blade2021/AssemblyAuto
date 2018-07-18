@@ -249,7 +249,7 @@ void setup()
     vector = EEPROM.read(VECTORMEMLOC);
     Serial.print("Vector: ");
     Serial.println(vector);
-    delay(10);
+    delay(1);
     memoryLoad();
 
     // Display time setting:
@@ -1659,74 +1659,78 @@ void memoryLoad()
 
 void vectorChange()
 {
+    lcd.clear();
     lcd.setCursor(0, 1);
     lcd.print("Memory Vector:      ");
     pos = POSDEFAULT;
     boolean complete = false;
     while (complete == false)
     {
-        char key;
-        key = keypad.getKey();
+        char key = keypad.getKey();
         lcd.setCursor(pos, 2);
         lcd.print(key);
-        switch (key)
+        if (key)
         {
-        case '0':
-            vector = 0;
-            errorReport(12, vector);
-            EEPROM.update(100, 0);
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT0");
-            complete = true;
-            break;
+            switch (key)
+            {
+            case '0':
+                vector = 0;
+                errorReport(12, vector);
+                EEPROM.update(100, 0);
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT0");
+                complete = true;
+                break;
 
-        case '1':
-            vector = 1;
-            errorReport(12, vector);
-            EEPROM.update(100, 1);
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT1");
-            complete = true;
-            break;
+            case '1':
+                vector = 1;
+                errorReport(12, vector);
+                EEPROM.update(100, 1);
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT1");
+                complete = true;
+                break;
 
-        case '2':
-            vector = 2;
-            errorReport(12, vector);
-            EEPROM.update(100, 2);
-            Serial.println("Vector 2");
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT2");
-            complete = true;
-            break;
+            case '2':
+                vector = 2;
+                errorReport(12, vector);
+                EEPROM.update(100, 2);
+                Serial.println("Vector 2");
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT2");
+                complete = true;
+                break;
 
-        case '#':
-            complete = true;
-            return;
+            case '#':
+                complete = true;
+                return;
 
-        default:
-            errorReport(14, 0);
-            preLCDClear = millis();
-            pos = POSDEFAULT;
-            lcd.print("     ");
-            break;
+            default:
+                errorReport(14, 0);
+                preLCDClear = millis();
+                pos = POSDEFAULT;
+                lcd.print("     ");
+                break;
+            }
         }
     }
+    systemReset(0);
 }
 
 void systemReset(byte resetVar)
 {
     if (resetVar != 0)
     {
-    for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
-    {
-        stateArray[indx] = 0;
-        Serial.print("Relay trigger INDEX: ");
-        Serial.print(indx);
-        Serial.println(" reset. [REF 3305]");
-    }
+        for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
+        {
+            stateArray[indx] = 0;
+            Serial.print("Relay trigger INDEX: ");
+            Serial.print(indx);
+            Serial.println(" reset. [REF 3305]");
+        }
     }
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -1832,6 +1836,9 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
 
 void mpsSelection()
 {
+    if (debug >= 2){
+        Serial.println(F("Triggered MPS Function"));
+    }
     sOverride = 0;
     boolean complete = false;
     byte arrayIndex = 0;
@@ -1846,19 +1853,21 @@ void mpsSelection()
             buttonPreviousTime = millis();
         }
         bDownLogic = digitalRead(downButton);
-        if((bDownLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait)){
-          complete = true;
-          buttonPreviousTime = millis();
-          systemReset(0);
-          return;
+        if ((bDownLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
+        {
+            complete = true;
+            buttonPreviousTime = millis();
+            systemReset(0);
+            return;
         }
         if (arrayIndex == (MPSLENGTH - 1))
         {
             arrayIndex = 0;
         }
-        if(formatLCD == 0){
+        if (formatLCD == 0)
+        {
             lcd.clear();
-            lcd.setCursor(0,0);
+            lcd.setCursor(0, 0);
             lcd.print("Machine Protection");
             formatLCD = 1;
         }
