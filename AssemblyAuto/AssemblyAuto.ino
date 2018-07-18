@@ -16,7 +16,7 @@
 #define DATASPEED 19200
 #define MPSLENGTH 4
 #define LEDARRAYLENGTH 6
-#define LEDSPEED 150
+#define LEDSPEED 100
 
 //Panel Buttons
 const byte manualButton = 6;  // Manual feed button
@@ -27,6 +27,7 @@ const byte downButton = 44;   // Down Button
 const byte toggleButton = 50; // toggle Button
 
 // Panel LEDs
+const byte ledArray[LEDARRAYLENGTH] = {13, 51, 49, 47, 45, 43};
 /*
 const byte panelLed1 = 51;
 const byte panelLed2 = 49;
@@ -35,7 +36,7 @@ const byte panelLed4 = 45;
 const byte panelLed5 = 43;
 const byte errorLed = 13;
 */
-const byte ledArray[LEDARRAYLENGTH] = {13, 51, 49, 47, 45, 43};
+
 //Sensors
 const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
 /* SENSOR LIST
@@ -139,7 +140,6 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 //System Variables
 boolean active = LOW;                    // System active variable
 byte partError = 0;                      // Hook status
-byte mpsEnable = 0;                      // Machine Protection Enabler
 byte toggleLogic = 0;                    // Value of toggle button
 byte feedLoop = 0;                       // Feed loop postion
 byte feedCheck = 0;                      // Feed check variable
@@ -239,7 +239,6 @@ void setup()
         delay(1);
     }
 
-    //mpsEnable = EEPROM.read(MPSMEMLOC);
     // Read memory for MPS DATA
     for (byte k = 0; k < MPSLENGTH; k++) // debug for issues with array length
     {
@@ -318,7 +317,7 @@ void loop()
             dispOverride = 0;
             overrideReset();
         }
-        if ((mpsEnable > 0) && (runCheck == 0))
+        if (((mpsArray[0] >= 1) || (mpsArray[1] >= 1) || (mpsArray[2] >= 1)) && (runCheck == 0))
         {
             manualFeed = digitalRead(manualButton);
             if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait))
@@ -440,7 +439,7 @@ void loop()
                         // Machine Protection disabled
                         ((feedNext == 0) && (mpsArray[0] == 0)) ||
                         // Machine protection enabled MPS 1+
-                        ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
+                        ((millis() - previousTimer1 >= sysArray[7]) && (mpsArray[0] >= 1) && (feedNext == 0)) ||
                         // Manual feed button activated && debounce button
                         ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (feedNext == 0)))
                     {
@@ -569,9 +568,9 @@ void loop()
                 crimpLoop = digitalRead(sensorArray[3]);
                 if (
                     //Trigger All
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[4])) ||
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 1) && (millis() - previousTimer4 >= sysArray[4])) ||
                     //Protection - Only crimp if malfunction was not detected
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] >= 1) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
                 {
                     if (debug >= 2)
                     {
@@ -619,7 +618,6 @@ void loop()
                 hookLoop = digitalRead(sensorArray[2]);
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
-                    //if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[7])))
                     if ((mpsArray[0] == 0) || ((mpsArray[0] == 1) && (millis() - previousTimer3 >= sysArray[7])))
                     {
                         if (debug >= 2)
@@ -647,7 +645,6 @@ void loop()
                             hookNext = 1;
                         }
                     }
-                    //if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     if ((mpsArray[0] == 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
@@ -672,7 +669,6 @@ void loop()
                 {
                     int HeadCheckDown = digitalRead(sensorArray[6]);
                     //MPS Disabled
-                    //if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[8])))
                     if ((HeadCheckDown == LOW) || ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
@@ -683,7 +679,6 @@ void loop()
                         }
                     }
                     //MPS Setting 5 - Shut down on timer
-                    //if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
                     if ((mpsArray[1] >= 3) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         machStop(1);
@@ -692,12 +687,10 @@ void loop()
                         hookNext = 0;
                         runCheck = 0;
                     }
-                    //if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[8]))
                     if ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         mfcount++;
                         hookNext = 3;
-                        //if (mpsEnable == 4)
                         if (mpsArray[1] == 2)
                         {
                             machStop(1);
@@ -731,7 +724,6 @@ void loop()
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                //if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[8])))
                 if (((hookNext == 4) && (mpsArray[1] <= 3)) || ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
                     int HeadUpCheck = digitalRead(sensorArray[7]);
@@ -747,7 +739,6 @@ void loop()
                         hookNext = 0;
                     }
                 }
-                //else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[8]))
                 else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[8]))
                 {
                     machStop(1);
