@@ -315,7 +315,7 @@ void loop()
         if ((sOverride == 0) && (active == 1))
         {
             dispOverride = 0;
-            overrideReset();
+            systemReset(1);
         }
         if (((mpsArray[0] >= 1) || (mpsArray[1] >= 1) || (mpsArray[2] >= 1)) && (runCheck == 0))
         {
@@ -798,7 +798,7 @@ void loop()
             errorReport(8, 0);
             sOverride = 0;
             sysPosition = 0;
-            overrideReset();
+            systemReset(1);
         }
         else
         {
@@ -818,7 +818,7 @@ void loop()
                 case '*':
                 case '0':
                     sOverride = 0;
-                    overrideReset();
+                    systemReset(1);
                     return;
                 default:
                     break;
@@ -1716,14 +1716,17 @@ void vectorChange()
     }
 }
 
-void overrideReset()
+void systemReset(byte resetVar)
 {
+    if (resetVar != 0)
+    {
     for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
     {
         stateArray[indx] = 0;
         Serial.print("Relay trigger INDEX: ");
         Serial.print(indx);
         Serial.println(" reset. [REF 3305]");
+    }
     }
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -1846,6 +1849,8 @@ void mpsSelection()
         if((bDownLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait)){
           complete = true;
           buttonPreviousTime = millis();
+          systemReset(0);
+          return;
         }
         if (arrayIndex == (MPSLENGTH - 1))
         {
@@ -1882,7 +1887,7 @@ void mpsSelection()
             if (key == '#')
             {
                 complete = true;
-                lcd.clear();
+                systemReset(0);
                 return;
             }
             byte keyValue = key - '0';
