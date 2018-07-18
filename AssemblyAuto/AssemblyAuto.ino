@@ -1286,6 +1286,7 @@ void changetime(int sysPos)
         if ((key == 'A') || (key == 'a'))
         {
             mpsSelection();
+            return;
         }
         if (key == 'B')
         {
@@ -1828,6 +1829,7 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
 
 void mpsSelection()
 {
+    sOverride = 0;
     boolean complete = false;
     byte arrayIndex = 0;
     byte formatLCD = 0;
@@ -1838,8 +1840,14 @@ void mpsSelection()
         {
             arrayIndex++;
             formatLCD = 0;
+            buttonPreviousTime = millis();
         }
-        if (arrayIndex == MPSLENGTH)
+        bDownLogic = digitalRead(downButton);
+        if((bDownLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait)){
+          complete = true;
+          buttonPreviousTime = millis();
+        }
+        if (arrayIndex == (MPSLENGTH - 1))
         {
             arrayIndex = 0;
         }
