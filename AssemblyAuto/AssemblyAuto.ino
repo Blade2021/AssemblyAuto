@@ -1830,19 +1830,24 @@ void mpsSelection()
 {
     boolean complete = false;
     byte arrayIndex = 0;
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Machine Protection");
+    byte formatLCD = 0;
     while (complete == false)
     {
         bNextLogic = digitalRead(nextButton);
         if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
         {
             arrayIndex++;
+            formatLCD = 0;
         }
         if (arrayIndex == MPSLENGTH)
         {
             arrayIndex = 0;
+        }
+        if(formatLCD == 0){
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print("Machine Protection");
+            formatLCD = 1;
         }
         lcd.setCursor(0, 1);
         switch (arrayIndex)
@@ -1869,12 +1874,14 @@ void mpsSelection()
             if (key == '#')
             {
                 complete = true;
+                lcd.clear();
                 return;
             }
             byte keyValue = key - '0';
             if ((keyValue >= 0) && (keyValue <= 9))
             {
                 mpsInput(keyValue, arrayIndex);
+                formatLCD = 0;
             }
             else
             {
