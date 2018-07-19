@@ -429,12 +429,12 @@ void loop()
                     {
                         if ((feedNext == 0) && (millis() - previousTimer1 <= sysArray[7]) && (millis() - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
                         {
-                            hookNext = 0;
-                            runCheck = 0;
+                            //hookNext = 0;
+                            //runCheck = 0;
                             mfPrintOut(7, previousTimer1);
                             previousTimer1 = millis();
-                            machStop(0);
                             errorReport(11,1);
+                            machStop(0);
                         }
                     }
                     if (
@@ -656,11 +656,12 @@ void loop()
                     // MPS Head Inserter Enabled & Overrun check FAILED: 
                     if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
+                        errorReport(11,3333);
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
                         //runCheck = 0;
-                        errorReport(11,3333);
                         previousTimer3 = millis();
+                        hookNext = 0;
                     }
                 }
                 //Send Head Down AFTER Timer
@@ -1035,7 +1036,10 @@ void machStop(byte airoff)
             doubler = 0;
         }
     }
+    errorReport(11,4559);
     digitalWrite(solenoidArray[7], HIGH);
+    digitalWrite(solenoidArray[1], LOW);
+    hookNext = 0;
     return;
 }
 
@@ -1139,7 +1143,7 @@ void checkData()
             if (apple.substring(0, 7) == "LOADOUT")
             {
                 Serial.println("MPS ARRAY:");
-                for(byte k; k < MPWLENGTH - 1; k++)
+                for(byte k; k < MPSLENGTH - 1; k++)
                 {
                     Serial.print("   ALOC: ");
                     Serial.print(k);
