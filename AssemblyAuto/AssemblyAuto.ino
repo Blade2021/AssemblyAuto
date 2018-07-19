@@ -434,6 +434,7 @@ void loop()
                             mfPrintOut(7, previousTimer1);
                             previousTimer1 = millis();
                             machStop(0);
+                            errorReport(11,1);
                         }
                     }
                     if (
@@ -652,12 +653,13 @@ void loop()
                         }
                     }
                     //bookmark1
-                    // MPS Head Inserter Enabled & Check FAILED: 
+                    // MPS Head Inserter Enabled & Overrun check FAILED: 
                     if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
-                        runCheck = 0;
+                        //runCheck = 0;
+                        errorReport(11,3333);
                         previousTimer3 = millis();
                     }
                 }
@@ -691,11 +693,13 @@ void loop()
                     // Head LOC Check - Shut down on timer down
                     if ((mpsArray[1] >= 5) && (millis() - previousTimer3 >= sysArray[8]))
                     {
+
                         machStop(1);
                         errorReport(13, 1);
+                        errorReport(11,2255);
                         mfPrintOut(8, previousTimer3);
                         hookNext = 0;
-                        runCheck = 0;
+                        //runCheck = 0;
                     }
                     // Check sensor && Head Location greater than alloted time ( check FAILED )
                     if ((HeadCheckDown == LOW) && (mpsArray[1] >= 2) && (millis() - previousTimer3 >= sysArray[8]))
@@ -709,6 +713,7 @@ void loop()
                             hookNext - 0;
                             runCheck = 0;
                             errorReport(13, 1);
+                            errorReport(11,2266);
                             mfPrintOut(8, previousTimer3);
                             previousTimer3 = millis();
                             //Turn off machine
@@ -759,6 +764,7 @@ void loop()
                     machStop(1);
                     hookNext = 0;
                     runCheck = 0;
+                    errorReport(11,2277);
                 }
                 // End of hook Cycle
                 if (logicCount >= 100)
@@ -1129,6 +1135,17 @@ void checkData()
             if (apple.substring(0, 7) == "SENWAIT")
             {
                 senWaitFunction();
+            }
+            if (apple.substring(0, 7) == "LOADOUT")
+            {
+                Serial.println("MPS ARRAY:");
+                for(byte k; k < MPWLENGTH - 1; k++)
+                {
+                    Serial.print("   ALOC: ");
+                    Serial.print(k);
+                    Serial.print(" Value: ");
+                    Serial.println(mpsArray[k]);
+                }
             }
             if (apple.substring(0, 3) == "MPS")
             {
@@ -1538,6 +1555,8 @@ void errorReport(byte errorType, int refID)
         break;
     // Deglatory
     case 11:
+        Serial.print("DEBUG CODE:");
+        Serial.println(refID);
         break;
     // Vector change
     case 12:
