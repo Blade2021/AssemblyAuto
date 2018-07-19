@@ -317,6 +317,7 @@ void loop()
             dispOverride = 0;
             systemReset(1);
         }
+        // Check if MPS is enabled
         if (((mpsArray[0] >= 1) || (mpsArray[1] >= 1) || (mpsArray[2] >= 1)) && (runCheck == 0))
         {
             manualFeed = digitalRead(manualButton);
@@ -568,9 +569,9 @@ void loop()
                 crimpLoop = digitalRead(sensorArray[3]);
                 if (
                     //Trigger All
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 1) && (millis() - previousTimer4 >= sysArray[4])) ||
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 2) && (millis() - previousTimer4 >= sysArray[4])) ||
                     //Protection - Only crimp if malfunction was not detected
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] >= 1) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] >= 2) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
                 {
                     if (debug >= 2)
                     {
@@ -615,10 +616,11 @@ void loop()
                     crimpNext = 0;
                 }
                 // Hook Cycle
-                hookLoop = digitalRead(sensorArray[2]);
+                hookLoop = digitalRead(sensorArray[2]); // main cycle sensor
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
-                    if ((mpsArray[0] == 0) || ((mpsArray[0] == 1) && (millis() - previousTimer3 >= sysArray[7])))
+                    // MPS Disabled | Overrun Check Enabled & check PASSED:
+                    if ((mpsArray[1] == 0) || ((mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[7])))
                     {
                         if (debug >= 2)
                         {
@@ -641,11 +643,17 @@ void loop()
                         if (hookCheck == LOW)
                         {
                             previousTimer3 = millis();
-                            digitalWrite(solenoidArray[1], HIGH);
+                            digitalWrite(solenoidArray[1], HIGH); // Hook Stopper
+                            if (debug >= 3)
+                            {
+                                Serial.println(F("Hook Cycle | Stopper Out"))
+                            }
                             hookNext = 1;
                         }
                     }
-                    if ((mpsArray[0] == 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
+                    //bookmark1
+                    // MPS Head Inserter Enabled & Check FAILED: 
+                    if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
@@ -653,7 +661,7 @@ void loop()
                         previousTimer3 = millis();
                     }
                 }
-                //Send Head Down
+                //Send Head Down AFTER Timer
                 if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
                 {
                     previousTimer3 = millis();
@@ -661,15 +669,17 @@ void loop()
                     {
                         Serial.println(F("Hook Cycle | Tool/Head OUT"));
                     }
-                    digitalWrite(solenoidArray[2], HIGH);
+                    digitalWrite(solenoidArray[2], HIGH); // Head/Tooling HIGH
                     hookNext = 2;
                 }
                 //Send Strip Off Out / Check Head location
                 if (hookNext == 2)
                 {
                     int HeadCheckDown = digitalRead(sensorArray[6]);
-                    //MPS Disabled
-                    if ((HeadCheckDown == LOW) || ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[8])))
+                    //Head LOC Check Disabled
+                    if (((HeadCheckDown == LOW) && mpsArray[1] <= 2) || 
+                    // Check for Sensor and PASSED
+                    ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -678,8 +688,8 @@ void loop()
                             Serial.println(F("Hook Cycle | Strip Off OUT"));
                         }
                     }
-                    //MPS Setting 5 - Shut down on timer
-                    if ((mpsArray[1] >= 3) && (millis() - previousTimer3 >= sysArray[8]))
+                    // Head LOC Check - Shut down on timer down
+                    if ((mpsArray[1] >= 5) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         machStop(1);
                         errorReport(13, 1);
@@ -687,11 +697,13 @@ void loop()
                         hookNext = 0;
                         runCheck = 0;
                     }
-                    if ((HeadCheckDown == LOW) && (mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[8]))
+                    // Check sensor && Head Location greater than alloted time ( check FAILED )
+                    if ((HeadCheckDown == LOW) && (mpsArray[1] >= 2) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         mfcount++;
                         hookNext = 3;
-                        if (mpsArray[1] == 2)
+                        // Shut down after reaching sensor
+                        if (mpsArray[1] == 3)
                         {
                             machStop(1);
                             hookNext - 0;
@@ -724,7 +736,9 @@ void loop()
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                if (((hookNext == 4) && (mpsArray[1] <= 3)) || ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
+                if (((hookNext == 4) && (mpsArray[1] <= 3)) || 
+                // Check upper hook sensor && PASSED
+                ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
                     int HeadUpCheck = digitalRead(sensorArray[7]);
                     if (HeadUpCheck == LOW)
@@ -739,6 +753,7 @@ void loop()
                         hookNext = 0;
                     }
                 }
+                // Check Head LOC and FAILED 
                 else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[8]))
                 {
                     machStop(1);
