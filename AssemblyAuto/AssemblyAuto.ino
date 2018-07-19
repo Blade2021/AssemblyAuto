@@ -1019,10 +1019,10 @@ void machStop(byte airoff)
     while (stopReset < 2){
         // wait for button press
         manualFeed = digitalRead(manualButton);
-        if ((manualFeed == LOW) && (millis() - preButtonTime >= buttonWait) && (doubler == 0))
+        if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (doubler == 0))
         {
             doubler = 1;
-            preButtonTime = millis();
+            buttonPreviousTime = millis();
         }
         if((manualFeed == HIGH) && (doubler == 1)){
             stopReset++;
