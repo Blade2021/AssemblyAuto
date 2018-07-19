@@ -1907,8 +1907,14 @@ void mpsSelection()
     boolean complete = false;
     byte arrayIndex = 0;
     byte formatLCD = 0;
+    boolean ledState = HIGH;
     while (complete == false)
     {
+        if (millis() - previousTimer4 >= buttonWait){
+            ledState = !ledState;
+            digitalWrite(ledArray[0], ledState);
+            previousTimer4 = millis();
+        }
         bNextLogic = digitalRead(nextButton);
         if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
         {
