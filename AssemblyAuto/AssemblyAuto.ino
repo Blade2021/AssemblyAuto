@@ -113,10 +113,11 @@ byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
         1 - enabled
   AL-1 - Head location mode
         0 - disabled
-        1 - Keep track of jams for crimping
-        2 - Shut down if jammed after getting to lower sensor
-        3 - Timed shutdown (going Down)
-        4 - Timed shutdown (coming Up)
+        1 - Feed Check
+        3 - Keep track of jams for crimping
+        3 - Shut down if jammed after getting to lower sensor
+        4 - Timed shutdown (going Down)
+        5 - Timed shutdown (coming Up)
   AL-2 - Crimp Protection
         0 - disabled
         1 - enabled
@@ -160,7 +161,6 @@ int mfcount;                             // Malfunction counter
 int lastMFcount;                         // Previous malfunction count, Used for MPS 3+
 byte vector;                             // Memory vector postion
 byte dispOverride = 0;                   // Display Override variable ( Displaying timers while in active mode )
-//byte ledStatus = 1;
 
 //LOGIC CONTROLS
 byte logicCount = 0;      // Counter of material flow
@@ -433,7 +433,7 @@ void loop()
                             //runCheck = 0;
                             mfPrintOut(7, previousTimer1);
                             previousTimer1 = millis();
-                            errorReport(11,1);
+                            errorReport(11, 1);
                             machStop(0);
                         }
                     }
@@ -653,10 +653,10 @@ void loop()
                         }
                     }
                     //bookmark1
-                    // MPS Head Inserter Enabled & Overrun check FAILED: 
+                    // MPS Head Inserter Enabled & Overrun check FAILED:
                     if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
-                        errorReport(11,3333);
+                        errorReport(11, 3333);
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
                         //runCheck = 0;
@@ -680,9 +680,9 @@ void loop()
                 {
                     int HeadCheckDown = digitalRead(sensorArray[6]);
                     //Head LOC Check Disabled
-                    if (((HeadCheckDown == LOW) && mpsArray[1] <= 2) || 
-                    // Check for Sensor and PASSED
-                    ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
+                    if (((HeadCheckDown == LOW) && mpsArray[1] <= 2) ||
+                        // Check for Sensor and PASSED
+                        ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -697,7 +697,7 @@ void loop()
 
                         machStop(1);
                         errorReport(13, 1);
-                        errorReport(11,2255);
+                        errorReport(11, 2255);
                         mfPrintOut(8, previousTimer3);
                         hookNext = 0;
                         //runCheck = 0;
@@ -714,7 +714,7 @@ void loop()
                             hookNext - 0;
                             runCheck = 0;
                             errorReport(13, 1);
-                            errorReport(11,2266);
+                            errorReport(11, 2266);
                             mfPrintOut(8, previousTimer3);
                             previousTimer3 = millis();
                             //Turn off machine
@@ -742,9 +742,9 @@ void loop()
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                if (((hookNext == 4) && (mpsArray[1] <= 3)) || 
-                // Check upper hook sensor && PASSED
-                ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
+                if (((hookNext == 4) && (mpsArray[1] <= 3)) ||
+                    // Check upper hook sensor && PASSED
+                    ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
                     int HeadUpCheck = digitalRead(sensorArray[7]);
                     if (HeadUpCheck == LOW)
@@ -759,13 +759,13 @@ void loop()
                         hookNext = 0;
                     }
                 }
-                // Check Head LOC and FAILED 
+                // Check Head LOC and FAILED
                 else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[8]))
                 {
                     machStop(1);
                     hookNext = 0;
                     runCheck = 0;
-                    errorReport(11,2277);
+                    errorReport(11, 2277);
                 }
                 // End of hook Cycle
                 if (logicCount >= 100)
@@ -1023,7 +1023,8 @@ void machStop(byte airoff)
     {
         digitalWrite(solenoidArray[7], LOW); // turn off air
     }
-    while (stopReset < 2){
+    while (stopReset < 2)
+    {
         // wait for button press
         manualFeed = digitalRead(manualButton);
         if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (doubler == 0))
@@ -1031,12 +1032,13 @@ void machStop(byte airoff)
             doubler = 1;
             buttonPreviousTime = millis();
         }
-        if((manualFeed == HIGH) && (doubler == 1)){
+        if ((manualFeed == HIGH) && (doubler == 1))
+        {
             stopReset++;
             doubler = 0;
         }
     }
-    errorReport(11,4559);
+    errorReport(11, 4559);
     digitalWrite(solenoidArray[7], HIGH);
     digitalWrite(solenoidArray[1], LOW);
     hookNext = 0;
@@ -1143,7 +1145,7 @@ void checkData()
             if (apple.substring(0, 7) == "LOADOUT")
             {
                 Serial.println("MPS ARRAY:");
-                for(byte k; k < MPSLENGTH - 1; k++)
+                for (byte k; k < MPSLENGTH - 1; k++)
                 {
                     Serial.print("   ALOC: ");
                     Serial.print(k);
@@ -1900,7 +1902,8 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
 
 void mpsSelection()
 {
-    if (debug >= 2){
+    if (debug >= 2)
+    {
         Serial.println(F("Triggered MPS Function"));
     }
     sOverride = 0;
@@ -1910,7 +1913,8 @@ void mpsSelection()
     boolean ledState = HIGH;
     while (complete == false)
     {
-        if (millis() - previousTimer4 >= buttonWait){
+        if (millis() - previousTimer4 >= buttonWait)
+        {
             ledState = !ledState;
             digitalWrite(ledArray[0], ledState);
             previousTimer4 = millis();
