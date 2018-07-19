@@ -325,7 +325,7 @@ void loop()
             {
                 buttonPreviousTime = millis() + 2000;
                 runCheck = 1;
-                digitalWrite(solenoidArray[8], LOW);
+                //digitalWrite(solenoidArray[8], LOW);
                 errorReport(4, 0);
             }
         }
@@ -646,7 +646,7 @@ void loop()
                             digitalWrite(solenoidArray[1], HIGH); // Hook Stopper
                             if (debug >= 3)
                             {
-                                Serial.println(F("Hook Cycle | Stopper Out"))
+                                Serial.println(F("Hook Cycle | Stopper Out"));
                             }
                             hookNext = 1;
                         }
@@ -1010,10 +1010,36 @@ void setLEDS(byte LEDSnumber)
 
 void machStop(byte airoff)
 {
+    byte stopReset = 0;
+    byte doubler = 0;
+    if (airoff >= 1)
+    {
+        digitalWrite(solenoidArray[7], LOW); // turn off air
+    }
+    while (stopReset < 2){
+        // wait for button press
+        manualFeed = digitalRead(manualButton);
+        if ((manualFeed == LOW) && (millis() - preButtonTime >= buttonWait) && (doubler == 0))
+        {
+            doubler = 1;
+            preButtonTime = millis();
+        }
+        if((manualFeed == HIGH) && (doubler == 1)){
+            stopReset++;
+            doubler = 0;
+        }
+    }
+    digitalWrite(solenoidArray[7], HIGH);
+    return;
+}
+
+/*
+void machStop(byte airoff)
+{
     feedNext = 0;
     hookNext = 0;
     railCheckNext = 0;
-    digitalWrite(solenoidArray[8], HIGH);
+    //digitalWrite(solenoidArray[8], HIGH);
     for (byte k; k < 7; k++)
     {
         digitalWrite(solenoidArray[k], LOW);
@@ -1025,7 +1051,7 @@ void machStop(byte airoff)
     }
     return;
 }
-
+*/
 void recvWithEndMarker()
 {
     static byte ndx = 0;
