@@ -665,10 +665,9 @@ void loop()
                     }
                 }
                 //Send Head Down AFTER Timer
-                byte headUpCheck;
                 if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
                 {
-                    headUpcheck = digitalRead(sensorArray[7]);
+                    byte headUpcheck = digitalRead(sensorArray[7]);
                     if(headUpcheck == HIGH)
                     {
                         //ERROR
@@ -755,8 +754,8 @@ void loop()
                     // Check upper hook sensor && PASSED
                     ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
-                    headUpcheck = digitalRead(sensorArray[7]);
-                    if (headUpcheck == LOW)
+                    byte secheadUpcheck = digitalRead(sensorArray[7]);
+                    if (secheadUpcheck == LOW)
                     {
                         if (debug >= 3)
                         {
