@@ -123,7 +123,6 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 //System Variables
 boolean active = LOW;                    // System active variable
 byte partError = 0;                      // Hook status
-//byte mpsEnable = 0;                      // Machine Protection Enabler
 byte toggleLogic = 0;                    // Value of toggle button
 byte hookNext = 0;                       // Hook loop position
 byte hookLoop = 0;                       // Main cycle sensor
@@ -218,8 +217,13 @@ void setup()
         digitalWrite(solenoidArray[k], LOW);
         delay(1);
     }
-
-    //mpsEnable = EEPROM.read(MPSMEMLOC);
+    // Read memory for MPS DATA
+    for (byte k = 0; k < MPSLENGTH; k++) // debug for issues with array length
+    {
+        byte mpsMemoryAddress = MPSMEMLOC + k;
+        mpsArray[k] = EEPROM.read(mpsMemoryAddress);
+        delay(1);
+    }
     vector = EEPROM.read(VECTORMEMLOC);
     Serial.print("Vector: ");
     Serial.println(vector);
