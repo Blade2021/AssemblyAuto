@@ -665,11 +665,11 @@ void loop()
                     }
                 }
                 //Send Head Down AFTER Timer
-                byte HeadUpCheck;
+                byte headUpCheck;
                 if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
                 {
-                    HeadUpCheck = digitalRead(sensorArray[7]);
-                    if(HeadupCheck == HIGH)
+                    headUpcheck = digitalRead(sensorArray[7]);
+                    if(headUpcheck == HIGH)
                     {
                         //ERROR
                         hookNext = 0;
@@ -687,11 +687,11 @@ void loop()
                 //Send Strip Off Out / Check Head location
                 if (hookNext == 2)
                 {
-                    int HeadCheckDown = digitalRead(sensorArray[6]);
+                    int headCheckDown = digitalRead(sensorArray[6]);
                     //Head LOC Check Disabled
-                    if (((HeadCheckDown == LOW) && mpsArray[1] <= 2) ||
+                    if (((headCheckDown == LOW) && mpsArray[1] <= 2) ||
                         // Check for Sensor and PASSED
-                        ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
+                        ((headCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -712,7 +712,7 @@ void loop()
                         //runCheck = 0;
                     }
                     // Check sensor && Head Location greater than alloted time ( check FAILED )
-                    if ((HeadCheckDown == LOW) && (mpsArray[1] >= 2) && (millis() - previousTimer3 >= sysArray[8]))
+                    if ((headCheckDown == LOW) && (mpsArray[1] >= 2) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         mfcount++;
                         hookNext = 3;
@@ -741,8 +741,8 @@ void loop()
                 //Send Head Up
                 if (hookNext == 3)
                 {
-                    byte StripOffCheck = digitalRead(sensorArray[5]);
-                    if (StripOffCheck == LOW)
+                    byte stripOffCheck = digitalRead(sensorArray[5]);
+                    if (stripOffCheck == LOW)
                     {
                         digitalWrite(solenoidArray[2], LOW);
                         digitalWrite(ledArray[3], HIGH);
@@ -755,8 +755,8 @@ void loop()
                     // Check upper hook sensor && PASSED
                     ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
-                    HeadUpCheck = digitalRead(sensorArray[7]);
-                    if (HeadUpCheck == LOW)
+                    headUpcheck = digitalRead(sensorArray[7]);
+                    if (headUpcheck == LOW)
                     {
                         if (debug >= 3)
                         {
