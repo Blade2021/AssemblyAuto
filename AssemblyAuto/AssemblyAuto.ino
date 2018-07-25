@@ -1054,25 +1054,6 @@ void machStop(byte airoff)
     return;
 }
 
-/*
-void machStop(byte airoff)
-{
-    feedNext = 0;
-    hookNext = 0;
-    railCheckNext = 0;
-    //digitalWrite(solenoidArray[8], HIGH);
-    for (byte k; k < 7; k++)
-    {
-        digitalWrite(solenoidArray[k], LOW);
-        delay(1);
-    }
-    if (airoff >= 1)
-    {
-        digitalWrite(solenoidArray[7], LOW);
-    }
-    return;
-}
-*/
 void recvWithEndMarker()
 {
     static byte ndx = 0;
