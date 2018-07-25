@@ -123,7 +123,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 //System Variables
 boolean active = LOW;                    // System active variable
 byte partError = 0;                      // Hook status
-byte mpsEnable = 0;                      // Machine Protection Enabler
+//byte mpsEnable = 0;                      // Machine Protection Enabler
 byte toggleLogic = 0;                    // Value of toggle button
 byte hookNext = 0;                       // Hook loop position
 byte hookLoop = 0;                       // Main cycle sensor
@@ -161,7 +161,7 @@ boolean newData = false;              // New serial data toggle
 String apple = "";                    // Incoming serial data string
 byte initial = 1;                     //Initial contact toggle
 byte orchard[SENARRAYSIZE + 1] = {0}; // Sensor output toggle
-byte debug = 0;
+byte debug = 0;                       // Debug value
 
 void setup()
 {
@@ -219,7 +219,7 @@ void setup()
         delay(1);
     }
 
-    mpsEnable = EEPROM.read(MPSMEMLOC);
+    //mpsEnable = EEPROM.read(MPSMEMLOC);
     vector = EEPROM.read(VECTORMEMLOC);
     Serial.print("Vector: ");
     Serial.println(vector);
@@ -291,7 +291,8 @@ void loop()
             dispOverride = 0;
             systemReset(1);
         }
-        if ((mpsEnable > 0) && (runCheck == 0))
+        //if ((mpsEnable > 0) && (runCheck == 0))
+        if (((mpsArray[1] >= 1) || (mpsArray[2] >= 1)) && (runCheck == 0))
         {
             manualFeed = digitalRead(manualButton);
             if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait))
@@ -431,9 +432,11 @@ void loop()
                 crimpLoop = digitalRead(sensorArray[3]);
                 if (
                     //Trigger All
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[2])) ||
+                   // ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[2])) ||
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 2) && (millis() - previousTimer4 >= sysArray[2])) ||
                     //Protection - Only crimp if malfunction was not detected
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[2])))
+                    //((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[2])))
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] >= 2) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[2])))
                 {
                     if (debug >= 2)
                     {
@@ -481,7 +484,8 @@ void loop()
                 hookLoop = digitalRead(sensorArray[2]);
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
-                    if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[4])))
+                    //if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[4])))
+                    if ((mpsArray[1] == 0) || ((mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[4])))
                     {
                         if (debug >= 2)
                         {
@@ -506,7 +510,8 @@ void loop()
                             hookNext = 1;
                         }
                     }
-                    if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[5]) && (millis() - previousTimer3 >= sysArray[4]))
+                    //if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[5]) && (millis() - previousTimer3 >= sysArray[4]))
+                    if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[5]) && (millis() - previousTimer3 >= sysArray[4]))
                     {
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
@@ -530,7 +535,8 @@ void loop()
                 {
                     int HeadCheckDown = digitalRead(sensorArray[6]);
                     //MPS Disabled
-                    if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[6])))
+                    //if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[6])))
+                    if (((HeadCheckDown == LOW) && (mpsArray[1] <= 2)) || ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[6])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -540,7 +546,8 @@ void loop()
                         }
                     }
                     //MPS Setting 5 - Shut down on timer
-                    if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[6]))
+                    //if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[6]))
+                    if ((mpsArray[1] >= 6) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         machStop(1);
                         Serial.println(F("Motor stopped due to ERROR[0036]"));
@@ -551,7 +558,8 @@ void loop()
                     {
                         mfcount++;
                         hookNext = 3;
-                        if (mpsEnable == 4)
+                        //if (mpsEnable == 4)
+                        if (mpsArray[1] == 3)
                         {
                             machStop(1);
                             hookNext - 0;
@@ -591,7 +599,8 @@ void loop()
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[6])))
+                //if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[6])))
+                if (((hookNext == 4) && (mpsArray[1] < 3)) || ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[6])))
                 {
                     int HeadUpCheck = digitalRead(sensorArray[7]);
                     if (HeadUpCheck == LOW)
@@ -606,7 +615,8 @@ void loop()
                         hookNext = 0;
                     }
                 }
-                else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[6]))
+                //else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[6]))
+                else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[6]))
                 {
                     machStop(1);
                     hookNext = 0;
@@ -1304,7 +1314,7 @@ void errorReport(byte errorType, int refID)
         break;
     // Version control memory corrupted
     case 3:
-        Serial.print(F("WARNING: Version control memory location[ "));
+        Serial.print(F("ALERT: Version control memory location[ "));
         Serial.print(refID);
         Serial.println(" ] is corrupted.");
         break;
@@ -1342,11 +1352,9 @@ void errorReport(byte errorType, int refID)
         Serial.print(F("WARNING: Max value hit when trying to save variable id:"));
         Serial.println(refID);
         break;
-    // MPS Input
+    // DEBUG
     case 11:
-        lcd.print("MPS set to: ");
-        lcd.print(refID);
-        Serial.print("SYSTEM: Updated mpsEnable: ");
+        Serial.print("DEBUG CODE: ");
         Serial.println(refID);
         break;
     // Vector change
@@ -1358,9 +1366,29 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.print(" settings");
         break;
-    // Vector invalid input
+    // Stop due to MPS
     case 13:
+        Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
+        Serial.print(mpsArray[refID]);
+        Serial.println("[REF 0034]");
+        break;
+    // Vector invalid input
+    case 14:
         lcd.print("INVALID INPUT");
+        Serial.print("INVALID INPUT REF: ");
+        Serial.println(refID);
+        break;
+    // Tried to enter override while in active mode
+    case 15:
+        lcd.print("ERROR:2358");
+        Serial.print("ERROR: 2358");
+        break;
+    // System function termination
+    case 16:
+        lcd.print(F("Function Terminated"));
+        break;
+    default:
+        Serial.println("PROGRAMMING ERROR");
         break;
     }
     preLCDClear = millis();

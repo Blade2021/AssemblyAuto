@@ -1603,6 +1603,9 @@ void errorReport(byte errorType, int refID)
     case 16:
         lcd.print(F("Function Terminated"));
         break;
+    default:
+        Serial.println("PROGRAMMING ERROR");
+        break;
     }
     preLCDClear = millis();
 }
