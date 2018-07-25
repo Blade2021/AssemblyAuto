@@ -558,12 +558,13 @@ void loop()
                         hookNext = 0;
                         runCheck = 0;
                     }
-                    if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[6]))
+                    //if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[6]))
+                    if ((HeadCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 >= sysArray[6]))
                     {
                         mfcount++;
                         hookNext = 3;
                         //if (mpsEnable == 4)
-                        if (mpsArray[1] == 3)
+                        if (mpsArray[1] == 4)
                         {
                             machStop(1);
                             hookNext - 0;
