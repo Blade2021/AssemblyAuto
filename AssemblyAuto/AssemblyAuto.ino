@@ -669,7 +669,7 @@ void loop()
                 if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
                 {
                     byte headUpcheck = digitalRead(sensorArray[7]);
-                    if(headUpcheck == HIGH)
+                    if (headUpcheck == HIGH)
                     {
                         //ERROR
                         hookNext = 0;
@@ -1132,10 +1132,6 @@ void checkData()
             {
                 senWaitFunction();
             }
-            if (apple.substring(0, 5) == "ADMIN")
-            {
-                senWaitFunction();
-            }
             if (apple.substring(0, 7) == "LOADOUT")
             {
                 Serial.println("MPS ARRAY:");
@@ -1152,6 +1148,55 @@ void checkData()
                 int keyValue = firstValue();
                 int arrayIndex = lastValue();
                 mpsInput(keyValue, arrayIndex);
+            }
+            if (apple.substring(0, 5) == "RESET")
+            {
+                byte value = firstValue();
+                if((value != 0) || (value != 1))
+                {
+                    errorReport(14,24);
+                    return;
+                }
+                systemReset(value);
+            }
+            if (apple.substring(0, 5) == "ADMIN")
+            {
+                byte keyValue = firstValue();
+                byte value = lastValue();
+                switch (keyValue)
+                {
+                case 0:
+                    feedNext = value;
+                    Serial.print(F("Feed Cycle set to: "));
+                    Serial.println(value);
+                    break;
+                case 1:
+                    hookNext = value;
+                    Serial.print(F("Hook Cycle set to: "));
+                    Serial.println(value);
+                    break;
+                case 2:
+                    crimpNext = value;
+                    Serial.print(F("Crimp Cycle set to: "));
+                    Serial.println(value);
+                    break;
+                case 3:
+                    railCheckNext = value;
+                    Serial.print(F("Vibrator Cycle set to: "));
+                    Serial.println(value);
+                    break;
+                case 4:
+                    Serial.print(F("All cycles set to: "));
+                    Serial.println(value);
+                    feedNext = value;
+                    hookNext = value;
+                    crimpNext = value;
+                    railCheckNext = value;
+                    break;
+                default:
+                    errorReport(14, 22);
+                    break;
+                }
             }
             if (apple.substring(0, 8) == "OVERRIDE")
             {
@@ -1344,6 +1389,7 @@ void changetime(int sysPos)
         if ((key == 'A') || (key == 'a'))
         {
             mpsSelection();
+            jindx = 0;
             return;
         }
         if (key == 'B')
@@ -1410,7 +1456,7 @@ void changetime(int sysPos)
             vectorChange();
             return;
         }
-        if (key == 'D')
+        if ((key == 'D') && (active == 1))
         {
             switch (dispOverride)
             {
@@ -1419,7 +1465,6 @@ void changetime(int sysPos)
                 break;
 
             case 1:
-                lcd.clear();
                 dispOverride = 0;
                 break;
             }
