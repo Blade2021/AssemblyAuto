@@ -452,7 +452,7 @@ void loop()
                         {
                             Serial.print(F("Feed Cycle Activated ["));
                             Serial.print(millis() / 1000);
-                            Serial.println(" ]");
+                            Serial.println("]");
                         }
                         if (dispOverride == 0)
                         {
@@ -789,7 +789,7 @@ void loop()
      - Trigger Relays individually
      - Record state of relay for display and toggle
   */
-    if (sOverride == 2)
+    if (sOverride >= 2)
     {
         static byte ledStatus;
         if (millis() - previousTimer3 >= LEDSPEED)
@@ -1129,6 +1129,10 @@ void checkData()
                 ext_timeChange();
             }
             if (apple.substring(0, 7) == "SENWAIT")
+            {
+                senWaitFunction();
+            }
+            if (apple.substring(0, 5) == "ADMIN")
             {
                 senWaitFunction();
             }
@@ -1549,7 +1553,7 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.println(" [REF: 2205]");
         break;
-    // Deglatory
+    // DEBUG
     case 11:
         Serial.print("DEBUG CODE:");
         Serial.println(refID);
@@ -1583,6 +1587,9 @@ void errorReport(byte errorType, int refID)
     // System function termination
     case 16:
         lcd.print(F("Function Terminated"));
+        break;
+    case 17:
+        Serial.println("ALERT: Head in wrong position. [REF 5119]");
         break;
     default:
         Serial.println("PROGRAMMING ERROR");
