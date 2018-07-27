@@ -1145,53 +1145,68 @@ void checkData()
             }
             if (apple.substring(0, 3) == "MPS")
             {
-                int keyValue = firstValue();
-                int arrayIndex = lastValue();
+                int keyValue = lastValue();
+                int arrayIndex = firstValue();
                 mpsInput(keyValue, arrayIndex);
             }
-            if (apple.substring(0, 5) == "RESET")
+            if (apple.substring(0, 8) == "SYSRESET")
             {
-                byte value = firstValue();
-                if((value != 0) || (value != 1))
+                int value = lastValue();
+                if((value == 0) || (value == 1))
                 {
+                    systemReset(value);
+                }
+                else {
                     errorReport(14,24);
+                }
+            }
+            if (apple.substring(0, 5) == "LOGIC")
+            {
+                int keyValue = lastValue();
+                if(keyValue == 255)
+                {
+                    Serial.print("Feed: ");
+                    Serial.print(feedNext);
+                    Serial.print(" Hook: ");
+                    Serial.println(hookNext);
+                    Serial.print("Crimp: ");
+                    Serial.print(crimpNext);
+                    Serial.print(" Vibrator: ");
+                    Serial.println(railCheckNext);
+                    newData = false;
+                    apple = "";
                     return;
                 }
-                systemReset(value);
-            }
-            if (apple.substring(0, 5) == "ADMIN")
-            {
-                byte keyValue = firstValue();
-                byte value = lastValue();
-                switch (keyValue)
+                int switchValue = firstValue();
+                switch (switchValue)
                 {
                 case 0:
-                    feedNext = value;
+                    feedNext = keyValue;
                     Serial.print(F("Feed Cycle set to: "));
-                    Serial.println(value);
+                    Serial.println(keyValue);
                     break;
                 case 1:
-                    hookNext = value;
+                    hookNext = keyValue;
                     Serial.print(F("Hook Cycle set to: "));
-                    Serial.println(value);
+                    Serial.println(keyValue);
                     break;
                 case 2:
-                    crimpNext = value;
+                    crimpNext = keyValue;
                     Serial.print(F("Crimp Cycle set to: "));
-                    Serial.println(value);
+                    Serial.println(keyValue);
                     break;
                 case 3:
-                    railCheckNext = value;
+                    railCheckNext = keyValue;
                     Serial.print(F("Vibrator Cycle set to: "));
-                    Serial.println(value);
+                    Serial.println(keyValue);
                     break;
                 case 4:
                     Serial.print(F("All cycles set to: "));
-                    Serial.println(value);
-                    feedNext = value;
-                    hookNext = value;
-                    crimpNext = value;
-                    railCheckNext = value;
+                    Serial.println(keyValue);
+                    feedNext = keyValue;
+                    hookNext = keyValue;
+                    crimpNext = keyValue;
+                    railCheckNext = keyValue;
                     break;
                 default:
                     errorReport(14, 22);
