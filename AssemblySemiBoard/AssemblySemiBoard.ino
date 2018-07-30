@@ -15,7 +15,7 @@
 #define POSDEFAULT 15
 #define DATASPEED 19200
 #define MPSLENGTH 4
-#define LEDARRAYLENGTH 6
+#define LEDARRAYLENGTH 5
 #define LEDSPEED 100
 
 //Panel Buttons
@@ -26,7 +26,7 @@ const byte upButton = 48;     // Up Button
 const byte downButton = 44;   // Down Button
 const byte toggleButton = 50; // toggle Button
 
-const byte ledArray[LEDARRAYLENGTH] = {13, 51, 49, 47, 45, 43};
+const byte ledArray[LEDARRAYLENGTH] = {13, 49, 47, 45, 43};
 /*
 // Panel LEDs
 const byte ledArray[1] = 51;
@@ -169,7 +169,7 @@ void setup()
     pinMode(ledArray[2], OUTPUT);
     pinMode(ledArray[3], OUTPUT);
     pinMode(ledArray[4], OUTPUT);
-    pinMode(ledArray[5], OUTPUT);
+    //pinMode(ledArray[5], OUTPUT);
     pinMode(ledArray[0], OUTPUT);
     //Buttons
     pinMode(manualButton, INPUT_PULLUP);
@@ -399,7 +399,7 @@ void loop()
                         Serial.println("]");
                     }
                     previousTimer2 = millis();
-                    digitalWrite(ledArray[5], HIGH);
+                    digitalWrite(ledArray[1], HIGH);
                     digitalWrite(solenoidArray[6], HIGH);
                     railCheckNext = 1;
                 }
@@ -422,7 +422,7 @@ void loop()
                     if ((railCheck == LOW) && (millis() - previousTimer2 >= sysArray[3]))
                     {
                         digitalWrite(solenoidArray[6], LOW);
-                        digitalWrite(ledArray[5], LOW);
+                        digitalWrite(ledArray[1], LOW);
                         previousTimer2 = millis();
                         if (debug >= 3)
                         {
@@ -766,19 +766,19 @@ void displaySwitch(int sysPos)
         changetime(sysPos);
         break;
     case 4:
-        setLEDS(5);
+        setLEDS(1);
         lcd.setCursor(0, 1);
         lcd.print(F("Sensor Ignore [MPS] "));
         changetime(sysPos);
         break;
     case 5:
-        setLEDS(1);
+        setLEDS(2);
         lcd.setCursor(0, 1);
         lcd.print(F("Main Cycle [MPS]   "));
         changetime(sysPos);
         break;
     case 6:
-        setLEDS(2);
+        setLEDS(3);
         lcd.setCursor(0, 1);
         lcd.print(F("Head LOC [MPS]     "));
         changetime(sysPos);
@@ -857,7 +857,7 @@ void setLEDS(byte LEDSnumber)
     digitalWrite(ledArray[2], LOW);
     digitalWrite(ledArray[3], LOW);
     digitalWrite(ledArray[4], LOW);
-    digitalWrite(ledArray[5], LOW);
+    //digitalWrite(ledArray[5], LOW);
     if ((LEDSnumber == 0) || (LEDSnumber > LEDARRAYLENGTH))
         {
             return;
