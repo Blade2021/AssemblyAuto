@@ -1434,6 +1434,7 @@ void changetime(int sysPos)
                         if ((passCheck == passcode) && (active == 0))
                         {
                             sOverride = 2;
+                            Serial.println("Override:On");
                             lcd.clear();
                             lcd.setCursor(0, 0);
                             lcd.print("Run Time:");
@@ -1850,12 +1851,13 @@ void systemReset(byte resetVar)
 {
     if (resetVar != 0)
     {
-        for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
+        for (byte indx = 0; indx <= SOLARRAYSIZE; indx++)
         {
             stateArray[indx] = 0;
             Serial.print("Relay trigger INDEX: ");
             Serial.print(indx);
             Serial.println(" reset. [REF 3305]");
+            digitalWrite(solenoidArray[indx], LOW);
         }
     }
     lcd.clear();
@@ -1870,6 +1872,9 @@ void systemReset(byte resetVar)
     hookNext = 0;
     crimpNext = 0;
     railCheckNext = 0;
+    if(sOverride == 2){
+        Serial.println("Override:Off");
+    }
     sOverride = 1; //Exit initial reset
 }
 
