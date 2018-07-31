@@ -1449,6 +1449,8 @@ void changetime(int sysPos)
                         else
                         {
                             lcd.clear();
+                            lcd.setCursor(0,0);
+                            lcd.print("Run Time:");
                             errorReport(14, 7);
                         }
                         complete = true;

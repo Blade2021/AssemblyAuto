@@ -381,6 +381,65 @@ void changetime(int sysPos)
             }
             return;
         }
+        if (key == 'B')
+        {
+            byte tempPos = 5; //Temporary lcd location
+            jindx = 0;
+            lcd.clear();
+            lcd.setCursor(6, 0);
+            lcd.print("Enter");
+            lcd.setCursor(1, 1);
+            lcd.print(F("Override Passcode:"));
+            boolean complete = false;
+            lcd.setCursor(tempPos, 2);
+            while (complete == false)
+            {
+                char key = keypad.getKey();
+                if (key)
+                {
+                    lcd.print(key);
+                    tempPos++;
+                    lcd.setCursor(tempPos, 2);
+                    arraya[jindx++] = key;
+                    arraya[jindx];
+                    if (key == '*')
+                    {
+                        int passCheck = atoi(arraya);
+                        if ((passCheck == passcode) && (active == 0))
+                        {
+                            mode = 3;
+                            Serial.println("Override:On");
+                            lcd.clear();
+                            lcd.setCursor(0, 0);
+                            lcd.print("Run Time:");
+                            complete = true;
+                            return;
+                        }
+                        if ((passCheck == passcode) && (active >= 1))
+                        {
+                            lcd.clear();
+                            Serial.println(F("ERROR: 2358"))
+                        }
+                        else
+                        {
+                            lcd.clear();
+                            Serial.println(F("INVALID INPUT"));
+                        }
+                        complete = true;
+                        return;
+                    }
+                    if (key == '#')
+                    {
+                        lcd.clear();
+                        Serial.println(F("Function Terminated"));
+                        complete = true;
+                    }
+                }
+            }
+            preLCDClear = millis();
+            jindx = 0;
+            return;
+        }
         if ((key == 'C') || (key == 'c'))
         {
             lcd.clear();
@@ -448,17 +507,6 @@ void changetime(int sysPos)
             int value = atoi(arraya);
             Serial.print(F("SYSTEM | Keypad Input: "));
             Serial.println(value);
-            if ((value == passcode) && (mode == 0))
-            {
-                /* VERY IMPORTANT!  Check to see if active is 0
-          so that override isn't turned on while machine running.  */
-                mode = 3;
-                pos = POSDEFAULT;
-                lcd.setCursor(pos, 2);
-                lcd.print("       ");
-                jindx = 0;
-                return;
-            }
             if (value > 5100)
             {
                 value = 5100;
