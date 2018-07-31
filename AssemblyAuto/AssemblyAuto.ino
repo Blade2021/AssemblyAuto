@@ -9,15 +9,17 @@
 #define SENARRAYSIZE 8
 #define SOLARRAYSIZE 8
 #define MEMVECTORMULTIPLE 11
-#define MPSMEMLOC 110
+#define MPSMEMLOC 110 // Start Address for MPS
 #define DEBUGMEMLOC 112
-#define VERSIONMEM 770
 #define VECTORMEMLOC 100
 #define POSDEFAULT 15
 #define DATASPEED 19200
+#define MPSLENGTH 4
+#define LEDARRAYLENGTH 6
+#define LEDSPEED 100
 
 //Panel Buttons
-const byte manualButton = 62; //Manual feed button
+const byte manualButton = 6;  // Manual feed button
 const byte nextButton = 42;   // Next Button
 const byte saveButton = 46;   // Savel/Select Button
 const byte upButton = 48;     // Up Button
@@ -25,12 +27,16 @@ const byte downButton = 44;   // Down Button
 const byte toggleButton = 50; // toggle Button
 
 // Panel LEDs
+const byte ledArray[LEDARRAYLENGTH] = {13, 51, 49, 47, 45, 43};
+/*
 const byte panelLed1 = 51;
 const byte panelLed2 = 49;
 const byte panelLed3 = 47;
 const byte panelLed4 = 45;
 const byte panelLed5 = 43;
 const byte errorLed = 13;
+*/
+
 //Sensors
 const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
 /* SENSOR LIST
@@ -44,7 +50,21 @@ const byte sensorArray[SENARRAYSIZE] = {A0, A1, A2, A3, A4, A5, A6, A7};
    A7 - HeadUp
 */
 //Solenoids
-const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
+const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14};
+/*
+    7 - [AL-0] Hanger Feed
+    8 - [AL-1] Hook Stopper
+   16 - [AL-2] Head/Tooling
+   17 - [AL-3] Strip Off
+   18 - [AL-4] Crimp Stopper
+   19 - [AL-5] Crimp
+   15 - [AL-6] Vibrator
+   14 - [AL-7] MainAir
+   9  - [AL-8] Motor Relay
+*/
+// OLD NUMBERS
+//Solenoids
+//const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
 /*
   12 - [AL-0] Hanger Feed
   11 - [AL-1] Hook Stopper
@@ -56,12 +76,13 @@ const byte solenoidArray[SOLARRAYSIZE] = {12, 11, 10, 9, 8, 7, 6, 17};
   17 - [AL-7] MainAir
    x - [AL-8] Motor Relay
 */
+
 //LCD Variables
 byte sysPosition = 0; // Position of sysArray
 const int lcdClearTime = 7000;
-byte pos = POSDEFAULT;           //LCD position for key input
-byte jindx = 0;                  //Key Input Position (Array)
-char arraya[] = {0, 1, 2, 3, 0}; //Key input array
+byte pos = POSDEFAULT;           // LCD position for key input
+byte jindx = 0;                  // Key Input Position (Array)
+char arraya[] = {0, 1, 2, 3, 0}; // Key input array
 const byte sysLength = 9;        // System timer array length
 
 //Time Controls
@@ -85,8 +106,26 @@ int sysArray[sysLength] = {1000, 1000, 1000, 1000, 2300, 2000, 300, 2000, 1200};
   AL-7 - Feed/Hook [MPS]
   AL-8 - Head LOC [MPS]
 */
+// test line 2
+
+byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
+/*AL-0 - Feed Protection
+        0 - disabled
+        1 - enabled
+  AL-1 - Head location mode
+        0 - disabled
+        1 - Feed Check
+        3 - Keep track of jams for crimping
+        3 - Shut down if jammed after getting to lower sensor
+        4 - Timed shutdown (going Down)
+        5 - Timed shutdown (coming Up)
+  AL-2 - Crimp Protection
+        0 - disabled
+        1 - enabled
+*/
 //LiquidCrystal
-LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+//LiquidCrystal lcd(18, 19, 5, 4, 3, 2);
 
 //Keypad
 const byte ROWS = 4; // # of rows for keypad
@@ -103,9 +142,8 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 //System Variables
 boolean active = LOW;                    // System active variable
 byte partError = 0;                      // Hook status
-byte mpsEnable = 0;                      // Machine Protection Enabler
 byte toggleLogic = 0;                    // Value of toggle button
-byte feedLoop = 0;                       //Feed loop postion
+byte feedLoop = 0;                       // Feed loop postion
 byte feedCheck = 0;                      // Feed check variable
 byte feedNext = 0;                       // Feed loop position
 byte hookNext = 0;                       // Hook loop position
@@ -117,22 +155,22 @@ byte railCheck = 0;                      // Upper Rail sensor
 byte railCheckNext = 0;                  // Vibrator cycle position
 byte rswitch = 0;                        // System override, solenoid position variable
 byte sOverride = 1;                      // System Override toggle 0 - Resets solenoids, 1 - Skip reset, active machine, 2 - System Override enabled
-byte stateArray[SOLARRAYSIZE + 1] = {0}; //State array for status of all solenoids [Include extra 0 for the NULL END]
-const int passcode = 7777;               //System override passcode
-byte runCheck = 1;                       //Machine protection variable, Initalize as 1 until machine error.
+byte stateArray[SOLARRAYSIZE + 1] = {0}; // State array for status of all solenoids [Include extra 0 for the NULL END]
+const int passcode = 7777;               // System override passcode
+byte runCheck = 1;                       // Machine protection variable, Initalize as 1 until machine error.
 int mfcount;                             // Malfunction counter
 int lastMFcount;                         // Previous malfunction count, Used for MPS 3+
 byte vector;                             // Memory vector postion
-byte dispOverride = 0;
+byte dispOverride = 0;                   // Display Override variable ( Displaying timers while in active mode )
 
 //LOGIC CONTROLS
-byte logicCount = 0;      //Counter of material flow
-byte bNextLogic = 0;      //Button Next Logic
-byte bUpLogic = 0;        //Button Up Logic
-byte bDownLogic = 0;      //Button Down Logic
-byte saveButtonLogic = 0; //Save Button Logic
-byte manualFeed = 0;      //Manual Feed Logic
-byte secStart = 0;        //Second Start
+byte logicCount = 0;      // Counter of material flow
+byte bNextLogic = 0;      // Button Next Logic
+byte bUpLogic = 0;        // Button Up Logic
+byte bDownLogic = 0;      // Button Down Logic
+byte saveButtonLogic = 0; // Save Button Logic
+byte manualFeed = 0;      // Manual Feed Logic
+byte secStart = 0;        // Second Start
 
 //PC Control
 const byte numChars = 32;             // Array character limit
@@ -142,19 +180,19 @@ int senWait = 100;                    // Sensor data wait time
 boolean senBool = false;              // Sensor data output toggle
 boolean newData = false;              // New serial data toggle
 String apple = "";                    // Incoming serial data string
-byte initial = 1;                     //Initial contact toggle
+byte initial = 1;                     // Initial contact toggle
 byte orchard[SENARRAYSIZE + 1] = {0}; // Sensor output toggle
-byte debug = 0;
+byte debug = 0;                       // Debug Value
 
 void setup()
 {
     //LEDs
-    pinMode(panelLed1, OUTPUT);
-    pinMode(panelLed2, OUTPUT);
-    pinMode(panelLed3, OUTPUT);
-    pinMode(panelLed4, OUTPUT);
-    pinMode(panelLed5, OUTPUT);
-    pinMode(errorLed, OUTPUT);
+    pinMode(ledArray[1], OUTPUT);
+    pinMode(ledArray[2], OUTPUT);
+    pinMode(ledArray[3], OUTPUT);
+    pinMode(ledArray[4], OUTPUT);
+    pinMode(ledArray[5], OUTPUT);
+    pinMode(ledArray[0], OUTPUT);
     //Buttons
     pinMode(manualButton, INPUT_PULLUP);
     pinMode(nextButton, INPUT_PULLUP);
@@ -195,28 +233,6 @@ void setup()
 
     debug = EEPROM.read(DEBUGMEMLOC);
 
-    byte versionControl[4] = {0};
-    int vcAddress = VERSIONMEM;
-    for (byte k; k < 3; k++)
-    {
-        versionControl[k] = EEPROM.read(vcAddress);
-        if ((versionControl[k]) < 0)
-        {
-            errorReport(3, vcAddress);
-        }
-        vcAddress++;
-    }
-    if (Serial)
-    {
-        Serial.print("Memory Version: ");
-        for (byte k; k < 3; k++)
-        {
-            Serial.print(versionControl[k]);
-            Serial.print(".");
-        }
-        Serial.println("");
-    }
-
     //Reset all solenoids to LOW
     for (byte k; k < SOLARRAYSIZE; k++)
     {
@@ -224,11 +240,17 @@ void setup()
         delay(1);
     }
 
-    mpsEnable = EEPROM.read(MPSMEMLOC);
+    // Read memory for MPS DATA
+    for (byte k = 0; k < MPSLENGTH; k++) // debug for issues with array length
+    {
+        byte mpsMemoryAddress = MPSMEMLOC + k;
+        mpsArray[k] = EEPROM.read(mpsMemoryAddress);
+        delay(1);
+    }
     vector = EEPROM.read(VECTORMEMLOC);
     Serial.print("Vector: ");
     Serial.println(vector);
-    delay(10);
+    delay(1);
     memoryLoad();
 
     // Display time setting:
@@ -294,16 +316,17 @@ void loop()
         if ((sOverride == 0) && (active == 1))
         {
             dispOverride = 0;
-            overrideReset();
+            systemReset(1);
         }
-        if ((mpsEnable > 0) && (runCheck == 0))
+        // Check if MPS is enabled
+        if (((mpsArray[0] >= 1) || (mpsArray[1] >= 1) || (mpsArray[2] >= 1)) && (runCheck == 0))
         {
             manualFeed = digitalRead(manualButton);
             if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait))
             {
                 buttonPreviousTime = millis() + 2000;
                 runCheck = 1;
-                digitalWrite(solenoidArray[8], LOW);
+                //digitalWrite(solenoidArray[8], LOW);
                 errorReport(4, 0);
             }
         }
@@ -383,12 +406,8 @@ void loop()
             }
 
             // Main code
-            digitalWrite(errorLed, LOW);
-            digitalWrite(panelLed1, LOW);
-            digitalWrite(panelLed2, LOW);
-            digitalWrite(panelLed3, LOW);
-            digitalWrite(panelLed4, LOW);
-            digitalWrite(panelLed5, LOW);
+            digitalWrite(ledArray[0], LOW);
+            setLEDS(0);
 
             if (runCheck == 1)
             {
@@ -407,22 +426,23 @@ void loop()
         */
                 if (((feedLoop == LOW) && (partError == 0)) || ((secStart == 1) && (feedCheck == LOW)) || ((manualFeed == LOW) && (feedNext == 0)))
                 {
-                    if (mpsEnable >= 1)
+                    if (mpsArray[0] >= 1)
                     {
                         if ((feedNext == 0) && (millis() - previousTimer1 <= sysArray[7]) && (millis() - previousTimer1 >= sysArray[6]) && (manualFeed == HIGH))
                         {
-                            hookNext = 0;
-                            runCheck = 0;
+                            //hookNext = 0;
+                            //runCheck = 0;
                             mfPrintOut(7, previousTimer1);
                             previousTimer1 = millis();
+                            errorReport(11, 1);
                             machStop(0);
                         }
                     }
                     if (
                         // Machine Protection disabled
-                        ((feedNext == 0) && (mpsEnable <= 0)) ||
+                        ((feedNext == 0) && (mpsArray[0] == 0)) ||
                         // Machine protection enabled MPS 1+
-                        ((millis() - previousTimer1 >= sysArray[7]) && (mpsEnable >= 1) && (feedNext == 0)) ||
+                        ((millis() - previousTimer1 >= sysArray[7]) && (mpsArray[0] >= 1) && (feedNext == 0)) ||
                         // Manual feed button activated && debounce button
                         ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (feedNext == 0)))
                     {
@@ -432,7 +452,7 @@ void loop()
                         {
                             Serial.print(F("Feed Cycle Activated ["));
                             Serial.print(millis() / 1000);
-                            Serial.println(" ]");
+                            Serial.println("]");
                         }
                         if (dispOverride == 0)
                         {
@@ -472,8 +492,8 @@ void loop()
                                 lcd.print(logicCount);
                                 lcd.print("  ");
                             }
-                            digitalWrite(panelLed1, HIGH);
-                            digitalWrite(errorLed, LOW);
+                            digitalWrite(ledArray[1], HIGH);
+                            digitalWrite(ledArray[0], LOW);
                             feedNext = 1;
                             previousTimer1 = millis();
                         }
@@ -499,7 +519,7 @@ void loop()
                     }
                     previousTimer1 = millis();
                     digitalWrite(solenoidArray[0], LOW);
-                    digitalWrite(panelLed1, LOW);
+                    digitalWrite(ledArray[1], LOW);
                     feedNext = 0;
                 }
                 // END OF FEED CYCLE
@@ -514,7 +534,7 @@ void loop()
                         Serial.println("]");
                     }
                     previousTimer2 = millis();
-                    digitalWrite(panelLed5, HIGH);
+                    digitalWrite(ledArray[5], HIGH);
                     digitalWrite(solenoidArray[6], HIGH);
                     railCheckNext = 1;
                 }
@@ -537,7 +557,7 @@ void loop()
                     if ((railCheck == LOW) && (millis() - previousTimer2 >= sysArray[5]))
                     {
                         digitalWrite(solenoidArray[6], LOW);
-                        digitalWrite(panelLed5, LOW);
+                        digitalWrite(ledArray[5], LOW);
                         previousTimer2 = millis();
                         if (debug >= 3)
                         {
@@ -551,9 +571,9 @@ void loop()
                 crimpLoop = digitalRead(sensorArray[3]);
                 if (
                     //Trigger All
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[4])) ||
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 2) && (millis() - previousTimer4 >= sysArray[4])) ||
                     //Protection - Only crimp if malfunction was not detected
-                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
+                    ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] >= 2) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[4])))
                 {
                     if (debug >= 2)
                     {
@@ -561,7 +581,7 @@ void loop()
                         Serial.print(millis() / 1000);
                         Serial.println("]");
                     }
-                    digitalWrite(panelLed4, HIGH);
+                    digitalWrite(ledArray[4], HIGH);
                     digitalWrite(solenoidArray[4], HIGH);
                     previousTimer4 = millis();
                     crimpNext = 1;
@@ -594,14 +614,15 @@ void loop()
                     previousTimer4 = millis();
                     digitalWrite(solenoidArray[5], LOW);
                     digitalWrite(solenoidArray[4], LOW);
-                    digitalWrite(panelLed4, LOW);
+                    digitalWrite(ledArray[4], LOW);
                     crimpNext = 0;
                 }
                 // Hook Cycle
-                hookLoop = digitalRead(sensorArray[2]);
+                hookLoop = digitalRead(sensorArray[2]); // main cycle sensor
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
-                    if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[7])))
+                    // MPS Disabled | Overrun Check Enabled & check PASSED:
+                    if ((mpsArray[1] == 0) || ((mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[7])))
                     {
                         if (debug >= 2)
                         {
@@ -609,50 +630,68 @@ void loop()
                             Serial.print(millis() / 1000);
                             Serial.println("]");
                         }
-                        digitalWrite(panelLed2, HIGH);
+                        digitalWrite(ledArray[2], HIGH);
                         boolean hookCheck;
                         hookCheck = digitalRead(sensorArray[0]);
                         if (hookCheck == HIGH)
                         {
                             errorReport(7, 0);
                             //partError = 1;
-                            digitalWrite(panelLed2, LOW);
+                            digitalWrite(ledArray[2], LOW);
                             feedLoop = 0;
                             feedNext = 0;
-                            digitalWrite(errorLed, HIGH);
+                            digitalWrite(ledArray[0], HIGH);
                         }
                         if (hookCheck == LOW)
                         {
                             previousTimer3 = millis();
-                            digitalWrite(solenoidArray[1], HIGH);
+                            digitalWrite(solenoidArray[1], HIGH); // Hook Stopper
+                            if (debug >= 3)
+                            {
+                                Serial.println(F("Hook Cycle | Stopper Out"));
+                            }
                             hookNext = 1;
                         }
                     }
-                    if ((mpsEnable >= 2) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
+                    //bookmark1
+                    // MPS Head Inserter Enabled & Overrun check FAILED:
+                    if ((mpsArray[1] >= 1) && (millis() - previousTimer3 < sysArray[7]) && (millis() - previousTimer3 >= sysArray[6]))
                     {
+                        errorReport(11, 3333);
                         //Check if MPS is enabled.  If so, check value of time sensor triggered.
                         machStop(0);
-                        runCheck = 0;
+                        //runCheck = 0;
                         previousTimer3 = millis();
+                        hookNext = 0;
                     }
                 }
-                //Send Head Down
+                //Send Head Down AFTER Timer
                 if ((hookNext == 1) && (millis() - previousTimer3 >= sysArray[2]))
                 {
+                    byte headUpcheck = digitalRead(sensorArray[7]);
+                    if (headUpcheck == HIGH)
+                    {
+                        //ERROR
+                        hookNext = 0;
+                        runCheck = 0;
+                        return;
+                    }
                     previousTimer3 = millis();
                     if (debug >= 3)
                     {
                         Serial.println(F("Hook Cycle | Tool/Head OUT"));
                     }
-                    digitalWrite(solenoidArray[2], HIGH);
+                    digitalWrite(solenoidArray[2], HIGH); // Head/Tooling HIGH
                     hookNext = 2;
                 }
                 //Send Strip Off Out / Check Head location
                 if (hookNext == 2)
                 {
-                    int HeadCheckDown = digitalRead(sensorArray[6]);
-                    //MPS Disabled
-                    if (((HeadCheckDown == LOW) && (mpsEnable <= 2)) || ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 < sysArray[8])))
+                    int headCheckDown = digitalRead(sensorArray[6]);
+                    //Head LOC Check Disabled
+                    if (((headCheckDown == LOW) && mpsArray[1] <= 2) ||
+                        // Check for Sensor and PASSED
+                        ((headCheckDown == LOW) && (mpsArray[1] >= 3) && (millis() - previousTimer3 < sysArray[8])))
                     {
                         digitalWrite(solenoidArray[3], HIGH);
                         hookNext = 3;
@@ -661,25 +700,30 @@ void loop()
                             Serial.println(F("Hook Cycle | Strip Off OUT"));
                         }
                     }
-                    //MPS Setting 5 - Shut down on timer
-                    if ((mpsEnable >= 6) && (millis() - previousTimer3 >= sysArray[8]))
+                    // Head LOC Check - Shut down on timer down
+                    if ((mpsArray[1] >= 5) && (millis() - previousTimer3 >= sysArray[8]))
                     {
+
                         machStop(1);
-                        errorReport(13, 0);
+                        errorReport(13, 1);
+                        errorReport(11, 2255);
                         mfPrintOut(8, previousTimer3);
                         hookNext = 0;
-                        runCheck = 0;
+                        //runCheck = 0;
                     }
-                    if ((HeadCheckDown == LOW) && (mpsEnable >= 3) && (millis() - previousTimer3 >= sysArray[8]))
+                    // Check sensor && Head Location greater than alloted time ( check FAILED )
+                    if ((headCheckDown == LOW) && (mpsArray[1] >= 2) && (millis() - previousTimer3 >= sysArray[8]))
                     {
                         mfcount++;
                         hookNext = 3;
-                        if (mpsEnable == 4)
+                        // Shut down after reaching sensor
+                        if (mpsArray[1] == 3)
                         {
                             machStop(1);
                             hookNext - 0;
                             runCheck = 0;
-                            errorReport(13, 0);
+                            errorReport(13, 1);
+                            errorReport(11, 2266);
                             mfPrintOut(8, previousTimer3);
                             previousTimer3 = millis();
                             //Turn off machine
@@ -697,20 +741,22 @@ void loop()
                 //Send Head Up
                 if (hookNext == 3)
                 {
-                    int StripOffCheck = digitalRead(sensorArray[5]);
-                    if (StripOffCheck == LOW)
+                    byte stripOffCheck = digitalRead(sensorArray[5]);
+                    if (stripOffCheck == LOW)
                     {
                         digitalWrite(solenoidArray[2], LOW);
-                        digitalWrite(panelLed3, HIGH);
-                        digitalWrite(panelLed2, LOW);
+                        digitalWrite(ledArray[3], HIGH);
+                        digitalWrite(ledArray[2], LOW);
                         hookNext = 4;
                     }
                 }
                 // Reset Strip Off / Reset Stopper
-                if (((hookNext == 4) && (mpsEnable < 5)) || ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 < sysArray[8])))
+                if (((hookNext == 4) && (mpsArray[1] <= 3)) ||
+                    // Check upper hook sensor && PASSED
+                    ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 < sysArray[8])))
                 {
-                    int HeadUpCheck = digitalRead(sensorArray[7]);
-                    if (HeadUpCheck == LOW)
+                    byte secheadUpcheck = digitalRead(sensorArray[7]);
+                    if (secheadUpcheck == LOW)
                     {
                         if (debug >= 3)
                         {
@@ -718,15 +764,17 @@ void loop()
                         }
                         digitalWrite(solenoidArray[1], LOW);
                         digitalWrite(solenoidArray[3], LOW);
-                        digitalWrite(panelLed3, LOW);
+                        digitalWrite(ledArray[3], LOW);
                         hookNext = 0;
                     }
                 }
-                else if ((hookNext == 4) && (mpsEnable >= 5) && (millis() - previousTimer3 >= sysArray[8]))
+                // Check Head LOC and FAILED
+                else if ((hookNext == 4) && (mpsArray[1] == 4) && (millis() - previousTimer3 >= sysArray[8]))
                 {
                     machStop(1);
                     hookNext = 0;
                     runCheck = 0;
+                    errorReport(11, 2277);
                 }
                 // End of hook Cycle
                 if (logicCount >= 100)
@@ -741,13 +789,19 @@ void loop()
      - Trigger Relays individually
      - Record state of relay for display and toggle
   */
-    if (sOverride == 2)
+    if (sOverride >= 2)
     {
-        digitalWrite(panelLed1, HIGH);
-        digitalWrite(panelLed2, HIGH);
-        digitalWrite(panelLed3, HIGH);
-        digitalWrite(panelLed4, HIGH);
-        digitalWrite(panelLed5, HIGH);
+        static byte ledStatus;
+        if (millis() - previousTimer3 >= LEDSPEED)
+        {
+            if (ledStatus > (LEDARRAYLENGTH - 1))
+            {
+                ledStatus = 1;
+            }
+            setLEDS(ledStatus);
+            ledStatus++;
+            previousTimer3 = millis();
+        }
         lcd.setCursor(0, 1);
         lcd.print("OVERRIDE: ON        ");
         lcd.setCursor(0, 2);
@@ -775,6 +829,7 @@ void loop()
             errorReport(8, 0);
             sOverride = 0;
             sysPosition = 0;
+            systemReset(1);
         }
         else
         {
@@ -794,11 +849,12 @@ void loop()
                 case '*':
                 case '0':
                     sOverride = 0;
+                    systemReset(1);
                     return;
                 default:
                     break;
                 }
-                int tempb = key - '0';
+                byte tempb = key - '0';
                 //Send keypad input to Override_Trigger function
                 Override_Trigger(tempb);
             }
@@ -815,7 +871,7 @@ void inactive()
     sOverride = 0;
     dispOverride = 1;
     railCheckNext = 0;
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     digitalWrite(solenoidArray[0], LOW); //FeedTable
     digitalWrite(solenoidArray[1], LOW); //HookStopper
     digitalWrite(solenoidArray[2], LOW); //Head/Tooling
@@ -833,55 +889,55 @@ void displaySwitch(int sysPos)
     switch (sysPos)
     {
     case 0:
-        setLEDS(panelLed1);
+        setLEDS(1);
         lcd.setCursor(0, 1);
         lcd.print(F("Feed Wait Time:     "));
         changetime(sysPos);
         break;
     case 1:
-        setLEDS(panelLed2);
+        setLEDS(2);
         lcd.setCursor(0, 1);
         lcd.print(F("Feed Open Time      "));
         changetime(sysPos);
         break;
     case 2:
-        setLEDS(panelLed3);
+        setLEDS(3);
         lcd.setCursor(0, 1);
         lcd.print(F("Hook Cycle Wait     "));
         changetime(sysPos);
         break;
     case 3:
-        setLEDS(panelLed4);
+        setLEDS(4);
         lcd.setCursor(0, 1);
         lcd.print(F("Crimp Cycle Wait    "));
         changetime(sysPos);
         break;
     case 4:
-        setLEDS(panelLed5);
+        setLEDS(5);
         lcd.setCursor(0, 1);
         lcd.print(F("Crimp Time          "));
         changetime(sysPos);
         break;
     case 5:
-        setLEDS(panelLed1);
+        setLEDS(1);
         lcd.setCursor(0, 1);
         lcd.print(F("Vibrator Time     "));
         changetime(sysPos);
         break;
     case 6:
-        setLEDS(panelLed2);
+        setLEDS(2);
         lcd.setCursor(0, 1);
         lcd.print(F("Sensor Ignore [MPS] "));
         changetime(sysPos);
         break;
     case 7:
-        setLEDS(panelLed3);
+        setLEDS(3);
         lcd.setCursor(0, 1);
         lcd.print(F("Main Cycle [MPS]   "));
         changetime(sysPos);
         break;
     case 8:
-        setLEDS(panelLed4);
+        setLEDS(4);
         lcd.setCursor(0, 1);
         lcd.print(F("Head LOC [MPS]     "));
         changetime(sysPos);
@@ -901,18 +957,18 @@ void saveTrigger(byte sysPos)
     }
     eepromWrite(sysPos, sysArray[sysPos]);
     errorReport(9, sysPos + 1);
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     delay(200);
-    digitalWrite(errorLed, LOW);
+    digitalWrite(ledArray[0], LOW);
     delay(200);
-    digitalWrite(errorLed, HIGH);
+    digitalWrite(ledArray[0], HIGH);
     delay(200);
-    digitalWrite(errorLed, LOW);
+    digitalWrite(ledArray[0], LOW);
 }
 
 void Override_Trigger(int RTrigger)
 {
-    int tempstate = LOW;
+    boolean tempstate = LOW;
     String lcdstate = "OFF";
     if (stateArray[RTrigger] == 1)
     {
@@ -956,63 +1012,46 @@ void lcdControl()
 //Set one LED to HIGH.
 void setLEDS(byte LEDSnumber)
 {
-    digitalWrite(panelLed1, LOW);
-    digitalWrite(panelLed2, LOW);
-    digitalWrite(panelLed3, LOW);
-    digitalWrite(panelLed4, LOW);
-    digitalWrite(panelLed5, LOW);
-
-    digitalWrite(LEDSnumber, HIGH);
+    digitalWrite(ledArray[1], LOW);
+    digitalWrite(ledArray[2], LOW);
+    digitalWrite(ledArray[3], LOW);
+    digitalWrite(ledArray[4], LOW);
+    digitalWrite(ledArray[5], LOW);
+    if ((LEDSnumber == 0) || (LEDSnumber > LEDARRAYLENGTH))
+    {
+        return;
+    }
+    digitalWrite(ledArray[LEDSnumber], HIGH);
 }
 
 void machStop(byte airoff)
 {
-    feedNext = 0;
-    hookNext = 0;
-    railCheckNext = 0;
-    digitalWrite(solenoidArray[8], HIGH);
-    for (byte k; k < 7; k++)
-    {
-        digitalWrite(solenoidArray[k], LOW);
-        delay(1);
-    }
+    byte stopReset = 0;
+    byte doubler = 0;
     if (airoff >= 1)
     {
-        digitalWrite(solenoidArray[7], LOW);
+        digitalWrite(solenoidArray[7], LOW); // turn off air
     }
-    return;
-}
-
-void mpsInput()
-{
-    char key;
-    lcd.setCursor(0, 1);
-    lcd.print("Enter key for MPS");
-    lcd.setCursor(0, 2);
-    lcd.print("Current: ");
-    lcd.print(mpsEnable);
-    key = keypad.getKey();
-    while (!key)
+    while (stopReset < 2)
     {
-        key = keypad.getKey();
-        lcdControl();
-        if (key)
+        // wait for button press
+        manualFeed = digitalRead(manualButton);
+        if ((manualFeed == LOW) && (millis() - buttonPreviousTime >= buttonWait) && (doubler == 0))
         {
-            if (key == '#')
-            {
-                return;
-            }
-            int keyValue = key - '0';
-            Serial.println(keyValue);
-            if (keyValue > 6)
-            {
-                keyValue = 6;
-            }
-            mpsEnable = keyValue;
-            errorReport(11, mpsEnable);
-            EEPROM.update(MPSMEMLOC, mpsEnable);
+            doubler = 1;
+            buttonPreviousTime = millis();
+        }
+        if ((manualFeed == HIGH) && (doubler == 1))
+        {
+            stopReset++;
+            doubler = 0;
         }
     }
+    errorReport(11, 4559);
+    digitalWrite(solenoidArray[7], HIGH);
+    digitalWrite(solenoidArray[1], LOW);
+    hookNext = 0;
+    return;
 }
 
 void recvWithEndMarker()
@@ -1049,6 +1088,18 @@ void checkData()
     {
         if (apple.length() >= 5)
         {
+            if (apple.substring(0, 5) == "EREAD")
+            {
+                int address = firstValue();
+                if ((address <= EEPROM.length()) && (address >= 0))
+                {
+                    byte value = EEPROM.read(address);
+                    Serial.print("EEPROM Memory Address: ");
+                    Serial.println(address);
+                    Serial.print("   Value: ");
+                    Serial.println(value);
+                }
+            }
             if (apple.substring(0, 6) == "EEPROM")
             {
                 eepromUpdate();
@@ -1066,7 +1117,7 @@ void checkData()
                 }
                 else
                 {
-                    Serial.println(F("Debug value not accepted"));
+                    errorReport(14, 11);
                 }
             }
             if ((apple.substring(0, 3) == "PIN") && (sOverride == 2))
@@ -1081,10 +1132,92 @@ void checkData()
             {
                 senWaitFunction();
             }
+            if (apple.substring(0, 7) == "LOADOUT")
+            {
+                Serial.println("MPS ARRAY:");
+                for (byte k; k < MPSLENGTH - 1; k++)
+                {
+                    Serial.print("   ALOC: ");
+                    Serial.print(k);
+                    Serial.print(" Value: ");
+                    Serial.println(mpsArray[k]);
+                }
+            }
+            if (apple.substring(0, 3) == "MPS")
+            {
+                int keyValue = lastValue();
+                int arrayIndex = firstValue();
+                mpsInput(keyValue, arrayIndex);
+            }
+            if (apple.substring(0, 8) == "SYSRESET")
+            {
+                int value = lastValue();
+                if((value == 0) || (value == 1))
+                {
+                    systemReset(value);
+                }
+                else {
+                    errorReport(14,24);
+                }
+            }
+            if (apple.substring(0, 5) == "LOGIC")
+            {
+                int keyValue = lastValue();
+                if(keyValue == 255)
+                {
+                    Serial.print("Feed: ");
+                    Serial.print(feedNext);
+                    Serial.print(" Hook: ");
+                    Serial.println(hookNext);
+                    Serial.print("Crimp: ");
+                    Serial.print(crimpNext);
+                    Serial.print(" Vibrator: ");
+                    Serial.println(railCheckNext);
+                    newData = false;
+                    apple = "";
+                    return;
+                }
+                int switchValue = firstValue();
+                switch (switchValue)
+                {
+                case 0:
+                    feedNext = keyValue;
+                    Serial.print(F("Feed Cycle set to: "));
+                    Serial.println(keyValue);
+                    break;
+                case 1:
+                    hookNext = keyValue;
+                    Serial.print(F("Hook Cycle set to: "));
+                    Serial.println(keyValue);
+                    break;
+                case 2:
+                    crimpNext = keyValue;
+                    Serial.print(F("Crimp Cycle set to: "));
+                    Serial.println(keyValue);
+                    break;
+                case 3:
+                    railCheckNext = keyValue;
+                    Serial.print(F("Vibrator Cycle set to: "));
+                    Serial.println(keyValue);
+                    break;
+                case 4:
+                    Serial.print(F("All cycles set to: "));
+                    Serial.println(keyValue);
+                    feedNext = keyValue;
+                    hookNext = keyValue;
+                    crimpNext = keyValue;
+                    railCheckNext = keyValue;
+                    break;
+                default:
+                    errorReport(14, 22);
+                    break;
+                }
+            }
             if (apple.substring(0, 8) == "OVERRIDE")
             {
                 if ((sOverride == 0) || (sOverride == 1))
                 {
+                    setLEDS(0);
                     sOverride = 2;
                     Serial.println("Override:On");
                 }
@@ -1150,23 +1283,28 @@ void senWaitFunction()
 void pinUpdate()
 {
     boolean value = LOW;
-    int pinAddress = firstValue();
+    byte pinAddress = firstValue();
     if (pinAddress >= 64)
     {
         pinAddress = 64;
     }
-    byte lastPos = apple.lastIndexOf('.') + 1;
+    byte lastPos = lastValue();
     if (receivedChars[lastPos] == '\0')
     {
-        Serial.println("ERROR FOUND");
+        errorReport(14, 4);
         return;
     }
-    else if (receivedChars[lastPos] == '0')
+    if (receivedChars[lastPos] == '0')
     {
         value = LOW;
     }
-    else if (receivedChars[lastPos] == '1')
+    else
     {
+        if (lastPos > 1)
+        {
+            errorReport(14, 5);
+            return;
+        }
         value = HIGH;
     }
     for (byte pinCheck = 0; pinCheck < 10; pinCheck++)
@@ -1265,13 +1403,67 @@ void changetime(int sysPos)
     {
         if ((key == 'A') || (key == 'a'))
         {
-            mpsInput();
+            mpsSelection();
+            jindx = 0;
             return;
         }
         if (key == 'B')
         {
+            byte tempPos = 5; //Temporary lcd location
             jindx = 0;
-            quickChange();
+            lcd.clear();
+            lcd.setCursor(6, 0);
+            lcd.print("Enter");
+            lcd.setCursor(1, 1);
+            lcd.print(F("Override Passcode:"));
+            boolean complete = false;
+            lcd.setCursor(tempPos, 2);
+            while (complete == false)
+            {
+                char key = keypad.getKey();
+                if (key)
+                {
+                    lcd.print(key);
+                    tempPos++;
+                    lcd.setCursor(tempPos, 2);
+                    arraya[jindx++] = key;
+                    arraya[jindx];
+                    if (key == '*')
+                    {
+                        int passCheck = atoi(arraya);
+                        if ((passCheck == passcode) && (active == 0))
+                        {
+                            sOverride = 2;
+                            Serial.println("Override:On");
+                            lcd.clear();
+                            lcd.setCursor(0, 0);
+                            lcd.print("Run Time:");
+                            complete = true;
+                            return;
+                        }
+                        if ((passCheck == passcode) && (active >= 1))
+                        {
+                            lcd.clear();
+                            errorReport(15, 0);
+                        }
+                        else
+                        {
+                            lcd.clear();
+                            errorReport(14, 7);
+                        }
+                        complete = true;
+                        return;
+                    }
+                    if (key == '#')
+                    {
+                        lcd.clear();
+                        errorReport(16, 0);
+                        complete = true;
+                    }
+                }
+            }
+            preLCDClear = millis();
+            jindx = 0;
             return;
         }
         if (key == 'C')
@@ -1280,7 +1472,7 @@ void changetime(int sysPos)
             vectorChange();
             return;
         }
-        if (key == 'D')
+        if ((key == 'D') && (active == 1))
         {
             switch (dispOverride)
             {
@@ -1289,7 +1481,6 @@ void changetime(int sysPos)
                 break;
 
             case 1:
-                lcd.clear();
                 dispOverride = 0;
                 break;
             }
@@ -1312,17 +1503,6 @@ void changetime(int sysPos)
             int value = atoi(arraya);
             Serial.print("SYSTEM | Keypad Input: ");
             Serial.println(value);
-            if ((value == passcode) && (active == 0))
-            {
-                /* VERY IMPORTANT!  Check to see if active is 0
-          so that override isn't turned on while machine running.  */
-                sOverride = 2;
-                pos = POSDEFAULT;
-                lcd.setCursor(pos, 2);
-                lcd.print("       ");
-                jindx = 0;
-                return;
-            }
             if (value > 5100)
             {
                 value = 5100;
@@ -1434,11 +1614,9 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.println(" [REF: 2205]");
         break;
-    // MPS Input
+    // DEBUG
     case 11:
-        lcd.print("MPS set to: ");
-        lcd.print(refID);
-        Serial.print(F("SYSTEM: Updated mpsEnable: "));
+        Serial.print("DEBUG CODE:");
         Serial.println(refID);
         break;
     // Vector change
@@ -1450,19 +1628,38 @@ void errorReport(byte errorType, int refID)
         Serial.print(refID);
         Serial.print(" settings");
         break;
+    // Stop due to MPS
     case 13:
         Serial.print(F("ALERT: Machine stopped due to malfunction. MPS:"));
-        Serial.print(mpsEnable);
+        Serial.print(mpsArray[refID]);
         Serial.println("[REF 0034]");
         break;
     // Vector invalid input
     case 14:
         lcd.print("INVALID INPUT");
+        Serial.print("INVALID INPUT REF: ");
+        Serial.println(refID);
+        break;
+    // Tried to enter override while in active mode
+    case 15:
+        lcd.print("ERROR:2358");
+        Serial.print("ERROR: 2358");
+        break;
+    // System function termination
+    case 16:
+        lcd.print(F("Function Terminated"));
+        break;
+    case 17:
+        Serial.println("ALERT: Head in wrong position. [REF 5119]");
+        break;
+    default:
+        Serial.println("PROGRAMMING ERROR");
         break;
     }
     preLCDClear = millis();
 }
 
+// Value after the first instance of a "." to the next instance of "."
 int firstValue()
 {
     char masterArray[numChars];
@@ -1496,6 +1693,7 @@ int firstValue()
     return value;
 }
 
+// Value after the last instance of a "." to the end of the string/array
 int lastValue()
 {
     char masterArray[numChars];
@@ -1588,81 +1786,85 @@ void memoryLoad()
 
 void vectorChange()
 {
+    lcd.clear();
     lcd.setCursor(0, 1);
     lcd.print("Memory Vector:      ");
     pos = POSDEFAULT;
     boolean complete = false;
     while (complete == false)
     {
-        char key;
-        key = keypad.getKey();
+        char key = keypad.getKey();
         lcd.setCursor(pos, 2);
         lcd.print(key);
-        switch (key)
+        if (key)
         {
-        case '0':
-            vector = 0;
-            errorReport(12, vector);
-            EEPROM.update(100, 0);
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT0");
-            complete = true;
-            break;
+            switch (key)
+            {
+            case '0':
+                vector = 0;
+                errorReport(12, vector);
+                EEPROM.update(100, 0);
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT0");
+                complete = true;
+                break;
 
-        case '1':
-            vector = 1;
-            errorReport(12, vector);
-            EEPROM.update(100, 1);
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT1");
-            complete = true;
-            break;
+            case '1':
+                vector = 1;
+                errorReport(12, vector);
+                EEPROM.update(100, 1);
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT1");
+                complete = true;
+                break;
 
-        case '2':
-            vector = 2;
-            errorReport(12, vector);
-            EEPROM.update(100, 2);
-            Serial.println("Vector 2");
-            memoryLoad();
-            lcd.setCursor(16, 0);
-            lcd.print("VCT2");
-            complete = true;
-            break;
+            case '2':
+                vector = 2;
+                errorReport(12, vector);
+                EEPROM.update(100, 2);
+                Serial.println("Vector 2");
+                memoryLoad();
+                lcd.setCursor(16, 0);
+                lcd.print("VCT2");
+                complete = true;
+                break;
 
-        case '#':
-            complete = true;
-            return;
+            case '#':
+                complete = true;
+                return;
 
-        default:
-            errorReport(14, 0);
-            preLCDClear = millis();
-            pos = POSDEFAULT;
-            lcd.print("     ");
-            break;
+            default:
+                errorReport(14, 0);
+                preLCDClear = millis();
+                pos = POSDEFAULT;
+                lcd.print("     ");
+                break;
+            }
         }
     }
+    systemReset(0);
 }
 
-void overrideReset()
+void systemReset(byte resetVar)
 {
-    for (byte indx = 0; indx < SOLARRAYSIZE; indx++)
+    if (resetVar != 0)
     {
-        stateArray[indx] = 0;
-        Serial.print("Relay trigger INDEX: ");
-        Serial.print(indx);
-        Serial.println(" reset. [REF 3305]");
+        for (byte indx = 0; indx <= SOLARRAYSIZE; indx++)
+        {
+            stateArray[indx] = 0;
+            Serial.print("Relay trigger INDEX: ");
+            Serial.print(indx);
+            Serial.println(" reset. [REF 3305]");
+            digitalWrite(solenoidArray[indx], LOW);
+        }
     }
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Run Time: ");
     Serial.println("LCD Cleared");
-    digitalWrite(panelLed1, LOW);
-    digitalWrite(panelLed2, LOW);
-    digitalWrite(panelLed3, LOW);
-    digitalWrite(panelLed4, LOW);
-    digitalWrite(panelLed5, LOW);
+    setLEDS(0);
     //Reset the count after leaving sOverride or inactive mode
     logicCount = 0;
     runCheck = 1;
@@ -1670,6 +1872,9 @@ void overrideReset()
     hookNext = 0;
     crimpNext = 0;
     railCheckNext = 0;
+    if(sOverride == 2){
+        Serial.println("Override:Off");
+    }
     sOverride = 1; //Exit initial reset
 }
 
@@ -1760,24 +1965,107 @@ void mfPrintOut(byte arrayId, unsigned long &timerId)
     }
 }
 
-void quickChange()
+void mpsSelection()
 {
-    boolean complete = true;
+    if (debug >= 2)
+    {
+        Serial.println(F("Triggered MPS Function"));
+    }
+    sOverride = 0;
+    boolean complete = false;
+    byte arrayIndex = 0;
+    byte formatLCD = 0;
+    boolean ledState = HIGH;
     while (complete == false)
     {
-        char key = keypad.getKey();
-        if ((key == '#') || (key == '*') || (key == 'A') || (key == 'C') || (key == 'D'))
+        if (millis() - previousTimer4 >= buttonWait)
         {
-            complete = true;
+            ledState = !ledState;
+            digitalWrite(ledArray[0], ledState);
+            previousTimer4 = millis();
         }
-        else
+        bNextLogic = digitalRead(nextButton);
+        if ((bNextLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
         {
-            byte value = key - '0';
-            sysPosition = value;
-            lcd.setCursor(POSDEFAULT, 2);
-            lcd.print("      ");
-            jindx = 0;
+            arrayIndex++;
+            formatLCD = 0;
+            buttonPreviousTime = millis();
+        }
+        bDownLogic = digitalRead(downButton);
+        if ((bDownLogic == LOW) && (millis() - buttonPreviousTime >= buttonWait))
+        {
             complete = true;
+            buttonPreviousTime = millis();
+            systemReset(0);
+            return;
+        }
+        if (arrayIndex == (MPSLENGTH - 1))
+        {
+            arrayIndex = 0;
+        }
+        if (formatLCD == 0)
+        {
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Machine Protection");
+            formatLCD = 1;
+        }
+        lcd.setCursor(0, 1);
+        switch (arrayIndex)
+        {
+        case 0:
+            lcd.print("Feed MPS:");
+            lcd.print(mpsArray[0]);
+            break;
+        case 1:
+            lcd.print("Inserter MPS:");
+            lcd.print(mpsArray[1]);
+            break;
+        case 2:
+            lcd.print("Crimper MPS:");
+            lcd.print(mpsArray[2]);
+            break;
+        default:
+            break;
+        }
+
+        char key = keypad.getKey();
+        if (key)
+        {
+            if (key == '#')
+            {
+                complete = true;
+                systemReset(0);
+                return;
+            }
+            byte keyValue = key - '0';
+            if ((keyValue >= 0) && (keyValue <= 9))
+            {
+                mpsInput(keyValue, arrayIndex);
+                formatLCD = 0;
+            }
+            else
+            {
+                errorReport(16, 3);
+                complete = true;
+            }
         }
     }
+}
+
+void mpsInput(byte keyValue, byte arrayIndex)
+{
+    mpsArray[arrayIndex] = keyValue;
+    byte mpsMemoryAddress = arrayIndex + MPSMEMLOC;
+    EEPROM.update(mpsMemoryAddress, keyValue);
+    lcd.setCursor(0, 3);
+    lcd.print("MPS[");
+    lcd.print(arrayIndex);
+    lcd.print("] Value: ");
+    lcd.print(keyValue);
+    preLCDClear = millis();
+    Serial.print("MPS Array LOC:");
+    Serial.println(arrayIndex);
+    Serial.print("   Value: ");
+    Serial.println(keyValue);
 }

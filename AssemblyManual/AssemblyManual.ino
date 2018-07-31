@@ -85,712 +85,732 @@ byte mode = 1;
 
 void setup()
 {
-  //LEDs
-  pinMode(errorLed, OUTPUT);
-  //Buttons
-  pinMode(toggleButton, INPUT_PULLUP);
-  //Sensor & Solenoids
-  pinMode(mainSensor, INPUT_PULLUP);
-  pinMode(slaveSensor, INPUT_PULLUP);
-  pinMode(solenoidArray[0], OUTPUT);
-  pinMode(solenoidArray[1], OUTPUT);
-  // END OF PINMODE
+    //LEDs
+    pinMode(errorLed, OUTPUT);
+    //Buttons
+    pinMode(toggleButton, INPUT_PULLUP);
+    //Sensor & Solenoids
+    pinMode(mainSensor, INPUT_PULLUP);
+    pinMode(slaveSensor, INPUT_PULLUP);
+    pinMode(solenoidArray[0], OUTPUT);
+    pinMode(solenoidArray[1], OUTPUT);
+    // END OF PINMODE
 
-  Serial.begin(DATASPEED);
-  Serial.println("Starting...");
-  Serial.println(F("Program Version 1.0.0"));
-  lcd.begin(20, 4);
-  lcd.setCursor(0, 0);
-  lcd.print("Run Time: ");
-  debug = EEPROM.read(DEBUGMEMLOC);
-  mpsEnable = EEPROM.read(MPSMEMLOC);
-  senMode = EEPROM.read(SENMODELOC);
-  memoryLoad();
+    Serial.begin(DATASPEED);
+    Serial.println("Starting...");
+    Serial.println(F("Program Version 1.0.0"));
+    lcd.begin(20, 4);
+    lcd.setCursor(0, 0);
+    lcd.print("Run Time: ");
+    debug = EEPROM.read(DEBUGMEMLOC);
+    mpsEnable = EEPROM.read(MPSMEMLOC);
+    senMode = EEPROM.read(SENMODELOC);
+    memoryLoad();
 
-  Serial.println(F("*** System Variables ***"));
-  Serial.print("LCD Clear Time: ");
-  Serial.println(lcdClearTime);
-  Serial.print("LCD Default POS: ");
-  Serial.println(POSDEFAULT);
-  Serial.print("Override Passcode: ");
-  Serial.println(passcode);
-  Serial.println();
-  Serial.println("<Controller Ready>");
+    Serial.println(F("*** System Variables ***"));
+    Serial.print("LCD Clear Time: ");
+    Serial.println(lcdClearTime);
+    Serial.print("LCD Default POS: ");
+    Serial.println(POSDEFAULT);
+    Serial.print("Override Passcode: ");
+    Serial.println(passcode);
+    Serial.println();
+    Serial.println("<Controller Ready>");
 }
 
 void loop()
 {
-  unsigned long currentTime = millis();
-  lcdControl();
+    unsigned long currentTime = millis();
+    lcdControl();
 
-  if (Serial.available() > 0)
-  {
-    recvWithEndMarker();
-  }
-  if (newData == true)
-  {
-    if (debug >= 2)
+    if (Serial.available() > 0)
     {
-      Serial.println(F("DEBUG: newData Function ran."));
+        recvWithEndMarker();
     }
-    checkData();
-  }
-  toggleLogic = digitalRead(toggleButton); //Check the status of the Toggle Button
-  if (sysPosition >= sysLength)
-  {
-    //Included one for null
-    sysPosition = 0;
-  }
-  // If Toggle Button is pressed or "Active"
-  if (((toggleLogic == LOW) || (runCheck == 0)) && mode != 3)
-  {
-    digitalWrite(errorLed, HIGH);
-    mode = 0;
-    inactive(sysPosition);
-  }
-  if ((toggleLogic == HIGH) && (mode != 2))
-  {
-    mode = 1;
-  }
-  if (mode == 1)
-  {
-    if (debug >= 2){
-      Serial.println("System mode resetting");
-    }
-    digitalWrite(errorLed, LOW);
-    digitalWrite(solenoidArray[0], LOW);
-    digitalWrite(solenoidArray[1], LOW);
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Run Time:");
-    lcd.setCursor(0, 1);
-    lcd.print("sMode:");
-    lcd.setCursor(6, 1);
-    if (senMode == 1)
+    if (newData == true)
     {
-      lcd.print("Enabled");
+        if (debug >= 2)
+        {
+            Serial.println(F("DEBUG: newData Function ran."));
+        }
+        checkData();
     }
-    if (senMode == 0)
+    toggleLogic = digitalRead(toggleButton); //Check the status of the Toggle Button
+    if (sysPosition >= sysLength)
     {
-      lcd.print("Disabled");
+        //Included one for null
+        sysPosition = 0;
     }
-    lcd.setCursor(0,2);
-    lcd.print("SC:");
-    lcd.print(systemCount);
-    mode = 2;
-  }
-  if (mode == 2)
-  {
-    // Active Mode
-    mSensorLogic = digitalRead(mainSensor);
-    if ((mSensorLogic == LOW) && (crimpCycle == 0))
+    // If Toggle Button is pressed or "Active"
+    if (((toggleLogic == LOW) || (runCheck == 0)) && mode != 3)
     {
-      systemCount++;
-      if (debug >= 1)
-      {
-        Serial.print(F("Main Cycle Started | SC:"));
-        Serial.println(systemCount);
-      }
-      lcd.setCursor(0, 2);
-      lcd.print("SC:");
-      lcd.print(systemCount);
-      digitalWrite(solenoidArray[0], HIGH);
-      preTimer1 = currentTime;
-      crimpCycle = 1;
-      if (senMode == 1)
-      {
-        // Go to block detection sequence
-        crimpCycle = 1;
-      }
-      else
-      {
-        // Skip block detection
-        crimpCycle = 5;
-      }
+        digitalWrite(errorLed, HIGH);
+        mode = 0;
+        inactive(sysPosition);
     }
-    //Block Detection Enabled
-    if ((crimpCycle == 1) && (currentTime - preTimer1 >= sysArray[0]))
+    if ((toggleLogic == HIGH) && (mode != 2))
     {
-      slaveSensorLogic = digitalRead(slaveSensor);
-      if (slaveSensorLogic == LOW)
-      {
-        preTimer1 = currentTime;
-        blockFunction();
-      }
-      else
-      {
-        digitalWrite(solenoidArray[1], HIGH);
-        preTimer1 = currentTime;
-        crimpCycle = 6;
-      }
-    }
-    // Wait for Sensor to be cleared
-    if(crimpCycle == 2){
-      lcd.setCursor(15,2);
-      lcd.print((currentTime - preTimer1) / 1000);
-      slaveSensorLogic = digitalRead(slaveSensor);
-      if(slaveSensorLogic == HIGH){
-        crimpCycle = 3;
-        preTimer1 = currentTime;
-        digitalWrite(errorLed, LOW);
-        Serial.print(F("Block Cleared      | SC:"));
-        Serial.println(systemCount);
-        lcd.setCursor(0,3);
-        lcd.print("Block Cleared       ");
-        preLCDClear = millis();
-      }
-    }
-    // Block Detection - Extra wait timer
-    if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[2])){
-      slaveSensorLogic = digitalRead(slaveSensor);
-      if(slaveSensorLogic == LOW){
-        blockFunction();
-        return;
-      }
-      digitalWrite(solenoidArray[1], HIGH);
-      preTimer1 = currentTime;
-      crimpCycle = 6;
-      lcd.setCursor(15,2);
-      lcd.print("     ");
-    }
-    // Block Detection Disabled
-    if ((crimpCycle == 5) && (currentTime - preTimer1 >= sysArray[0]))
-    {
-      digitalWrite(solenoidArray[1], HIGH);
-      preTimer1 = currentTime;
-      crimpCycle = 6;
-    }
-    // Reset Cylinders
-    if ((crimpCycle == 6) && (currentTime - preTimer1 >= sysArray[1]))
-    {
-      digitalWrite(solenoidArray[0], LOW);
-      digitalWrite(solenoidArray[1], LOW);
-      if(debug >= 2){
-      Serial.print(F("Cycle Finished     | SC:"));
-      Serial.println(systemCount);
-      }
-      preTimer1 = currentTime;
-      crimpCycle = 0;
-    }
-  }
-  if (mode == 3)
-  {
-    lcd.setCursor(0, 1);
-    lcd.print(F("OVERRIDE: ON        "));
-    //Get keypad input
-    char key = keypad.getKey();
-    if (key)
-    {
-      if(debug >= 3){
-        Serial.print("Debug Key: ");
-        Serial.println(key);
-      }
-      switch (key)
-      {
-      case 'A':
-      case 'B':
-      case 'C':
-      case 'D':
-        return;
-      case '#':
-      case '*':
-      case '0':
         mode = 1;
-        return;
-      default:
-        break;
-      }
-      int trigger = key - '0';
-      //Send keypad input to Override_Trigger function
-      Override_Trigger(trigger);
     }
-  } // End of Else Statment
+    if (mode == 1)
+    {
+        if (debug >= 2)
+        {
+            Serial.println("System mode resetting");
+        }
+        digitalWrite(errorLed, LOW);
+        digitalWrite(solenoidArray[0], LOW);
+        digitalWrite(solenoidArray[1], LOW);
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Run Time:");
+        lcd.setCursor(0, 1);
+        lcd.print("sMode:");
+        lcd.setCursor(6, 1);
+        if (senMode == 1)
+        {
+            lcd.print("Enabled");
+        }
+        if (senMode == 0)
+        {
+            lcd.print("Disabled");
+        }
+        lcd.setCursor(0, 2);
+        lcd.print("SC:");
+        lcd.print(systemCount);
+        mode = 2;
+    }
+    if (mode == 2)
+    {
+        // Active Mode
+        mSensorLogic = digitalRead(mainSensor);
+        if ((mSensorLogic == LOW) && (crimpCycle == 0) && (currentTime - preTimer1 >= sysArray[4])) //Checks crimp Cycle and compares last run vs time allotment
+        {
+            systemCount++;
+            if (debug >= 1)
+            {
+                Serial.print(F("Main Cycle Started | SC:"));
+                Serial.println(systemCount);
+            }
+            lcd.setCursor(0, 2);
+            lcd.print("SC:");
+            lcd.print(systemCount);
+            digitalWrite(solenoidArray[0], HIGH);
+            preTimer1 = currentTime;
+            crimpCycle = 1;
+            if (senMode == 1)
+            {
+                // Go to block detection sequence
+                crimpCycle = 1;
+            }
+            else
+            {
+                // Skip block detection
+                crimpCycle = 5;
+            }
+        }
+        //Block Detection Enabled
+        if ((crimpCycle == 1) && (currentTime - preTimer1 >= sysArray[0]))
+        {
+            slaveSensorLogic = digitalRead(slaveSensor);
+            if (slaveSensorLogic == LOW)
+            {
+                preTimer1 = currentTime;
+                blockFunction();
+            }
+            else
+            {
+                digitalWrite(solenoidArray[1], HIGH);
+                preTimer1 = currentTime;
+                crimpCycle = 6;
+            }
+        }
+        // Wait for Sensor to be cleared
+        if (crimpCycle == 2)
+        {
+            lcd.setCursor(15, 2);
+            lcd.print((currentTime - preTimer1) / 1000);
+            slaveSensorLogic = digitalRead(slaveSensor);
+            if (slaveSensorLogic == HIGH)
+            {
+                crimpCycle = 3;
+                preTimer1 = currentTime;
+                digitalWrite(errorLed, LOW);
+                Serial.print(F("Block Cleared      | SC:"));
+                Serial.println(systemCount);
+                lcd.setCursor(0, 3);
+                lcd.print("Block Cleared       ");
+                preLCDClear = millis();
+            }
+        }
+        // Block Detection - Extra wait timer
+        if ((crimpCycle == 3) && (currentTime - preTimer1 >= sysArray[2]))
+        {
+            slaveSensorLogic = digitalRead(slaveSensor);
+            if (slaveSensorLogic == LOW)
+            {
+                blockFunction();
+                return;
+            }
+            digitalWrite(solenoidArray[1], HIGH);
+            preTimer1 = currentTime;
+            crimpCycle = 6;
+            lcd.setCursor(15, 2);
+            lcd.print("     ");
+        }
+        // Block Detection Disabled
+        if ((crimpCycle == 5) && (currentTime - preTimer1 >= sysArray[0]))
+        {
+            digitalWrite(solenoidArray[1], HIGH);
+            preTimer1 = currentTime;
+            crimpCycle = 6;
+        }
+        // Reset Cylinders
+        if ((crimpCycle == 6) && (currentTime - preTimer1 >= sysArray[1]))
+        {
+            digitalWrite(solenoidArray[0], LOW);
+            digitalWrite(solenoidArray[1], LOW);
+            if (debug >= 2)
+            {
+                Serial.print(F("Cycle Finished     | SC:"));
+                Serial.println(systemCount);
+            }
+            preTimer1 = currentTime;
+            crimpCycle = 0;
+        }
+    }
+    if (mode == 3)
+    {
+        lcd.setCursor(0, 1);
+        lcd.print(F("OVERRIDE: ON        "));
+        //Get keypad input
+        char key = keypad.getKey();
+        if (key)
+        {
+            if (debug >= 3)
+            {
+                Serial.print("Debug Key: ");
+                Serial.println(key);
+            }
+            switch (key)
+            {
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+                return;
+            case '#':
+            case '*':
+            case '0':
+                mode = 1;
+                return;
+            default:
+                break;
+            }
+            int trigger = key - '0';
+            //Send keypad input to Override_Trigger function
+            Override_Trigger(trigger);
+        }
+    } // End of Else Statment
 }
-void blockFunction() {
-  crimpCycle = 2;
-  Serial.print(F("Block Detected.  SC:"));
-  Serial.println(systemCount);
-  lcd.setCursor(0, 3);
-  lcd.print(F("Block detected      "));
-  preLCDClear = millis();
-  digitalWrite(errorLed, HIGH);
+void blockFunction()
+{
+    crimpCycle = 2;
+    Serial.print(F("Block Detected.  SC:"));
+    Serial.println(systemCount);
+    lcd.setCursor(0, 3);
+    lcd.print(F("Block detected      "));
+    preLCDClear = millis();
+    digitalWrite(errorLed, HIGH);
 }
 void inactive(byte sysPos)
 {
-  lcd.setCursor(0, 2);
-  lcd.print("Time:");
-  lcd.setCursor(18,0);
-  lcd.print("IA");
-  digitalWrite(errorLed, HIGH);
-  digitalWrite(solenoidArray[0], LOW);
-  digitalWrite(solenoidArray[1], LOW);
-  crimpCycle = 0;
-  switch (sysPos)
-  {
-  case 0:
-    lcd.setCursor(0, 1);
-    lcd.print(F("Crimp Wait Delay    "));
-    changetime(sysPos);
-    break;
-  case 1:
-    lcd.setCursor(0, 1);
-    lcd.print(F("Crimp Time          "));
-    changetime(sysPos);
-    break;
-  case 2:
-    lcd.setCursor(0, 1);
-    lcd.print(F("Block Wait Time  "));
-    changetime(sysPos);
-    break;
-  case 3:
-    lcd.setCursor(0, 1);
-    lcd.print(F("Sensor Ignore Delay "));
-    changetime(sysPos);
-    break;
-  case 4:
-    lcd.setCursor(0, 1);
-    lcd.print(F("Crimp Jam [ MPS ]   "));
-    changetime(sysPos);
-    break;
-  } //END OF MAIN SWITCH
+    lcd.setCursor(0, 2);
+    lcd.print("Time:");
+    lcd.setCursor(18, 0);
+    lcd.print("IA");
+    digitalWrite(errorLed, HIGH);
+    digitalWrite(solenoidArray[0], LOW);
+    digitalWrite(solenoidArray[1], LOW);
+    crimpCycle = 0;
+    switch (sysPos)
+    {
+    case 0:
+        lcd.setCursor(0, 1);
+        lcd.print(F("Crimp Wait Delay    "));
+        changetime(sysPos);
+        break;
+    case 1:
+        lcd.setCursor(0, 1);
+        lcd.print(F("Crimp Time          "));
+        changetime(sysPos);
+        break;
+    case 2:
+        lcd.setCursor(0, 1);
+        lcd.print(F("Block Wait Time  "));
+        changetime(sysPos);
+        break;
+    case 3:
+        lcd.setCursor(0, 1);
+        lcd.print(F("Sensor Ignore Delay "));
+        changetime(sysPos);
+        break;
+    case 4:
+        lcd.setCursor(0, 1);
+        lcd.print(F("Crimp Jam [ MPS ]   "));
+        changetime(sysPos);
+        break;
+    } //END OF MAIN SWITCH
 } // End of Inactive void
 
 void changetime(int sysPos)
 {
-  lcd.setCursor(5, 2);
-  lcd.print(sysArray[sysPos]);
-  lcd.print("      ");
-  lcd.setCursor(pos, 2);
-  char key = keypad.getKey();
-  if (key)
-  {
-    if ((key == 'A') || (key == 'a'))
+    lcd.setCursor(5, 2);
+    lcd.print(sysArray[sysPos]);
+    lcd.print("      ");
+    lcd.setCursor(pos, 2);
+    char key = keypad.getKey();
+    if (key)
     {
-      sysPosition++;
-      if (sysPosition == sysLength)
-      {
-        sysPosition = 0;
-      }
-      return;
-    }
-    if ((key == 'C') || (key == 'c'))
-    {
-      lcd.clear();
-      lcd.setCursor(0, 1);
-      lcd.print(F("Enter Sensor Mode:  "));
-
-      boolean complete = false;
-      while (complete == false)
-      {
-        char key = keypad.getKey();
-        if (key)
+        if ((key == 'A') || (key == 'a'))
         {
-          switch (key)
-          {
-          case '0':
-            senMode = 0;
-            Serial.println("SenMode = 0");
-            EEPROM.update(SENMODELOC, 0);
-            lcd.setCursor(0, 3);
-            lcd.print("Sensor Mode: 0");
-            complete = true;
-            break;
-
-          case '1':
-            senMode = 1;
-            Serial.println("SenMode = 1");
-            EEPROM.update(SENMODELOC, 1);
-            lcd.setCursor(0, 3);
-            lcd.print("Sensor Mode: 1");
-            complete = true;
-            break;
-
-          case '#':
-          case '*':
-            Serial.println("Premature Exit");
-            complete = true;
-            break;
-
-          default:
-            Serial.print("Key [ ");
-            Serial.print(key);
-            Serial.println(" ] not accepted");
-            break;
-          }
+            sysPosition++;
+            if (sysPosition == sysLength)
+            {
+                sysPosition = 0;
+            }
+            return;
         }
-      }
-      jindx = 0;
-      preLCDClear = millis();
-    }
-    else
-    {
-      lcd.print(key);
-      pos++;
-      lcd.setCursor(pos, 2);
+        if ((key == 'C') || (key == 'c'))
+        {
+            lcd.clear();
+            lcd.setCursor(0, 1);
+            lcd.print(F("Enter Sensor Mode:  "));
 
-      arraya[jindx++] = key;
-      arraya[jindx];
-      if (pos > 20)
-      {
-        pos = POSDEFAULT;
-      }
-    }
-    if (key == '*')
-    {
-      int value = atoi(arraya);
-      Serial.print(F("SYSTEM | Keypad Input: "));
-      Serial.println(value);
-      if ((value == passcode) && (mode == 0))
-      {
-        /* VERY IMPORTANT!  Check to see if active is 0
+            boolean complete = false;
+            while (complete == false)
+            {
+                char key = keypad.getKey();
+                if (key)
+                {
+                    switch (key)
+                    {
+                    case '0':
+                        senMode = 0;
+                        Serial.println("SenMode = 0");
+                        EEPROM.update(SENMODELOC, 0);
+                        lcd.setCursor(0, 3);
+                        lcd.print("Sensor Mode: 0");
+                        complete = true;
+                        break;
+
+                    case '1':
+                        senMode = 1;
+                        Serial.println("SenMode = 1");
+                        EEPROM.update(SENMODELOC, 1);
+                        lcd.setCursor(0, 3);
+                        lcd.print("Sensor Mode: 1");
+                        complete = true;
+                        break;
+
+                    case '#':
+                    case '*':
+                        Serial.println("Premature Exit");
+                        complete = true;
+                        break;
+
+                    default:
+                        Serial.print("Key [ ");
+                        Serial.print(key);
+                        Serial.println(" ] not accepted");
+                        break;
+                    }
+                }
+            }
+            jindx = 0;
+            preLCDClear = millis();
+        }
+        else
+        {
+            lcd.print(key);
+            pos++;
+            lcd.setCursor(pos, 2);
+
+            arraya[jindx++] = key;
+            arraya[jindx];
+            if (pos > 20)
+            {
+                pos = POSDEFAULT;
+            }
+        }
+        if (key == '*')
+        {
+            int value = atoi(arraya);
+            Serial.print(F("SYSTEM | Keypad Input: "));
+            Serial.println(value);
+            if ((value == passcode) && (mode == 0))
+            {
+                /* VERY IMPORTANT!  Check to see if active is 0
           so that override isn't turned on while machine running.  */
-        mode = 3;
-        pos = POSDEFAULT;
-        lcd.setCursor(pos, 2);
-        lcd.print("       ");
-        jindx = 0;
-        return;
-      }
-      if (value > 5100)
-      {
-        value = 5100;
-        Serial.println("WARNING: MAX VALUE HIT");
-        lcd.setCursor(0, 3);
-        lcd.print("ERROR: MAX VALUE HIT");
-        preLCDClear = millis();
-      }
-      eepromWrite(sysPos, value);
-      sysArray[sysPos] = value;
-      pos = POSDEFAULT;
-      lcd.setCursor(pos, 2);
-      lcd.print("      ");
-      jindx = 0;
-      return;
-    }
-    if (key == '#')
-    {
-      pos = POSDEFAULT;
-      lcd.setCursor(pos, 2);
-      lcd.print("     ");
-      jindx = 0;
-      return;
-    }
-  } //End of If(Key)
+                mode = 3;
+                pos = POSDEFAULT;
+                lcd.setCursor(pos, 2);
+                lcd.print("       ");
+                jindx = 0;
+                return;
+            }
+            if (value > 5100)
+            {
+                value = 5100;
+                Serial.println("WARNING: MAX VALUE HIT");
+                lcd.setCursor(0, 3);
+                lcd.print("ERROR: MAX VALUE HIT");
+                preLCDClear = millis();
+            }
+            eepromWrite(sysPos, value);
+            sysArray[sysPos] = value;
+            pos = POSDEFAULT;
+            lcd.setCursor(pos, 2);
+            lcd.print("      ");
+            jindx = 0;
+            return;
+        }
+        if (key == '#')
+        {
+            pos = POSDEFAULT;
+            lcd.setCursor(pos, 2);
+            lcd.print("     ");
+            jindx = 0;
+            return;
+        }
+    } //End of If(Key)
 }
 //End of ChangeTime function
 
 void eepromWrite(byte arrayLoc, int value)
 {
-  //int memAddress = (((vector * MEMVECTORMULTIPLE) + arrayLoc) * 2);
-  int memAddress = (arrayLoc * 2);
-  if (memCheck(memAddress, 12) == true)
-  {
-    if ((value >= 5100) || (value <= 0))
+    //int memAddress = (((vector * MEMVECTORMULTIPLE) + arrayLoc) * 2);
+    int memAddress = (arrayLoc * 2);
+    if (memCheck(memAddress, 12) == true)
     {
-      Serial.println(F("EEPROM Function Aborted [REF:3692]"));
-      return;
+        if ((value >= 5100) || (value <= 0))
+        {
+            Serial.println(F("EEPROM Function Aborted [REF:3692]"));
+            return;
+        }
+        int tempValue = value / 10;
+        if ((value <= 2550))
+        {
+            EEPROM.update(memAddress, tempValue);
+            Serial.print(F("Updating EEPROM Address ( "));
+            Serial.print(memAddress);
+            Serial.print(F(" ) with value [ "));
+            Serial.print(tempValue);
+            Serial.println(" ]");
+            memAddress++;
+            if (memCheck(memAddress, 13) == false)
+            {
+                return;
+            }
+            EEPROM.update(memAddress, 0);
+            Serial.print(F("Updating EEPROM Address ( "));
+            Serial.print(memAddress);
+            Serial.println(F(" ) with value [ 0 ]"));
+        }
+        if (value > 2550)
+        {
+            tempValue = tempValue - 255;
+            EEPROM.update(memAddress, tempValue);
+            Serial.print(F("Updating EEPROM Address ( "));
+            Serial.print(memAddress);
+            Serial.print(F(" ) with value [ "));
+            Serial.print(tempValue);
+            Serial.println(" ]");
+            memAddress++;
+            if (memCheck(memAddress, 14) == false)
+            {
+                return;
+            }
+            EEPROM.update(memAddress, 255);
+            Serial.print(F("Updating EEPROM Address ( "));
+            Serial.print(memAddress);
+            Serial.println(F(" ) with value [ 255 ]"));
+        }
     }
-    int tempValue = value / 10;
-    if ((value <= 2550))
-    {
-      EEPROM.update(memAddress, tempValue);
-      Serial.print(F("Updating EEPROM Address ( "));
-      Serial.print(memAddress);
-      Serial.print(F(" ) with value [ "));
-      Serial.print(tempValue);
-      Serial.println(" ]");
-      memAddress++;
-      if (memCheck(memAddress, 13) == false)
-      {
-        return;
-      }
-      EEPROM.update(memAddress, 0);
-      Serial.print(F("Updating EEPROM Address ( "));
-      Serial.print(memAddress);
-      Serial.println(F(" ) with value [ 0 ]"));
-    }
-    if (value > 2550)
-    {
-      tempValue = tempValue - 255;
-      EEPROM.update(memAddress, tempValue);
-      Serial.print(F("Updating EEPROM Address ( "));
-      Serial.print(memAddress);
-      Serial.print(F(" ) with value [ "));
-      Serial.print(tempValue);
-      Serial.println(" ]");
-      memAddress++;
-      if (memCheck(memAddress, 14) == false)
-      {
-        return;
-      }
-      EEPROM.update(memAddress, 255);
-      Serial.print(F("Updating EEPROM Address ( "));
-      Serial.print(memAddress);
-      Serial.println(F(" ) with value [ 255 ]"));
-    }
-  }
 }
 
 void memoryLoad()
 {
-  //Load EEPROM Memory
-  for (byte k = 0; k < sysLength; k++)
-  {
-    // Grab memory address
-    int memAddress = (k * 2);
-    //Read 
-    int memBlockOne = EEPROM.read(memAddress);
-    Serial.print("X23 Address[ ");
-    Serial.print(memAddress);
-    Serial.print(" ] Value: ");
-    Serial.println(memBlockOne);
-    memBlockOne = memBlockOne * 10;
-    if ((memBlockOne > 2550) || (memBlockOne < 0))
+    //Load EEPROM Memory
+    for (byte k = 0; k < sysLength; k++)
     {
-      Serial.print(F("ERROR | Corrupted memory LOC:"));
-      Serial.print(memAddress);
-      Serial.print(" Result:");
-      Serial.println(memBlockOne);
-      lcd.setCursor(0, 3);
-      lcd.print("MEMCORE:");
-      lcd.print(memAddress);
-      break;
+        // Grab memory address
+        int memAddress = (k * 2);
+        //Read
+        int memBlockOne = EEPROM.read(memAddress);
+        Serial.print("X23 Address[ ");
+        Serial.print(memAddress);
+        Serial.print(" ] Value: ");
+        Serial.println(memBlockOne);
+        memBlockOne = memBlockOne * 10;
+        if ((memBlockOne > 2550) || (memBlockOne < 0))
+        {
+            Serial.print(F("ERROR | Corrupted memory LOC:"));
+            Serial.print(memAddress);
+            Serial.print(" Result:");
+            Serial.println(memBlockOne);
+            lcd.setCursor(0, 3);
+            lcd.print("MEMCORE:");
+            lcd.print(memAddress);
+            break;
+        }
+        memAddress++;
+        int memBlockTwo = EEPROM.read(memAddress);
+        Serial.print("X24: Address[ ");
+        Serial.print(memAddress);
+        Serial.print(" ] Value: ");
+        Serial.println(memBlockTwo);
+        memBlockTwo = memBlockTwo * 10;
+        if ((memBlockTwo > 2550) || (memBlockTwo < 0))
+        {
+            Serial.print(F("ERROR | Corrupted memory LOC:"));
+            Serial.print(memAddress);
+            Serial.print(" Result:");
+            Serial.println(memBlockTwo);
+            lcd.setCursor(0, 3);
+            lcd.print("MEMCORE:");
+            lcd.print(memAddress);
+            break;
+        }
+        sysArray[k] = memBlockOne + memBlockTwo;
+        Serial.print("EEPROM[");
+        Serial.print(k);
+        Serial.print("]: ");
+        Serial.println(sysArray[k]);
+        delay(10);
     }
-    memAddress++;
-    int memBlockTwo = EEPROM.read(memAddress);
-    Serial.print("X24: Address[ ");
-    Serial.print(memAddress);
-    Serial.print(" ] Value: ");
-    Serial.println(memBlockTwo);
-    memBlockTwo = memBlockTwo * 10;
-    if ((memBlockTwo > 2550) || (memBlockTwo < 0))
-    {
-      Serial.print(F("ERROR | Corrupted memory LOC:"));
-      Serial.print(memAddress);
-      Serial.print(" Result:");
-      Serial.println(memBlockTwo);
-      lcd.setCursor(0, 3);
-      lcd.print("MEMCORE:");
-      lcd.print(memAddress);
-      break;
-    }
-    sysArray[k] = memBlockOne + memBlockTwo;
-    Serial.print("EEPROM[");
-    Serial.print(k);
-    Serial.print("]: ");
-    Serial.println(sysArray[k]);
-    delay(10);
-  }
 }
 
 boolean memCheck(unsigned int address, byte refID)
 {
-  if (address > EEPROM.length())
-  {
-    Serial.print(F("Memory limit reached. ID( "));
-    Serial.print(refID);
-    Serial.println(" ) [REF: 4320]");
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+    if (address > EEPROM.length())
+    {
+        Serial.print(F("Memory limit reached. ID( "));
+        Serial.print(refID);
+        Serial.println(" ) [REF: 4320]");
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 void Override_Trigger(int RTrigger)
 {
-  if (RTrigger - 1 < SOLARRAYSIZE)
-  {
-    boolean tempstate = LOW;
-    String lcdstate = "OFF";
-    if (stateArray[RTrigger] == 1)
+    if (RTrigger - 1 < SOLARRAYSIZE)
     {
-      tempstate = LOW;
-      lcdstate = "OFF";
-      stateArray[RTrigger] = 0;
+        boolean tempstate = LOW;
+        String lcdstate = "OFF";
+        if (stateArray[RTrigger] == 1)
+        {
+            tempstate = LOW;
+            lcdstate = "OFF";
+            stateArray[RTrigger] = 0;
+        }
+        else
+        {
+            stateArray[RTrigger] = 1;
+            lcdstate = "ON";
+            tempstate = HIGH;
+        }
+        digitalWrite(solenoidArray[RTrigger - 1], tempstate);
+        lcd.setCursor(0, 3);
+        lcd.print("Relay ");
+        lcd.print(RTrigger);
+        lcd.print(" SET TO: ");
+        lcd.print(lcdstate);
+        lcd.print(" ");
+        Serial.print(F("SYSTEM OVERRIDE | Relay "));
+        Serial.print(RTrigger);
+        Serial.print(" | ");
+        Serial.println(lcdstate);
+        preLCDClear = millis();
     }
-    else
-    {
-      stateArray[RTrigger] = 1;
-      lcdstate = "ON";
-      tempstate = HIGH;
-    }
-    digitalWrite(solenoidArray[RTrigger - 1], tempstate);
-    lcd.setCursor(0, 3);
-    lcd.print("Relay ");
-    lcd.print(RTrigger);
-    lcd.print(" SET TO: ");
-    lcd.print(lcdstate);
-    lcd.print(" ");
-    Serial.print(F("SYSTEM OVERRIDE | Relay "));
-    Serial.print(RTrigger);
-    Serial.print(" | ");
-    Serial.println(lcdstate);
-    preLCDClear = millis();
-  }
 }
 
 void lcdControl()
 {
-  lcd.setCursor(0, 0);
-  lcd.print("Run Time:");
-  lcd.setCursor(10, 0);
-  lcd.print(millis() / 1000);
-  if (millis() - preLCDClear >= lcdClearTime)
-  {
-    preLCDClear = millis();
-    lcd.setCursor(0, 3);
-    lcd.print("                    ");
-  }
+    lcd.setCursor(0, 0);
+    lcd.print("Run Time:");
+    lcd.setCursor(10, 0);
+    lcd.print(millis() / 1000);
+    if (millis() - preLCDClear >= lcdClearTime)
+    {
+        preLCDClear = millis();
+        lcd.setCursor(0, 3);
+        lcd.print("                    ");
+    }
 }
 
 void recvWithEndMarker()
 {
-  static byte ndx = 0;
-  char endMarker = '\n';
-  char rc;
+    static byte ndx = 0;
+    char endMarker = '\n';
+    char rc;
 
-  while (Serial.available() > 0 && newData == false)
-  {
-    rc = Serial.read();
+    while (Serial.available() > 0 && newData == false)
+    {
+        rc = Serial.read();
 
-    if (rc != endMarker)
-    {
-      receivedChars[ndx] = rc;
-      ndx++;
-      apple = apple += rc;
-      if (ndx >= numChars)
-      {
-        ndx = numChars - 1;
-      }
+        if (rc != endMarker)
+        {
+            receivedChars[ndx] = rc;
+            ndx++;
+            apple = apple += rc;
+            if (ndx >= numChars)
+            {
+                ndx = numChars - 1;
+            }
+        }
+        else
+        {
+            receivedChars[ndx] = '\0'; // terminate the string
+            ndx = 0;
+            newData = true;
+        }
     }
-    else
-    {
-      receivedChars[ndx] = '\0'; // terminate the string
-      ndx = 0;
-      newData = true;
-    }
-  }
 }
 void checkData()
 {
-  if (newData == true)
-  {
-    if (apple.length() >= 5)
+    if (newData == true)
     {
-      if (apple.substring(0, 6) == "EEPROM")
-      {
-        eepromUpdate();
-      }
-      if (apple.substring(0, 5) == "DEBUG")
-      {
-        char voucher = apple.charAt(6);
-        byte endingVoucher = voucher - '0';
-        if ((endingVoucher >= 0) && (endingVoucher <= 9))
+        if (apple.length() >= 5)
         {
-          debug = endingVoucher;
-          Serial.print("Debug updated to: ");
-          Serial.println(debug);
-          EEPROM.update(DEBUGMEMLOC, debug);
+            if (apple.substring(0, 5) == "EREAD")
+            {
+                int address = firstValue();
+                if ((address <= EEPROM.length()) && (address >= 0))
+                {
+                    byte value = EEPROM.read(address);
+                    Serial.print("EEPROM Memory Address: ");
+                    Serial.println(address);
+                    Serial.print("   Value: ");
+                    Serial.println(value);
+                }
+            }
+            if (apple.substring(0, 6) == "EEPROM")
+            {
+                eepromUpdate();
+            }
+            if (apple.substring(0, 5) == "DEBUG")
+            {
+                char voucher = apple.charAt(6);
+                byte endingVoucher = voucher - '0';
+                if ((endingVoucher >= 0) && (endingVoucher <= 9))
+                {
+                    debug = endingVoucher;
+                    Serial.print("Debug updated to: ");
+                    Serial.println(debug);
+                    EEPROM.update(DEBUGMEMLOC, debug);
+                }
+                else
+                {
+                    Serial.println(F("Debug value not accepted"));
+                }
+            }
+            if (apple.substring(0, 8) == "OVERRIDE")
+            {
+                if ((mode == 0) || (mode == 1))
+                {
+                    mode = 2;
+                    Serial.println("Override:On");
+                }
+                else
+                {
+                    mode = 0;
+                    Serial.println("Override:Off");
+                }
+            }
         }
-        else
-        {
-          Serial.println(F("Debug value not accepted"));
-        }
-      }
-      if (apple.substring(0, 8) == "OVERRIDE")
-      {
-        if ((mode == 0) || (mode == 1))
-        {
-          mode = 2;
-          Serial.println("Override:On");
-        }
-        else
-        {
-          mode = 0;
-          Serial.println("Override:Off");
-        }
-      }
+        newData = false;
+        apple = "";
     }
-    newData = false;
-    apple = "";
-  }
 }
 void eepromUpdate()
 {
-  int address = firstValue();
-  if (memCheck(address, 10) == false)
-  {
-    return;
-  }
-  else
-  {
-    int eepromValue = lastValue();
-    Serial.print("EEPROM.update(");
-    Serial.print(address);
-    Serial.print(", ");
-    Serial.print(eepromValue);
-    Serial.println(")");
-    EEPROM.update(address, eepromValue);
-    memoryLoad();
-  }
+    int address = firstValue();
+    if (memCheck(address, 10) == false)
+    {
+        return;
+    }
+    else
+    {
+        int eepromValue = lastValue();
+        Serial.print("EEPROM.update(");
+        Serial.print(address);
+        Serial.print(", ");
+        Serial.print(eepromValue);
+        Serial.println(")");
+        EEPROM.update(address, eepromValue);
+        memoryLoad();
+    }
 }
 int firstValue()
 {
-  char masterArray[numChars];
-  byte slaveindx;
-  byte value_start = apple.indexOf('.');
-  if (debug >= 2)
-  {
-    Serial.print("V Start: ");
-    Serial.println(value_start);
-  }
-  byte value_end = apple.indexOf('.', value_start + 1);
-  if (debug >= 2)
-  {
-    Serial.print("V End: ");
-    Serial.println(value_end);
-  }
-  for (byte k = value_start + 1; k < value_end; k++)
-  {
-    masterArray[slaveindx] = receivedChars[k];
-    slaveindx++;
-  }
-  masterArray[slaveindx] = '\0';
-  Serial.print("Recieved Input: ");
-  Serial.println(masterArray);
-  int value = atoi(masterArray);
+    char masterArray[numChars];
+    byte slaveindx;
+    byte value_start = apple.indexOf('.');
+    if (debug >= 2)
+    {
+        Serial.print("V Start: ");
+        Serial.println(value_start);
+    }
+    byte value_end = apple.indexOf('.', value_start + 1);
+    if (debug >= 2)
+    {
+        Serial.print("V End: ");
+        Serial.println(value_end);
+    }
+    for (byte k = value_start + 1; k < value_end; k++)
+    {
+        masterArray[slaveindx] = receivedChars[k];
+        slaveindx++;
+    }
+    masterArray[slaveindx] = '\0';
+    Serial.print("Recieved Input: ");
+    Serial.println(masterArray);
+    int value = atoi(masterArray);
 
-  if (debug >= 2)
-  {
-    Serial.print("fvF firstValue: ");
-    Serial.println(value);
-  }
-  return value;
+    if (debug >= 2)
+    {
+        Serial.print("fvF firstValue: ");
+        Serial.println(value);
+    }
+    return value;
 }
 
 int lastValue()
 {
-  char masterArray[numChars];
-  byte slaveindx = 0;
-  byte value_end = apple.lastIndexOf('.');
-  if (debug >= 2)
-  {
-    Serial.print("V End (2): ");
-    Serial.println(value_end);
-  }
-  for (byte k = value_end + 1; k < apple.length(); k++)
-  {
-    masterArray[slaveindx] = receivedChars[k];
-    slaveindx++;
-  }
-  masterArray[slaveindx] = '\0';
-  int lastvalue = atoi(masterArray);
-  if (debug >= 2)
-  {
-    Serial.print("lvF lastValue: ");
-    Serial.println(lastvalue);
-  }
-  return lastvalue;
+    char masterArray[numChars];
+    byte slaveindx = 0;
+    byte value_end = apple.lastIndexOf('.');
+    if (debug >= 2)
+    {
+        Serial.print("V End (2): ");
+        Serial.println(value_end);
+    }
+    for (byte k = value_end + 1; k < apple.length(); k++)
+    {
+        masterArray[slaveindx] = receivedChars[k];
+        slaveindx++;
+    }
+    masterArray[slaveindx] = '\0';
+    int lastvalue = atoi(masterArray);
+    if (debug >= 2)
+    {
+        Serial.print("lvF lastValue: ");
+        Serial.println(lastvalue);
+    }
+    return lastvalue;
 }
