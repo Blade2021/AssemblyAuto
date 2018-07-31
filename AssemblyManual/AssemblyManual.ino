@@ -418,7 +418,7 @@ void changetime(int sysPos)
                         if ((passCheck == passcode) && (active >= 1))
                         {
                             lcd.clear();
-                            Serial.println(F("ERROR: 2358"))
+                            Serial.println(F("ERROR: 2358"));
                         }
                         else
                         {
