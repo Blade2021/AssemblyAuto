@@ -1530,6 +1530,7 @@ void changetime(int sysPos)
 }
 //End of ChangeTime function
 
+// Serial eeprom Update
 void eepromUpdate()
 {
     int address = firstValue();

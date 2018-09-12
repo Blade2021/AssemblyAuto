@@ -60,7 +60,7 @@ const byte solenoidArray[SOLARRAYSIZE] = {7, 8, 16, 17, 18, 19, 15, 14, 9};
    18 - [AL-4] Crimp Stopper
    19 - [AL-5] Crimp
    15 - [AL-6] Vibrator
-   14 - [AL-7] MainAir
+   14 - [AL-7] MainAir  
    9  - [AL-8] Motor Relay
 */
 //LCD Variables
@@ -438,7 +438,7 @@ void loop()
                 crimpLoop = digitalRead(sensorArray[3]);
                 if (
                     //Trigger All
-                   // ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[2])) ||
+                    // ((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable < 3) && (millis() - previousTimer4 >= sysArray[2])) ||
                     ((crimpLoop == LOW) && (crimpNext == 0) && (mpsArray[1] < 2) && (millis() - previousTimer4 >= sysArray[2])) ||
                     //Protection - Only crimp if malfunction was not detected
                     //((crimpLoop == LOW) && (crimpNext == 0) && (mpsEnable >= 3) && (mfcount <= lastMFcount) && (millis() - previousTimer4 >= sysArray[2])))
@@ -490,6 +490,19 @@ void loop()
                 hookLoop = digitalRead(sensorArray[2]);
                 if ((hookLoop == LOW) && (hookNext == 0))
                 {
+                    if (logicCount == 0)
+                    {
+                        precountTime = millis();
+                    } else {
+                        logicCount++;
+                    }
+                    if (dispOverride == 0)
+                    {
+                        lcd.setCursor(0,1);
+                        lcd.print("SC: ");
+                        lcd.print(logicCount);
+                        lcd.print("   ")
+                    }
                     //if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[4])))
                     if ((mpsArray[1] == 0) || ((mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[4])))
                     {
@@ -861,9 +874,9 @@ void setLEDS(byte LEDSnumber)
     digitalWrite(ledArray[4], LOW);
     //digitalWrite(ledArray[5], LOW);
     if ((LEDSnumber == 0) || (LEDSnumber > LEDARRAYLENGTH))
-        {
-            return;
-        }
+    {
+        return;
+    }
     digitalWrite(ledArray[LEDSnumber], HIGH);
 }
 
