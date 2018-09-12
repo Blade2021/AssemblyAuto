@@ -4,7 +4,6 @@
 */
 #include <Keypad.h>
 #include <Wire.h>
-#include <LiquidCrystal.h>
 #include <Adafruit_LiquidCrystal.h>
 #include <EEPROM.h>
 
@@ -493,15 +492,14 @@ void loop()
                     if (logicCount == 0)
                     {
                         precountTime = millis();
-                    } else {
-                        logicCount++;
                     }
-                    if (dispOverride == 0)
+                    logicCount++;
+                    if (dispOverride <= 0)
                     {
                         lcd.setCursor(0,1);
                         lcd.print("SC: ");
                         lcd.print(logicCount);
-                        lcd.print("   ")
+                        lcd.print("   ");
                     }
                     //if ((mpsEnable <= 1) || ((mpsEnable >= 2) && (millis() - previousTimer3 >= sysArray[4])))
                     if ((mpsArray[1] == 0) || ((mpsArray[1] >= 1) && (millis() - previousTimer3 >= sysArray[4])))
