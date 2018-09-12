@@ -3,7 +3,9 @@
     Last Upload SHA Token: 8de98c
 */
 #include <Keypad.h>
+#include <Wire.h>
 #include <LiquidCrystal.h>
+#include <Adafruit_LiquidCrystal.h>
 #include <EEPROM.h>
 
 #define SENARRAYSIZE 8
@@ -106,7 +108,7 @@ byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
 */
 
 //LiquidCrystal
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+Adafruit_LiquidCrystal lcd(0);
 
 //Keypad
 const byte ROWS = 4; // # of rows for keypad
