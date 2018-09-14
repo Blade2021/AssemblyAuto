@@ -107,7 +107,14 @@ byte mpsArray[MPSLENGTH] = {0, 0, 0, 0};
 */
 
 //LiquidCrystal
+//LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 Adafruit_LiquidCrystal lcd(0);
+/* Backpack Pin connections:
+ *  5V to 5V
+ *  GND to GND
+ *  DAT to 20
+ *  CLK to 21
+ */
 
 //Keypad
 const byte ROWS = 4; // # of rows for keypad
